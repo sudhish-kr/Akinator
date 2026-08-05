@@ -1,0 +1,1 @@
+"""MindGuess AI application package."""

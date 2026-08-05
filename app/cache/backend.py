@@ -1,0 +1,13 @@
+"""Cache backend protocol. InMemory for single-process; Redis is a drop-in."""
+
+from typing import Any, Protocol
+
+
+class CacheBackend(Protocol):
+    def get(self, key: str) -> Any | None: ...
+
+    def set(self, key: str, value: Any, ttl_seconds: int | None = None) -> None: ...
+
+    def delete(self, key: str) -> None: ...
+
+    def purge_expired(self) -> int: ...
