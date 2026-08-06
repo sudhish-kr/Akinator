@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { adminApi } from "../api.js";
+import { useI18n } from "../../i18n/index.jsx";
 
 function pct(rate) {
   return `${Math.round((rate || 0) * 100)}%`;
 }
 
-function BarChart({ points }) {
+function BarChart({ points, label }) {
   const max = Math.max(1, ...points.map((p) => p.games));
   const width = 640;
   const height = 180;
@@ -21,7 +22,7 @@ function BarChart({ points }) {
       className="admin-chart"
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label="Daily games over the last 14 days"
+      aria-label={label}
     >
       <line
         x1={padX}
@@ -44,7 +45,7 @@ function BarChart({ points }) {
               rx="3"
               className="admin-chart-bar"
             >
-              <title>{`${p.date}: ${p.games} games`}</title>
+              <title>{`${p.date}: ${p.games}`}</title>
             </rect>
             {i % 2 === 0 && (
               <text x={x + barW / 2} y={height - 2} textAnchor="middle" className="admin-chart-label">
@@ -59,9 +60,10 @@ function BarChart({ points }) {
 }
 
 function RankBars({ items, valueKey, labelKey }) {
+  const { t } = useI18n();
   const max = Math.max(1, ...items.map((item) => item[valueKey] || 0));
   if (!items.length) {
-    return <p className="admin-muted">No data yet.</p>;
+    return <p className="admin-muted">{t("admin.noData")}</p>;
   }
   return (
     <ul className="admin-rank">
@@ -81,6 +83,7 @@ function RankBars({ items, valueKey, labelKey }) {
 }
 
 export default function StatisticsPage() {
+  const { t, tq } = useI18n();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -105,36 +108,44 @@ export default function StatisticsPage() {
   }, []);
 
   const daily = useMemo(() => stats?.daily_activity || [], [stats]);
+  const asked = useMemo(
+    () =>
+      (stats?.most_asked_questions || []).slice(0, 8).map((q) => ({
+        ...q,
+        text: tq(q.text),
+      })),
+    [stats, tq]
+  );
 
   return (
     <div className="admin-panel">
       <header className="admin-panel-head">
         <div>
-          <h2>Analytics</h2>
-          <p>Games, learning outcomes, and question demand from live statistics.</p>
+          <h2>{t("admin.analyticsTitle")}</h2>
+          <p>{t("admin.analyticsLede")}</p>
         </div>
       </header>
 
       {error && <p className="admin-error">{error}</p>}
-      {busy && <p className="admin-muted">Loading analytics…</p>}
+      {busy && <p className="admin-muted">{t("admin.loadingAnalytics")}</p>}
 
       {!busy && !error && stats && (
         <>
           <div className="admin-stat-grid analytics">
             <article className="admin-stat">
-              <span className="admin-stat-label">Total games</span>
+              <span className="admin-stat-label">{t("admin.totalGames")}</span>
               <strong className="admin-stat-value">{stats.total_games_played ?? 0}</strong>
             </article>
             <article className="admin-stat">
-              <span className="admin-stat-label">Win rate</span>
+              <span className="admin-stat-label">{t("admin.winRate")}</span>
               <strong className="admin-stat-value">{pct(stats.guess_accuracy_rate)}</strong>
             </article>
             <article className="admin-stat">
-              <span className="admin-stat-label">Learning rate</span>
+              <span className="admin-stat-label">{t("admin.learningRate")}</span>
               <strong className="admin-stat-value">{pct(stats.learning_rate)}</strong>
             </article>
             <article className="admin-stat">
-              <span className="admin-stat-label">Avg questions / game</span>
+              <span className="admin-stat-label">{t("admin.avgQuestions")}</span>
               <strong className="admin-stat-value">
                 {(stats.average_questions_per_game ?? 0).toFixed(1)}
               </strong>
@@ -142,22 +153,18 @@ export default function StatisticsPage() {
           </div>
 
           <div className="admin-card admin-chart-card">
-            <h3>Daily activity</h3>
-            <p className="admin-muted">Games started per day (last 14 days)</p>
-            <BarChart points={daily} />
+            <h3>{t("admin.dailyActivity")}</h3>
+            <p className="admin-muted">{t("admin.dailyLede")}</p>
+            <BarChart points={daily} label={t("admin.dailyActivity")} />
           </div>
 
           <div className="admin-grid analytics-grid">
             <div className="admin-card">
-              <h3>Most asked questions</h3>
-              <RankBars
-                items={(stats.most_asked_questions || []).slice(0, 8)}
-                valueKey="times_asked"
-                labelKey="text"
-              />
+              <h3>{t("admin.mostAsked")}</h3>
+              <RankBars items={asked} valueKey="times_asked" labelKey="text" />
             </div>
             <div className="admin-card">
-              <h3>Most guessed characters</h3>
+              <h3>{t("admin.mostGuessed")}</h3>
               <RankBars
                 items={(stats.most_guessed_characters || []).slice(0, 8)}
                 valueKey="times_guessed"

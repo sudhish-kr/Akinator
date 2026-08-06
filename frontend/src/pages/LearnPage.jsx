@@ -1,12 +1,15 @@
+import { useI18n } from "../i18n/index.jsx";
+
 export default function LearnPage({ wrongGuessName, characters, busy, onPick, onHome }) {
+  const { t } = useI18n();
   return (
     <section className="page learn">
-      <p className="kicker">Learning</p>
-      <h2 className="title">Who was it?</h2>
+      <p className="kicker">{t("learn.kicker")}</p>
+      <h2 className="title">{t("learn.title")}</h2>
       <p className="lede">
         {wrongGuessName
-          ? `Not ${wrongGuessName}. Choose the correct character so I can update my model.`
-          : "Choose the correct character so I can update my model."}
+          ? t("learn.ledeWrong", { name: wrongGuessName })
+          : t("learn.lede")}
       </p>
 
       <div className="char-grid">
@@ -23,12 +26,10 @@ export default function LearnPage({ wrongGuessName, characters, busy, onPick, on
         ))}
       </div>
 
-      {!busy && characters.length === 0 && (
-        <p className="muted">No active characters available.</p>
-      )}
+      {!busy && characters.length === 0 && <p className="muted">{t("learn.empty")}</p>}
 
       <button type="button" className="btn ghost" disabled={busy} onClick={onHome}>
-        Back to home
+        {t("learn.home")}
       </button>
     </section>
   );

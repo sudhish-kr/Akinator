@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "./api.js";
+import { LanguageSwitch, useI18n } from "./i18n/index.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import GamePage from "./pages/GamePage.jsx";
 import GuessPage from "./pages/GuessPage.jsx";
@@ -7,6 +8,7 @@ import LearnPage from "./pages/LearnPage.jsx";
 
 /** Screens: home | game | guess | learn | done */
 export default function App() {
+  const { t } = useI18n();
   const [screen, setScreen] = useState("home");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -20,7 +22,7 @@ export default function App() {
   const [doneMessage, setDoneMessage] = useState("");
 
   const fail = (err) => {
-    setError(err?.message || "Something went wrong");
+    setError(err?.message || t("common.error"));
     setBusy(false);
   };
 
@@ -62,7 +64,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [t]);
 
   const answer = useCallback(
     async (value) => {
@@ -97,7 +99,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [sessionId, question, busy]
+    [sessionId, question, busy, t]
   );
 
   const onCorrect = useCallback(async () => {
@@ -106,14 +108,14 @@ export default function App() {
     setError(null);
     try {
       await api.learn(sessionId, guess.character.id, { wrongGuess: false });
-      setDoneMessage(`Nailed it — ${guess.character.name}.`);
+      setDoneMessage(t("done.nailed", { name: guess.character.name }));
       setScreen("done");
     } catch (err) {
       fail(err);
     } finally {
       setBusy(false);
     }
-  }, [sessionId, guess, busy]);
+  }, [sessionId, guess, busy, t]);
 
   const openLearn = useCallback(async () => {
     if (busy) return;
@@ -128,7 +130,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [busy, guess]);
+  }, [busy, guess, t]);
 
   const onLearnPick = useCallback(
     async (characterId, characterName) => {
@@ -139,8 +141,8 @@ export default function App() {
         await api.learn(sessionId, characterId, { wrongGuess: true });
         setDoneMessage(
           characterName
-            ? `Learned — next time I’ll look for ${characterName}.`
-            : "Learned from that round."
+            ? t("done.learnedNamed", { name: characterName })
+            : t("done.learned")
         );
         setScreen("done");
       } catch (err) {
@@ -149,17 +151,23 @@ export default function App() {
         setBusy(false);
       }
     },
-    [sessionId, busy]
+    [sessionId, busy, t]
   );
 
   return (
     <div className="shell">
       <div className="atmosphere" aria-hidden="true" />
+      <LanguageSwitch className="lang-switch-floating" />
 
       {error && (
         <div className="toast" role="alert">
           <span>{error}</span>
-          <button type="button" className="toast-x" onClick={() => setError(null)} aria-label="Dismiss">
+          <button
+            type="button"
+            className="toast-x"
+            onClick={() => setError(null)}
+            aria-label={t("common.dismiss")}
+          >
             ×
           </button>
         </div>
@@ -189,13 +197,13 @@ export default function App() {
       )}
       {screen === "done" && (
         <section className="page done">
-          <h2 className="title">{doneMessage || "Round complete"}</h2>
+          <h2 className="title">{doneMessage || t("done.title")}</h2>
           <div className="actions">
             <button type="button" className="btn primary" onClick={startGame} disabled={busy}>
-              Play again
+              {t("done.playAgain")}
             </button>
             <button type="button" className="btn ghost" onClick={goHome} disabled={busy}>
-              Home
+              {t("done.home")}
             </button>
           </div>
         </section>

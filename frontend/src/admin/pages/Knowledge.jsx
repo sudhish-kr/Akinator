@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import { adminApi } from "../api.js";
+import { useI18n } from "../../i18n/index.jsx";
 
 export default function KnowledgePage({ token }) {
+  const { t } = useI18n();
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
@@ -21,7 +23,10 @@ export default function KnowledgePage({ token }) {
       a.click();
       URL.revokeObjectURL(url);
       setMessage(
-        `Exported ${data.characters?.length || 0} characters and ${data.questions?.length || 0} questions.`
+        t("admin.exported", {
+          chars: data.characters?.length || 0,
+          questions: data.questions?.length || 0,
+        })
       );
     } catch (err) {
       setError(err.message);
@@ -44,7 +49,7 @@ export default function KnowledgePage({ token }) {
       try {
         payload = JSON.parse(text);
       } catch {
-        throw new Error("Invalid JSON file");
+        throw new Error(t("admin.invalidJson"));
       }
       const result = await adminApi.importKnowledge(token, {
         version: payload.version || 1,
@@ -52,7 +57,10 @@ export default function KnowledgePage({ token }) {
         questions: payload.questions || [],
       });
       setMessage(
-        `Imported ${result.characters_imported} characters and ${result.questions_imported} questions.`
+        t("admin.imported", {
+          chars: result.characters_imported,
+          questions: result.questions_imported,
+        })
       );
     } catch (err) {
       setError(err.message);
@@ -65,8 +73,8 @@ export default function KnowledgePage({ token }) {
     <div className="admin-panel">
       <header className="admin-panel-head">
         <div>
-          <h2>Knowledge import / export</h2>
-          <p>Download or upload characters and questions as JSON. Imports reject duplicates.</p>
+          <h2>{t("admin.knowledgeTitle")}</h2>
+          <p>{t("admin.knowledgeLede")}</p>
         </div>
       </header>
 
@@ -75,18 +83,16 @@ export default function KnowledgePage({ token }) {
 
       <div className="admin-grid">
         <div className="admin-card">
-          <h3>Export</h3>
-          <p className="admin-muted">All characters and questions as a JSON file.</p>
+          <h3>{t("admin.export")}</h3>
+          <p className="admin-muted">{t("admin.exportLede")}</p>
           <button type="button" className="admin-btn primary" disabled={busy} onClick={onExport}>
-            Download JSON
+            {t("admin.downloadJson")}
           </button>
         </div>
 
         <div className="admin-card">
-          <h3>Import</h3>
-          <p className="admin-muted">
-            Validates payload shape, rejects duplicate names/texts, and rolls back on failure.
-          </p>
+          <h3>{t("admin.import")}</h3>
+          <p className="admin-muted">{t("admin.importLede")}</p>
           <input
             ref={fileRef}
             type="file"
@@ -100,7 +106,7 @@ export default function KnowledgePage({ token }) {
             disabled={busy}
             onClick={() => fileRef.current?.click()}
           >
-            Upload JSON
+            {t("admin.uploadJson")}
           </button>
         </div>
       </div>

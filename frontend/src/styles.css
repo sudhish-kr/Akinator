@@ -354,6 +354,58 @@ body {
   color: var(--sea);
 }
 
+.lang-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 40, 34, 0.12);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+}
+
+.lang-switch button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.lang-switch button.active {
+  background: var(--sea);
+  color: #f4fbf8;
+}
+
+.lang-switch-floating {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 5;
+}
+
+.lang-switch-admin {
+  background: rgba(232, 240, 236, 0.06);
+  border-color: rgba(232, 240, 236, 0.1);
+  color: #e8f0ec;
+  width: 100%;
+  justify-content: stretch;
+}
+
+.lang-switch-admin button {
+  flex: 1;
+}
+
+.lang-switch-admin button.active {
+  background: #3d9a7a;
+  color: #06150f;
+}
+
 .btn.answer,
 .btn.chip {
   background: #fff;

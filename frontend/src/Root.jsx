@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import GameApp from "./App.jsx";
 import AdminApp from "./admin/AdminApp.jsx";
+import { I18nProvider } from "./i18n/index.jsx";
 import "./styles.css";
 import "./admin/admin.css";
 
@@ -18,5 +19,9 @@ export default function Root() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  return route === "admin" ? <AdminApp /> : <GameApp />;
+  return (
+    <I18nProvider>
+      {route === "admin" ? <AdminApp /> : <GameApp />}
+    </I18nProvider>
+  );
 }

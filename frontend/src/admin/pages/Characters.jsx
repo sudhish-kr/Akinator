@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../api.js";
 import { mediaUrl } from "../../config.js";
+import { useI18n } from "../../i18n/index.jsx";
 
 const emptyForm = { name: "", category: "real_person", image_url: "", is_active: true };
 
 export default function CharactersPage({ token }) {
+  const { t } = useI18n();
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,7 +92,7 @@ export default function CharactersPage({ token }) {
   };
 
   const remove = async (id) => {
-    if (!confirm("Deactivate this character?")) return;
+    if (!confirm(t("admin.deactivateChar"))) return;
     setBusy(true);
     setError(null);
     try {
@@ -108,12 +110,12 @@ export default function CharactersPage({ token }) {
     <div className="admin-panel">
       <header className="admin-panel-head">
         <div>
-          <h2>Characters</h2>
-          <p>List, search, create, edit, upload images, and deactivate knowledge entries.</p>
+          <h2>{t("admin.charactersTitle")}</h2>
+          <p>{t("admin.charactersLede")}</p>
         </div>
         <input
           className="admin-search"
-          placeholder="Search name or category…"
+          placeholder={t("admin.searchChar")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -123,12 +125,12 @@ export default function CharactersPage({ token }) {
 
       <div className="admin-grid">
         <form className="admin-card admin-form" onSubmit={save}>
-          <h3>{editingId ? "Edit character" : "Create character"}</h3>
+          <h3>{editingId ? t("admin.editCharacter") : t("admin.createCharacter")}</h3>
           <div className="admin-image-preview">
             <img src={mediaUrl(form.image_url)} alt="" />
           </div>
           <label>
-            Name
+            {t("admin.name")}
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -136,7 +138,7 @@ export default function CharactersPage({ token }) {
             />
           </label>
           <label>
-            Category
+            {t("admin.category")}
             <input
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -144,7 +146,7 @@ export default function CharactersPage({ token }) {
             />
           </label>
           <label>
-            Image upload
+            {t("admin.imageUpload")}
             <input
               ref={fileRef}
               type="file"
@@ -152,24 +154,22 @@ export default function CharactersPage({ token }) {
               onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
             />
           </label>
-          <p className="admin-muted">
-            JPEG/PNG/WebP/GIF up to 2MB. Stored path is saved on the character.
-          </p>
+          <p className="admin-muted">{t("admin.imageHint")}</p>
           <label className="admin-check">
             <input
               type="checkbox"
               checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
             />
-            Active
+            {t("admin.active")}
           </label>
           <div className="admin-actions">
             <button type="submit" className="admin-btn primary" disabled={busy}>
-              {editingId ? "Save changes" : "Create"}
+              {editingId ? t("admin.save") : t("admin.create")}
             </button>
             {editingId && (
               <button type="button" className="admin-btn ghost" onClick={resetForm}>
-                Cancel
+                {t("admin.cancel")}
               </button>
             )}
           </div>
@@ -180,9 +180,9 @@ export default function CharactersPage({ token }) {
             <thead>
               <tr>
                 <th />
-                <th>Name</th>
-                <th>Category</th>
-                <th>Active</th>
+                <th>{t("admin.name")}</th>
+                <th>{t("admin.category")}</th>
+                <th>{t("admin.active")}</th>
                 <th />
               </tr>
             </thead>
@@ -194,14 +194,14 @@ export default function CharactersPage({ token }) {
                   </td>
                   <td>{c.name}</td>
                   <td>{c.category}</td>
-                  <td>{c.is_active ? "Yes" : "No"}</td>
+                  <td>{c.is_active ? t("admin.yes") : t("admin.no")}</td>
                   <td className="admin-row-actions">
                     <button type="button" className="admin-link" onClick={() => startEdit(c)}>
-                      Edit
+                      {t("admin.edit")}
                     </button>
                     {c.is_active && (
                       <button type="button" className="admin-link danger" onClick={() => remove(c.id)}>
-                        Delete
+                        {t("admin.delete")}
                       </button>
                     )}
                   </td>
@@ -209,7 +209,7 @@ export default function CharactersPage({ token }) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5}>{busy ? "Loading…" : "No characters found."}</td>
+                  <td colSpan={5}>{busy ? t("admin.loading") : t("admin.noCharacters")}</td>
                 </tr>
               )}
             </tbody>

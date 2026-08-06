@@ -1,8 +1,10 @@
 import { mediaUrl } from "../config.js";
+import { useI18n } from "../i18n/index.jsx";
 
 export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
+  const { t, tq } = useI18n();
   if (!guess) return null;
-  const { character, confidence, confidence_percent, summary, top_candidates, influential_questions } =
+  const { character, confidence, confidence_percent, top_candidates, influential_questions } =
     guess;
   const pct =
     typeof confidence_percent === "number"
@@ -16,25 +18,25 @@ export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
 
   return (
     <section className="page guess">
-      <p className="kicker">Final read</p>
+      <p className="kicker">{t("guess.kicker")}</p>
       <div className="guess-card">
         <img className="guess-photo" src={imageSrc} alt={character.name} />
         <h2 className="guess-name">{character.name}</h2>
-        <p className="guess-conf">{pct}% confident</p>
+        <p className="guess-conf">{t("guess.confident", { pct })}</p>
       </div>
 
-      {summary && <p className="lede center guess-why">{summary}</p>}
+      <p className="lede center guess-why">{t("guess.summary", { name: character.name })}</p>
 
       {influencers.length > 0 && (
         <div className="explain-block">
-          <h3 className="explain-title">Most influential answers</h3>
+          <h3 className="explain-title">{t("guess.influencers")}</h3>
           <ol className="explain-list">
             {influencers.map((row) => (
               <li key={row.id}>
-                <span className="explain-q">{row.text}</span>
+                <span className="explain-q">{tq(row.text)}</span>
                 <span className="explain-meta">
-                  {String(row.answer || "").replace(/_/g, " ")} · impact{" "}
-                  {(row.influence * 100).toFixed(1)} pts
+                  {t(`answers.${row.answer}`, {}) || String(row.answer || "").replace(/_/g, " ")} ·{" "}
+                  {t("guess.impact", { pts: (row.influence * 100).toFixed(1) })}
                 </span>
               </li>
             ))}
@@ -44,7 +46,7 @@ export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
 
       {candidates.length > 0 && (
         <div className="explain-block">
-          <h3 className="explain-title">Top candidates</h3>
+          <h3 className="explain-title">{t("guess.candidates")}</h3>
           <ol className="explain-list">
             {candidates.map((row) => (
               <li key={row.id}>
@@ -56,13 +58,13 @@ export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
         </div>
       )}
 
-      <p className="lede center">Is this who you were thinking of?</p>
+      <p className="lede center">{t("guess.confirm")}</p>
       <div className="actions">
         <button type="button" className="btn primary" disabled={busy} onClick={onCorrect}>
-          Yes — you got it
+          {t("guess.yes")}
         </button>
         <button type="button" className="btn ghost" disabled={busy} onClick={onWrong}>
-          No — teach me
+          {t("guess.no")}
         </button>
       </div>
     </section>
