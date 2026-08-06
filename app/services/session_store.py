@@ -8,6 +8,14 @@ from app.config import settings
 from app.engine.models import GameEngineState, QuestionRef
 
 
+@dataclass(frozen=True)
+class StoredAnswer:
+    """One user answer recorded during the session."""
+
+    question_id: UUID
+    answer: str
+
+
 @dataclass
 class LiveSession:
     """In-memory game session state. Source of truth is the game_answers log;
@@ -21,6 +29,7 @@ class LiveSession:
     pending_question_id: UUID | None = None
     last_answered_question_id: UUID | None = None
     awaiting_guess: bool = False
+    answers: list[StoredAnswer] = field(default_factory=list)
     last_activity_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
