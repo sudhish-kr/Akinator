@@ -18,7 +18,7 @@ from app.api.schemas.admin import (
 )
 from app.db.repositories.game_repository import GameRepository
 
-router = APIRouter(tags=["admin"])
+router = APIRouter(tags=["catalog"])
 
 
 def _character_item(c) -> CharacterItem:
@@ -110,15 +110,16 @@ async def get_statistics(repo: GameRepository = Depends(get_game_repository)):
     return StatisticsResponse(**data)
 
 
-# ---- Admin-only mutations (RBAC via require_admin) ----
+# ---- Admin-only APIs (RBAC: admin role required) ----
 
-
-@router.post(
-    "/admin/characters",
-    response_model=CharacterItem,
-    status_code=201,
+admin_router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
     dependencies=[Depends(require_admin)],
 )
+
+
+@admin_router.post("/characters", response_model=CharacterItem, status_code=201)
 async def create_character(
     body: CharacterCreate,
     repo: GameRepository = Depends(get_game_repository),
@@ -133,11 +134,7 @@ async def create_character(
     return _character_item(character)
 
 
-@router.patch(
-    "/admin/characters/{character_id}",
-    response_model=CharacterItem,
-    dependencies=[Depends(require_admin)],
-)
+@admin_router.patch("/characters/{character_id}", response_model=CharacterItem)
 async def update_character(
     character_id: UUID,
     body: CharacterUpdate,
@@ -153,12 +150,7 @@ async def update_character(
     return _character_item(character)
 
 
-@router.post(
-    "/admin/questions",
-    response_model=QuestionItem,
-    status_code=201,
-    dependencies=[Depends(require_admin)],
-)
+@admin_router.post("/questions", response_model=QuestionItem, status_code=201)
 async def create_question(
     body: QuestionCreate,
     repo: GameRepository = Depends(get_game_repository),
@@ -170,11 +162,7 @@ async def create_question(
     return _question_item(question)
 
 
-@router.patch(
-    "/admin/questions/{question_id}",
-    response_model=QuestionItem,
-    dependencies=[Depends(require_admin)],
-)
+@admin_router.patch("/questions/{question_id}", response_model=QuestionItem)
 async def update_question(
     question_id: UUID,
     body: QuestionUpdate,
@@ -188,3 +176,6 @@ async def update_question(
         setattr(question, field, value)
     await repo.commit()
     return _question_item(question)
+
+
+router.include_router(admin_router)
