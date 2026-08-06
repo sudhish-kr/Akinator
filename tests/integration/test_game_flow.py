@@ -384,3 +384,98 @@ async def test_statistics_endpoint(client: AsyncClient):
     assert "daily_activity" in data
     assert len(data["daily_activity"]) == 14
     assert all("date" in d and "games" in d for d in data["daily_activity"])
+
+
+@pytest.mark.asyncio
+async def test_knowledge_export_import_admin_only(client: AsyncClient, admin_token: str):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    denied = await client.get("/admin/knowledge/export")
+    assert denied.status_code == 401
+
+    exported = await client.get("/admin/knowledge/export", headers=headers)
+    assert exported.status_code == 200
+    payload = exported.json()
+    assert payload["version"] == 1
+    assert isinstance(payload["characters"], list)
+    assert isinstance(payload["questions"], list)
+    assert len(payload["characters"]) >= 1
+    assert len(payload["questions"]) >= 1
+
+    # Duplicate against existing DB rejected
+    clash = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {
+                    "name": payload["characters"][0]["name"],
+                    "category": "real_person",
+                    "is_active": True,
+                }
+            ],
+            "questions": [],
+        },
+    )
+    assert clash.status_code == 409
+
+    # Duplicate within payload rejected
+    within = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {"name": "Ada Lovelace", "category": "real_person", "is_active": True},
+                {"name": "ada lovelace", "category": "real_person", "is_active": True},
+            ],
+            "questions": [],
+        },
+    )
+    assert within.status_code == 400
+    assert "Duplicate characters" in within.json()["detail"]
+
+    before_chars = (await client.get("/characters?page_size=100")).json()["meta"]["total"]
+    ok = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {"name": "Marie Curie", "category": "real_person", "is_active": True}
+            ],
+            "questions": [
+                {
+                    "text": "Did this person win a Nobel Prize?",
+                    "category": "awards",
+                    "is_active": True,
+                }
+            ],
+        },
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["characters_imported"] == 1
+    assert ok.json()["questions_imported"] == 1
+    after_chars = (await client.get("/characters?page_size=100")).json()["meta"]["total"]
+    assert after_chars == before_chars + 1
+
+
+@pytest.mark.asyncio
+async def test_knowledge_import_rolls_back_on_failure(client: AsyncClient, admin_token: str):
+    """If import fails after partial writes, nothing from the batch remains."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    before_q = (await client.get("/questions?page_size=100")).json()["meta"]["total"]
+
+    # Second question duplicates the first → validation fails before commit
+    bad = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [],
+            "questions": [
+                {"text": "Is this person a composer?", "is_active": True},
+                {"text": "Is this person a composer?", "is_active": True},
+            ],
+        },
+    )
+    assert bad.status_code == 400
+    after_q = (await client.get("/questions?page_size=100")).json()["meta"]["total"]
+    assert after_q == before_q

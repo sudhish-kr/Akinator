@@ -4,11 +4,13 @@ import AdminLogin from "./pages/Login.jsx";
 import CharactersPage from "./pages/Characters.jsx";
 import QuestionsPage from "./pages/Questions.jsx";
 import StatisticsPage from "./pages/Statistics.jsx";
+import KnowledgePage from "./pages/Knowledge.jsx";
 
 const TABS = [
   { id: "stats", label: "Analytics" },
   { id: "characters", label: "Characters" },
   { id: "questions", label: "Questions" },
+  { id: "knowledge", label: "Import / Export" },
 ];
 
 export default function AdminApp() {
@@ -79,6 +81,7 @@ export default function AdminApp() {
         {tab === "stats" && <StatisticsPage />}
         {tab === "characters" && <CharactersPage token={token} />}
         {tab === "questions" && <QuestionsPage token={token} />}
+        {tab === "knowledge" && <KnowledgePage token={token} />}
       </main>
     </div>
   );

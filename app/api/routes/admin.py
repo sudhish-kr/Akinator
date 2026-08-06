@@ -9,6 +9,9 @@ from app.api.schemas.admin import (
     CharacterItem,
     CharacterListResponse,
     CharacterUpdate,
+    KnowledgeExportResponse,
+    KnowledgeImportRequest,
+    KnowledgeImportResponse,
     PaginatedMeta,
     QuestionCreate,
     QuestionItem,
@@ -17,6 +20,7 @@ from app.api.schemas.admin import (
     StatisticsResponse,
 )
 from app.db.repositories.game_repository import GameRepository
+from app.services.knowledge_io import KnowledgeIOError, KnowledgeIOService
 
 router = APIRouter(tags=["catalog"])
 
@@ -176,6 +180,28 @@ async def update_question(
         setattr(question, field, value)
     await repo.commit()
     return _question_item(question)
+
+
+@admin_router.get("/knowledge/export", response_model=KnowledgeExportResponse)
+async def export_knowledge(repo: GameRepository = Depends(get_game_repository)):
+    return KnowledgeExportResponse(**(await KnowledgeIOService(repo).export_knowledge()))
+
+
+@admin_router.post("/knowledge/import", response_model=KnowledgeImportResponse)
+async def import_knowledge(
+    body: KnowledgeImportRequest,
+    repo: GameRepository = Depends(get_game_repository),
+):
+    if not body.characters and not body.questions:
+        raise HTTPException(status_code=400, detail="Import must include characters or questions")
+    try:
+        result = await KnowledgeIOService(repo).import_knowledge(
+            characters=[c.model_dump() for c in body.characters],
+            questions=[q.model_dump() for q in body.questions],
+        )
+    except KnowledgeIOError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    return KnowledgeImportResponse(**result)
 
 
 router.include_router(admin_router)

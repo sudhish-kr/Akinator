@@ -423,6 +423,11 @@
   margin-bottom: 0.75rem;
 }
 
+.admin-success {
+  color: var(--admin-accent);
+  margin-bottom: 0.75rem;
+}
+
 .admin-login {
   min-height: 100dvh;
   display: grid;

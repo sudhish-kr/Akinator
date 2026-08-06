@@ -90,4 +90,9 @@ export const adminApi = {
     request("PATCH", `/admin/questions/${id}`, { token, body: { is_active: false } }),
 
   getStatistics: () => request("GET", "/statistics"),
+
+  exportKnowledge: (token) => request("GET", "/admin/knowledge/export", { token }),
+
+  importKnowledge: (token, body) =>
+    request("POST", "/admin/knowledge/import", { token, body }),
 };

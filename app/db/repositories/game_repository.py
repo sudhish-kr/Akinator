@@ -81,6 +81,28 @@ class GameRepository:
         )
         return list(result.scalars().all()), total
 
+    async def list_all_characters(self) -> list[Character]:
+        result = await self.db.execute(select(Character).order_by(Character.name))
+        return list(result.scalars().all())
+
+    async def list_all_questions(self) -> list[Question]:
+        result = await self.db.execute(select(Question).order_by(Question.text))
+        return list(result.scalars().all())
+
+    async def find_characters_by_names(self, names: list[str]) -> list[Character]:
+        if not names:
+            return []
+        lowered = {n.casefold() for n in names}
+        result = await self.db.execute(select(Character))
+        return [c for c in result.scalars().all() if c.name.casefold() in lowered]
+
+    async def find_questions_by_texts(self, texts: list[str]) -> list[Question]:
+        if not texts:
+            return []
+        lowered = {t.casefold() for t in texts}
+        result = await self.db.execute(select(Question))
+        return [q for q in result.scalars().all() if q.text.casefold() in lowered]
+
     async def get_likelihoods(
         self,
         character_ids: list[UUID],
