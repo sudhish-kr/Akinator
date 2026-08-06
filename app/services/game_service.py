@@ -251,7 +251,7 @@ class GameService:
                 char.times_guessed_incorrectly += 1
 
         # Learn from the actual character the user was thinking of (TDD Section 4.2)
-        await self.learning.learn_from_session(session_id, actual_character_id)
+        await self.learning.learn_from_wrong_guess(session_id, actual_character_id)
 
         if guessed_id and guessed_id in live.engine.probabilities:
             del live.engine.probabilities[guessed_id]
