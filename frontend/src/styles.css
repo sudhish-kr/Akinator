@@ -297,6 +297,17 @@ body {
   width: fit-content;
 }
 
+.admin-entry {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.admin-entry:hover {
+  color: var(--sea);
+}
+
 .btn.answer,
 .btn.chip {
   background: #fff;

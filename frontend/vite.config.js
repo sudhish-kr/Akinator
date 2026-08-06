@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       "/game": backend,
       "/auth": backend,
+      "/admin": backend,
       "/characters": backend,
       "/questions": backend,
       "/statistics": backend,

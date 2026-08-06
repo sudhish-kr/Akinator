@@ -12,6 +12,9 @@ export default function HomePage({ onStart, busy }) {
       <button type="button" className="btn primary lg" onClick={onStart} disabled={busy}>
         {busy ? "Connecting…" : "Start game"}
       </button>
+      <a className="admin-entry" href="#/admin">
+        Admin dashboard
+      </a>
     </section>
   );
 }
