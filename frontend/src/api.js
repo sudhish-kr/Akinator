@@ -1,38 +1,49 @@
-async function post(path, body) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : "{}",
-  });
+async function request(method, path, body) {
+  const options = { method, headers: { "Content-Type": "application/json" } };
+  if (body !== undefined) options.body = JSON.stringify(body);
+  const res = await fetch(path, options);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
-    throw new Error(detail.detail || `Request failed: ${res.status}`);
+    const message =
+      typeof detail.detail === "string"
+        ? detail.detail
+        : detail.detail
+          ? JSON.stringify(detail.detail)
+          : `Request failed: ${res.status}`;
+    throw new Error(message);
   }
+  if (res.status === 204) return null;
   return res.json();
 }
 
+/** Game API client — existing endpoints only. */
 export const api = {
-  startGame: () => post("/game/start"),
+  startGame: () => request("POST", "/game/start"),
+
   submitAnswer: (sessionId, questionId, answer) =>
-    post("/game/answer", { session_id: sessionId, question_id: questionId, answer }),
-  makeGuess: (sessionId) => post("/game/guess", { session_id: sessionId }),
+    request("POST", "/game/answer", {
+      session_id: sessionId,
+      question_id: questionId,
+      answer,
+    }),
+
+  getState: (sessionId) => request("GET", `/game/state/${sessionId}`),
+
+  getGuess: (sessionId) => request("GET", `/game/guess/${sessionId}`),
+
+  learn: (sessionId, characterId, { wrongGuess = false } = {}) =>
+    request("POST", "/game/learn", {
+      session_id: sessionId,
+      character_id: characterId,
+      wrong_guess: wrongGuess,
+    }),
+
   confirmGuess: (sessionId, correct, actualCharacterId = null) =>
-    post("/game/guess/confirm", {
+    request("POST", "/game/guess/confirm", {
       session_id: sessionId,
       correct,
       actual_character_id: actualCharacterId,
     }),
-  getState: async (sessionId) => {
-    const res = await fetch(`/game/${sessionId}/state`);
-    if (!res.ok) {
-      const detail = await res.json().catch(() => ({}));
-      throw new Error(detail.detail || `Request failed: ${res.status}`);
-    }
-    return res.json();
-  },
-  listCharacters: async () => {
-    const res = await fetch("/characters?page_size=100");
-    if (!res.ok) throw new Error("Failed to load characters");
-    return res.json();
-  },
+
+  listCharacters: () => request("GET", "/characters?is_active=true&page_size=100"),
 };
