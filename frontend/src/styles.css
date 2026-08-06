@@ -244,6 +244,15 @@ body {
   font-weight: 700;
 }
 
+.guess-photo {
+  width: min(100%, 11rem);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 1rem;
+  background: rgba(15, 40, 34, 0.08);
+  box-shadow: 0 10px 28px rgba(15, 40, 34, 0.12);
+}
+
 .guess-name {
   font-size: clamp(1.6rem, 5vw, 2.1rem);
 }

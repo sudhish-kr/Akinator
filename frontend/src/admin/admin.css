@@ -428,6 +428,29 @@
   margin-bottom: 0.75rem;
 }
 
+.admin-image-preview {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  background: #121916;
+}
+
+.admin-image-preview img,
+.admin-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-thumb {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.45rem;
+}
+
 .admin-login {
   min-height: 100dvh;
   display: grid;

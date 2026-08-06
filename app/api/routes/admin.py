@@ -1,7 +1,7 @@
 import math
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.api.deps import get_game_repository, require_admin
 from app.api.schemas.admin import (
@@ -21,6 +21,7 @@ from app.api.schemas.admin import (
 )
 from app.db.repositories.game_repository import GameRepository
 from app.services.knowledge_io import KnowledgeIOError, KnowledgeIOService
+from app.services.media_service import MediaError, save_character_image
 
 router = APIRouter(tags=["catalog"])
 
@@ -150,6 +151,24 @@ async def update_character(
     updates = body.model_dump(exclude_unset=True)
     for field, value in updates.items():
         setattr(character, field, value)
+    await repo.commit()
+    return _character_item(character)
+
+
+@admin_router.post("/characters/{character_id}/image", response_model=CharacterItem)
+async def upload_character_image(
+    character_id: UUID,
+    file: UploadFile = File(...),
+    repo: GameRepository = Depends(get_game_repository),
+):
+    character = await repo.get_character(character_id)
+    if not character:
+        raise HTTPException(status_code=404, detail="Character not found")
+    try:
+        path = await save_character_image(file, character_id)
+    except MediaError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    character.image_url = path
     await repo.commit()
     return _character_item(character)
 

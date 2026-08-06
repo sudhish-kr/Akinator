@@ -1,3 +1,5 @@
+import { mediaUrl } from "../config.js";
+
 export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
   if (!guess) return null;
   const { character, confidence, confidence_percent, summary, top_candidates, influential_questions } =
@@ -10,14 +12,13 @@ export default function GuessPage({ guess, busy, onCorrect, onWrong }) {
   const influencers = Array.isArray(influential_questions)
     ? influential_questions.slice(0, 5)
     : [];
+  const imageSrc = mediaUrl(character.image_url);
 
   return (
     <section className="page guess">
       <p className="kicker">Final read</p>
       <div className="guess-card">
-        <div className="avatar" aria-hidden="true">
-          {character.name.charAt(0)}
-        </div>
+        <img className="guess-photo" src={imageSrc} alt={character.name} />
         <h2 className="guess-name">{character.name}</h2>
         <p className="guess-conf">{pct}% confident</p>
       </div>

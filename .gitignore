@@ -31,3 +31,8 @@ build/
 # Local / runtime
 pgdata/
 *.db
+
+# Uploaded character images (keep default placeholder)
+media/characters/*
+!media/characters/.gitkeep
+!media/characters/default.svg

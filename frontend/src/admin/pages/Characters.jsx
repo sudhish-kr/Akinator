@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../api.js";
+import { mediaUrl } from "../../config.js";
 
 const emptyForm = { name: "", category: "real_person", image_url: "", is_active: true };
 
@@ -10,6 +11,8 @@ export default function CharactersPage({ token }) {
   const [error, setError] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+  const [pendingFile, setPendingFile] = useState(null);
+  const fileRef = useRef(null);
 
   const load = async () => {
     setBusy(true);
@@ -41,10 +44,14 @@ export default function CharactersPage({ token }) {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setPendingFile(null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const startEdit = (c) => {
     setEditingId(c.id);
+    setPendingFile(null);
+    if (fileRef.current) fileRef.current.value = "";
     setForm({
       name: c.name,
       category: c.category,
@@ -64,10 +71,15 @@ export default function CharactersPage({ token }) {
       is_active: form.is_active,
     };
     try {
+      let id = editingId;
       if (editingId) {
         await adminApi.updateCharacter(token, editingId, payload);
       } else {
-        await adminApi.createCharacter(token, payload);
+        const created = await adminApi.createCharacter(token, payload);
+        id = created.id;
+      }
+      if (pendingFile && id) {
+        await adminApi.uploadCharacterImage(token, id, pendingFile);
       }
       resetForm();
       await load();
@@ -87,6 +99,7 @@ export default function CharactersPage({ token }) {
       await load();
     } catch (err) {
       setError(err.message);
+    } finally {
       setBusy(false);
     }
   };
@@ -96,7 +109,7 @@ export default function CharactersPage({ token }) {
       <header className="admin-panel-head">
         <div>
           <h2>Characters</h2>
-          <p>List, search, create, edit, and deactivate knowledge entries.</p>
+          <p>List, search, create, edit, upload images, and deactivate knowledge entries.</p>
         </div>
         <input
           className="admin-search"
@@ -111,6 +124,9 @@ export default function CharactersPage({ token }) {
       <div className="admin-grid">
         <form className="admin-card admin-form" onSubmit={save}>
           <h3>{editingId ? "Edit character" : "Create character"}</h3>
+          <div className="admin-image-preview">
+            <img src={mediaUrl(form.image_url)} alt="" />
+          </div>
           <label>
             Name
             <input
@@ -128,12 +144,17 @@ export default function CharactersPage({ token }) {
             />
           </label>
           <label>
-            Image URL
+            Image upload
             <input
-              value={form.image_url}
-              onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => setPendingFile(e.target.files?.[0] || null)}
             />
           </label>
+          <p className="admin-muted">
+            JPEG/PNG/WebP/GIF up to 2MB. Stored path is saved on the character.
+          </p>
           <label className="admin-check">
             <input
               type="checkbox"
@@ -158,6 +179,7 @@ export default function CharactersPage({ token }) {
           <table className="admin-table">
             <thead>
               <tr>
+                <th />
                 <th>Name</th>
                 <th>Category</th>
                 <th>Active</th>
@@ -167,6 +189,9 @@ export default function CharactersPage({ token }) {
             <tbody>
               {filtered.map((c) => (
                 <tr key={c.id} className={!c.is_active ? "muted-row" : undefined}>
+                  <td>
+                    <img className="admin-thumb" src={mediaUrl(c.image_url)} alt="" />
+                  </td>
                   <td>{c.name}</td>
                   <td>{c.category}</td>
                   <td>{c.is_active ? "Yes" : "No"}</td>
@@ -184,7 +209,7 @@ export default function CharactersPage({ token }) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4}>{busy ? "Loading…" : "No characters found."}</td>
+                  <td colSpan={5}>{busy ? "Loading…" : "No characters found."}</td>
                 </tr>
               )}
             </tbody>

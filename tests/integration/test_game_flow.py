@@ -355,6 +355,48 @@ async def test_admin_can_create_and_update(client: AsyncClient, admin_token: str
 
 
 @pytest.mark.asyncio
+async def test_admin_can_upload_character_image(client: AsyncClient, admin_token: str):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    created = await client.post(
+        "/admin/characters",
+        json={"name": "Image Person", "category": "real_person"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    char_id = created.json()["id"]
+
+    # Tiny valid PNG (1x1)
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
+        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    upload = await client.post(
+        f"/admin/characters/{char_id}/image",
+        headers=headers,
+        files={"file": ("face.png", png, "image/png")},
+    )
+    assert upload.status_code == 200, upload.text
+    path = upload.json()["image_url"]
+    assert path.startswith("/media/characters/")
+    assert path.endswith(".png")
+
+    media = await client.get(path)
+    assert media.status_code == 200
+    assert media.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+    denied = await client.post(
+        f"/admin/characters/{char_id}/image",
+        files={"file": ("face.png", png, "image/png")},
+    )
+    assert denied.status_code == 401
+
+    placeholder = await client.get("/media/characters/default.svg")
+    assert placeholder.status_code == 200
+    assert b"<svg" in placeholder.content
+
+
+@pytest.mark.asyncio
 async def test_suggest_character_creates_inactive(client: AsyncClient):
     start = (await client.post("/game/start")).json()
     resp = await client.post(

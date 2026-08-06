@@ -74,6 +74,31 @@ export const adminApi = {
   deleteCharacter: (token, id) =>
     request("PATCH", `/admin/characters/${id}`, { token, body: { is_active: false } }),
 
+  uploadCharacterImage: async (token, id, file) => {
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch(apiUrl(`/admin/characters/${id}/image`), {
+      method: "POST",
+      headers,
+      body,
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({}));
+      const message =
+        typeof detail.detail === "string"
+          ? detail.detail
+          : detail.detail
+            ? JSON.stringify(detail.detail)
+            : `Request failed: ${res.status}`;
+      const err = new Error(message);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  },
+
   listQuestions: (params = {}) => {
     const q = new URLSearchParams({ page: "1", page_size: "100", ...params });
     return request("GET", `/questions?${q}`);

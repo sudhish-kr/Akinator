@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api.routes.admin import router as admin_router
@@ -11,6 +12,7 @@ from app.api.routes.game import router as game_router
 from app.config import settings
 from app.core.logging import request_logging_middleware, setup_logging
 from app.db.session import async_session_factory
+from app.services.media_service import media_root
 from app.workers.session_cleanup import run_session_cleanup_loop
 
 setup_logging(settings.log_level)
@@ -46,6 +48,8 @@ app.middleware("http")(request_logging_middleware)
 app.include_router(auth_router)
 app.include_router(game_router)
 app.include_router(admin_router)
+
+app.mount("/media", StaticFiles(directory=str(media_root())), name="media")
 
 
 @app.get("/health", tags=["health"])
