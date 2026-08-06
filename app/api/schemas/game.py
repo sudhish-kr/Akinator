@@ -35,9 +35,26 @@ class CharacterOut(BaseModel):
     image_url: str | None = None
 
 
+class CandidateOut(BaseModel):
+    id: str
+    name: str
+    probability: float
+
+
+class InfluentialQuestionOut(BaseModel):
+    id: str
+    text: str
+    answer: str
+    influence: float
+
+
 class GuessResponse(BaseModel):
     character: CharacterOut
     confidence: float
+    confidence_percent: float
+    summary: str
+    top_candidates: list[CandidateOut]
+    influential_questions: list[InfluentialQuestionOut]
 
 
 class LearnRequest(BaseModel):

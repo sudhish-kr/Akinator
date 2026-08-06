@@ -114,6 +114,13 @@ async def test_get_guess_and_post_learn(client: AsyncClient):
     body = guess.json()
     assert body["character"]["name"]
     assert 0.0 <= body["confidence"] <= 1.0
+    assert 0.0 <= body["confidence_percent"] <= 100.0
+    assert isinstance(body["summary"], str) and body["summary"]
+    assert isinstance(body["top_candidates"], list)
+    assert 1 <= len(body["top_candidates"]) <= 5
+    assert isinstance(body["influential_questions"], list)
+    assert len(body["influential_questions"]) <= 5
+    assert body["top_candidates"][0]["id"] == body["character"]["id"]
 
     learn = await client.post(
         "/game/learn",

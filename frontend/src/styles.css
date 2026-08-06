@@ -253,6 +253,43 @@ body {
   font-weight: 600;
 }
 
+.guess-why {
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+.explain-block {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+}
+
+.explain-title {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  margin: 0 0 0.45rem;
+}
+
+.explain-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.explain-list li {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.explain-q {
+  font-weight: 600;
+}
+
+.explain-meta {
+  color: var(--ink-muted, #4a635c);
+  font-size: 0.92rem;
+}
+
 .btn {
   appearance: none;
   border: 1px solid transparent;

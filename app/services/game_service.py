@@ -4,6 +4,7 @@ from uuid import UUID
 from app.config import settings
 from app.db.models import GameSessionStatus
 from app.db.repositories.game_repository import GameRepository
+from app.engine.explain import AnswerObservation, build_guess_explanation
 from app.engine.models import LikelihoodEntry, QuestionRef
 from app.engine.selector import (
     create_initial_state,
@@ -182,6 +183,21 @@ class GameService:
 
         await self.repo.commit()
 
+        explanation = build_guess_explanation(
+            guessed_id=top_id,
+            guessed_name=character.name,
+            confidence=confidence,
+            probabilities=live.engine.probabilities,
+            character_ids=list(live.engine.character_ids),
+            character_names=live.character_names,
+            likelihoods=live.engine.likelihoods,
+            answers=[
+                AnswerObservation(question_id=a.question_id, answer=a.answer)
+                for a in live.answers
+            ],
+            question_refs=live.question_refs,
+        )
+
         return {
             "character": {
                 "id": str(character.id),
@@ -189,6 +205,7 @@ class GameService:
                 "image_url": character.image_url,
             },
             "confidence": round(confidence, 4),
+            **explanation,
         }
 
     async def learn(
