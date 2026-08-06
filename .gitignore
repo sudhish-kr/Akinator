@@ -1,13 +1,33 @@
+# Python
+.venv/
+venv/
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-venv/
-.env
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Environment (keep committed examples)
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+frontend/dist/
+build/
+*.egg
+
+# Local / runtime
 pgdata/
 *.db
-node_modules/
-dist/
