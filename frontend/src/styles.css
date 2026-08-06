@@ -196,6 +196,34 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.voice-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.voice-toggle.on {
+  border-color: var(--sea);
+  color: var(--sea-deep);
+}
+
+.voice-mic.listening {
+  opacity: 0.85;
+}
+
+.voice-hint,
+.voice-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+.voice-note {
+  color: var(--sea-deep);
+  font-weight: 600;
+}
+
 .answers .btn:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
