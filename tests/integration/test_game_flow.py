@@ -266,7 +266,8 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
     )
     session_id = result["session_id"]
 
-    guess = await client.post("/game/guess", json={"session_id": session_id})
+    guess = await client.get(f"/game/guess/{session_id}")
+    assert guess.status_code == 200
     assert guess.json()["character"]["name"] == "Albert Einstein"
 
     chars = (await client.get("/characters?is_active=true")).json()["items"]
@@ -281,7 +282,7 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
     # Simulate a restart: wipe the cache, forcing DB rehydration
     session_store.delete(uuid.UUID(session_id))
 
-    state = await client.get(f"/game/{session_id}/state")
+    state = await client.get(f"/game/state/{session_id}")
     assert state.status_code == 200
     data = state.json()
 
@@ -300,7 +301,7 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
         assert resp.status_code == 200
         data = resp.json()
 
-    guess2 = await client.post("/game/guess", json={"session_id": session_id})
+    guess2 = await client.get(f"/game/guess/{session_id}")
     assert guess2.status_code == 200
     assert guess2.json()["character"]["name"] != "Albert Einstein"
 
