@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +12,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://mindguess:mindguess@localhost:5432/mindguess"
 
-    jwt_secret: str = "change-me-in-production"
+    # Required via JWT_SECRET — no default; startup fails if missing/empty
+    jwt_secret: str = Field(min_length=1)
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
     jwt_refresh_expire_days: int = 7
