@@ -1,3 +1,11 @@
+"""Question selection via information gain (TDD v1.1 Section 2.3).
+
+IG(Q) = H(current) − E[H | Q]
+where the expectation averages simulated Bayesian updates over answer outcomes
+(yes / no / unknown(=dont_know), plus probably_yes / probably_no per TDD).
+Already-answered questions are excluded; the single best unused question is returned.
+"""
+
 from uuid import UUID
 
 from app.engine.bayesian import bayesian_update, initialize_uniform_priors
@@ -13,21 +21,26 @@ from app.engine.constants import (
 from app.engine.elimination import eliminate_candidates, entropy
 from app.engine.models import ConfidenceResult, GameEngineState, LikelihoodEntry
 
+# Outcomes used when estimating E[H | Q]. Includes yes / no / unknown (dont_know).
+_IG_ANSWERS: tuple[Answer, ...] = ALL_ANSWERS
+
 
 def expected_entropy_after_question(
     state: GameEngineState,
     question_id: UUID,
 ) -> float:
     """
-    Expected entropy after asking Q, averaging over 5 possible answers (TDD Section 2.3).
+    Expected posterior entropy after asking Q (TDD Section 2.3).
+
+    For each answer a in {yes, no, unknown, ...}:
+      P(a) ∝ Σ_C P(C) · (1 − |L(C,Q) − w_a|)
+      H(a)  = entropy(bayesian_update(state, Q, a))
+    Returns Σ_a P(a) · H(a) with P(a) renormalized to sum to 1.
     """
     active = state.active_character_ids()
-    probs = {cid: state.probabilities[cid] for cid in active}
-    current_h = entropy(probs)
+    weighted: list[tuple[float, float]] = []
 
-    expected_h = 0.0
-    for answer in ALL_ANSWERS:
-        # P(answer) = sum over C of P(C) * likelihood_match(C, Q, a)
+    for answer in _IG_ANSWERS:
         p_answer = 0.0
         for cid in active:
             l_cq = get_likelihood(state.likelihoods, cid, question_id)
@@ -36,25 +49,27 @@ def expected_entropy_after_question(
         if p_answer <= 0:
             continue
 
-        # Simulate update with this answer
         sim_state = GameEngineState(
             character_ids=state.character_ids,
             probabilities=state.copy_probabilities(),
             likelihoods=state.likelihoods,
         )
         sim_probs = bayesian_update(sim_state, question_id, answer)
-        h_after = entropy(sim_probs)
-        expected_h += p_answer * h_after
+        weighted.append((p_answer, entropy(sim_probs)))
 
-    return expected_h
+    total_p = sum(weight for weight, _ in weighted)
+    if total_p <= 0:
+        probs = {cid: state.probabilities[cid] for cid in active}
+        return entropy(probs)
+
+    return sum((weight / total_p) * h for weight, h in weighted)
 
 
 def information_gain(state: GameEngineState, question_id: UUID) -> float:
+    """IG(Q) = H(current) − expected entropy after asking Q."""
     active = state.active_character_ids()
     probs = {cid: state.probabilities[cid] for cid in active}
-    current_h = entropy(probs)
-    expected_h = expected_entropy_after_question(state, question_id)
-    return current_h - expected_h
+    return entropy(probs) - expected_entropy_after_question(state, question_id)
 
 
 def total_sample_size_for_question(
@@ -77,9 +92,14 @@ def select_next_question(
     consecutive_dont_know_cap: int = DEFAULT_CONSECUTIVE_DONT_KNOW_CAP,
 ) -> UUID | None:
     """
-    Pick unused question with max information gain (TDD Section 2.3).
-    Tie-break by total sample_size (TDD Section 7).
+    Return the single unused question with maximum information gain.
+
+    - Skips questions in state.used_question_ids
+    - Ties (ΔIG ≤ tie_threshold) broken by higher total sample_size
+    - Returns None when no unanswered questions remain
     """
+    del consecutive_dont_know_cap  # reserved for future dont_know streak policy
+
     unused = [
         qid
         for qid in all_question_ids
@@ -88,7 +108,7 @@ def select_next_question(
     ]
 
     if not unused:
-        # Relax eligibility if all questions are gated
+        # Relax cold-start gate if every unused question is still gated
         unused = [qid for qid in all_question_ids if qid not in state.used_question_ids]
 
     if not unused:
