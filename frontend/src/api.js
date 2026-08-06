@@ -16,7 +16,7 @@ async function request(method, path, body) {
   return res.json();
 }
 
-/** Game API client — existing endpoints only. */
+/** Game API — only the documented game endpoints. */
 export const api = {
   startGame: () => request("POST", "/game/start"),
 
@@ -38,12 +38,6 @@ export const api = {
       wrong_guess: wrongGuess,
     }),
 
-  confirmGuess: (sessionId, correct, actualCharacterId = null) =>
-    request("POST", "/game/guess/confirm", {
-      session_id: sessionId,
-      correct,
-      actual_character_id: actualCharacterId,
-    }),
-
+  /** Character list for the Learn page picker (existing public API). */
   listCharacters: () => request("GET", "/characters?is_active=true&page_size=100"),
 };

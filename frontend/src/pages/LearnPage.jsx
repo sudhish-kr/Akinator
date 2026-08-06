@@ -1,39 +1,34 @@
-export default function LearnPage({
-  wrongGuessName,
-  characters,
-  busy,
-  onPick,
-  onSkip,
-}) {
+export default function LearnPage({ wrongGuessName, characters, busy, onPick, onHome }) {
   return (
-    <section className="page page-learn">
-      <h2>Who were you thinking of?</h2>
+    <section className="page learn">
+      <p className="kicker">Learning</p>
+      <h2 className="title">Who was it?</h2>
       <p className="lede">
         {wrongGuessName
-          ? `Not ${wrongGuessName}. Pick the correct character so I can learn.`
-          : "Pick the correct character so I can learn."}
+          ? `Not ${wrongGuessName}. Choose the correct character so I can update my model.`
+          : "Choose the correct character so I can update my model."}
       </p>
 
-      <div className="character-grid">
+      <div className="char-grid">
         {characters.map((c) => (
           <button
             key={c.id}
             type="button"
             className="btn chip"
             disabled={busy}
-            onClick={() => onPick(c.id)}
+            onClick={() => onPick(c.id, c.name)}
           >
             {c.name}
           </button>
         ))}
       </div>
 
-      {characters.length === 0 && !busy && (
-        <p className="muted">No characters loaded.</p>
+      {!busy && characters.length === 0 && (
+        <p className="muted">No active characters available.</p>
       )}
 
-      <button type="button" className="btn secondary" disabled={busy} onClick={onSkip}>
-        Skip — play again
+      <button type="button" className="btn ghost" disabled={busy} onClick={onHome}>
+        Back to home
       </button>
     </section>
   );
