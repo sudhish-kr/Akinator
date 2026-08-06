@@ -1,16 +1,74 @@
+"""Bayesian probability update (TDD v1.1 Section 2.2).
+
+Pure update: P'(C) ∝ P(C) × (1 − |L(C,Q) − w|), then renormalize.
+Answer weights: yes=1.0, no=0.0, dont_know/unknown=0.5
+(also probably_yes=0.75, probably_no=0.25 per TDD).
+"""
+
 from uuid import UUID
 
 from app.engine.cold_start import get_likelihood, likelihood_match
-from app.engine.models import GameEngineState, LikelihoodEntry, answer_from_str
 from app.engine.constants import Answer
+from app.engine.models import GameEngineState, answer_from_str
+
+# User-facing aliases for the three primary answers
+_ANSWER_ALIASES: dict[str, str] = {
+    "unknown": "dont_know",
+    "dontknow": "dont_know",
+    "don't_know": "dont_know",
+}
 
 
 def initialize_uniform_priors(character_ids: list[UUID]) -> dict[UUID, float]:
-    """P(C) = 1/N for all active characters (TDD Section 2.1)."""
+    """P(C) = 1/N for all characters (TDD Section 2.1)."""
     if not character_ids:
         return {}
     p = 1.0 / len(character_ids)
     return {cid: p for cid in character_ids}
+
+
+def _resolve_answer(answer: Answer | str) -> Answer:
+    if isinstance(answer, Answer):
+        return answer
+    key = answer.strip().lower().replace(" ", "_")
+    key = _ANSWER_ALIASES.get(key, key)
+    return answer_from_str(key)
+
+
+def update_probabilities(
+    previous: dict[UUID, float],
+    character_likelihoods: dict[UUID, float],
+    answer: Answer | str,
+    *,
+    default_likelihood: float = 0.5,
+) -> dict[UUID, float]:
+    """
+    Update character probabilities from a user answer (Bayesian formula).
+
+    Args:
+        previous: Prior P(C) for each active character.
+        character_likelihoods: Stored L(C, Q) per character (missing → default_likelihood).
+        answer: Yes / No / Unknown (dont_know), or the full TDD five-way set.
+
+    Returns:
+        Renormalized posterior P(C | answer). Sums to 1.0 when previous is non-empty.
+    """
+    if not previous:
+        return {}
+
+    resolved = _resolve_answer(answer)
+    weight = resolved.weight
+    updated: dict[UUID, float] = {}
+
+    for cid, p_old in previous.items():
+        l_cq = character_likelihoods.get(cid, default_likelihood)
+        updated[cid] = p_old * likelihood_match(l_cq, weight)
+
+    total = sum(updated.values())
+    if total <= 0:
+        return initialize_uniform_priors(list(previous.keys()))
+
+    return {cid: value / total for cid, value in updated.items()}
 
 
 def bayesian_update(
@@ -19,28 +77,15 @@ def bayesian_update(
     answer: Answer | str,
 ) -> dict[UUID, float]:
     """
-    Apply Bayes' rule and renormalize (TDD Section 2.2).
-    Returns the updated probability distribution.
+    Apply Bayes' rule using session likelihood table, then renormalize.
+    Thin wrapper over update_probabilities for GameEngineState callers.
     """
-    if isinstance(answer, str):
-        answer = answer_from_str(answer)
-
-    answer_weight = answer.weight
     active = state.active_character_ids()
-    updated: dict[UUID, float] = {}
-
-    for cid in active:
-        p_old = state.probabilities[cid]
-        l_cq = get_likelihood(state.likelihoods, cid, question_id)
-        match = likelihood_match(l_cq, answer_weight)
-        updated[cid] = p_old * match
-
-    total = sum(updated.values())
-    if total <= 0:
-        # Degenerate case: restore uniform over active set
-        return initialize_uniform_priors(active)
-
-    return {cid: updated[cid] / total for cid in active}
+    previous = {cid: state.probabilities[cid] for cid in active}
+    character_likelihoods = {
+        cid: get_likelihood(state.likelihoods, cid, question_id) for cid in active
+    }
+    return update_probabilities(previous, character_likelihoods, answer)
 
 
 def apply_learning_update(
@@ -48,6 +93,6 @@ def apply_learning_update(
     user_answer_weight: float,
     learning_rate: float,
 ) -> float:
-    """Post-game nudge (TDD Section 4.1)."""
+    """Post-game nudge (TDD Section 4.1). Kept here for existing learning callers."""
     new_val = old_likelihood + learning_rate * (user_answer_weight - old_likelihood)
     return max(0.0, min(1.0, new_val))
