@@ -29,10 +29,6 @@ class AnswerResponse(BaseModel):
     top_confidence: float
 
 
-class GuessRequest(BaseModel):
-    session_id: UUID
-
-
 class CharacterOut(BaseModel):
     id: str
     name: str
@@ -42,6 +38,19 @@ class CharacterOut(BaseModel):
 class GuessResponse(BaseModel):
     character: CharacterOut
     confidence: float
+
+
+class LearnRequest(BaseModel):
+    session_id: UUID
+    character_id: UUID
+    wrong_guess: bool = False
+    distinguishing_question_id: UUID | None = None
+    distinguishing_answer: str | None = None
+
+
+class LearnResponse(BaseModel):
+    status: str = "learned"
+    updates: int
 
 
 class GuessConfirmRequest(BaseModel):

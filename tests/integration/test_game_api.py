@@ -1,0 +1,124 @@
+"""Minimal API tests for the Game REST endpoints."""
+
+import uuid
+
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.db.models import Base, Character, CharacterAnswer, Question
+from app.db.session import get_db
+from app.main import app
+
+CHARACTERS = {
+    "Albert Einstein": {"alive": 0.0, "scientist": 0.95},
+    "Lionel Messi": {"alive": 0.95, "scientist": 0.02},
+}
+QUESTIONS = {
+    "alive": "Is this person alive today?",
+    "scientist": "Is this person a scientist?",
+}
+
+
+@pytest_asyncio.fixture
+async def client():
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with factory() as db:
+        q_ids = {}
+        for key, text in QUESTIONS.items():
+            q = Question(id=uuid.uuid4(), text=text, is_active=True)
+            db.add(q)
+            q_ids[key] = q.id
+        for name, likelihoods in CHARACTERS.items():
+            c = Character(id=uuid.uuid4(), name=name, category="real_person", is_active=True)
+            db.add(c)
+            for key, value in likelihoods.items():
+                db.add(
+                    CharacterAnswer(
+                        character_id=c.id,
+                        question_id=q_ids[key],
+                        likelihood=value,
+                        sample_size=100,
+                    )
+                )
+        await db.commit()
+
+    async def override_get_db():
+        async with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+    app.dependency_overrides.clear()
+    await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_post_game_start(client: AsyncClient):
+    resp = await client.post("/game/start")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "session_id" in data
+    assert "id" in data["question"] and "text" in data["question"]
+
+
+@pytest.mark.asyncio
+async def test_post_answer_and_get_state(client: AsyncClient):
+    start = (await client.post("/game/start")).json()
+    session_id = start["session_id"]
+
+    state = await client.get(f"/game/state/{session_id}")
+    assert state.status_code == 200
+    assert state.json()["status"] == "asking"
+    assert state.json()["next_question"]["id"] == start["question"]["id"]
+
+    answer = await client.post(
+        "/game/answer",
+        json={
+            "session_id": session_id,
+            "question_id": start["question"]["id"],
+            "answer": "yes",
+        },
+    )
+    assert answer.status_code == 200
+    assert answer.json()["status"] in {"asking", "ready_to_guess"}
+
+
+@pytest.mark.asyncio
+async def test_get_guess_and_post_learn(client: AsyncClient):
+    start = (await client.post("/game/start")).json()
+    session_id = start["session_id"]
+    question = start["question"]
+
+    # Exhaustive dont_know → ready_to_guess
+    for _ in range(10):
+        resp = await client.post(
+            "/game/answer",
+            json={"session_id": session_id, "question_id": question["id"], "answer": "dont_know"},
+        )
+        data = resp.json()
+        if data["status"] == "ready_to_guess":
+            break
+        question = data["next_question"]
+
+    guess = await client.get(f"/game/guess/{session_id}")
+    assert guess.status_code == 200
+    body = guess.json()
+    assert body["character"]["name"]
+    assert 0.0 <= body["confidence"] <= 1.0
+
+    learn = await client.post(
+        "/game/learn",
+        json={"session_id": session_id, "character_id": body["character"]["id"]},
+    )
+    assert learn.status_code == 200
+    assert learn.json()["status"] == "learned"
+    assert learn.json()["updates"] >= 0

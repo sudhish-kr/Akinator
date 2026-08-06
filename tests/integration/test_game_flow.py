@@ -119,7 +119,7 @@ async def test_full_game_correct_guess(client: AsyncClient):
         },
     )
 
-    guess = await client.post("/game/guess", json={"session_id": result["session_id"]})
+    guess = await client.get(f"/game/guess/{result['session_id']}")
     assert guess.status_code == 200
     assert guess.json()["character"]["name"] == "Albert Einstein"
 
@@ -134,7 +134,7 @@ async def test_full_game_correct_guess(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_guess_before_ready_is_rejected(client: AsyncClient):
     start = (await client.post("/game/start")).json()
-    resp = await client.post("/game/guess", json={"session_id": start["session_id"]})
+    resp = await client.get(f"/game/guess/{start['session_id']}")
     assert resp.status_code == 409
 
 
@@ -197,7 +197,7 @@ async def test_questions_exhausted_forces_guess(client: AsyncClient):
         question = data["next_question"]
 
     assert final_status == "ready_to_guess"
-    guess = await client.post("/game/guess", json={"session_id": session_id})
+    guess = await client.get(f"/game/guess/{session_id}")
     assert guess.status_code == 200
     assert guess.json()["character"]["name"]
 
@@ -205,7 +205,7 @@ async def test_questions_exhausted_forces_guess(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_state_endpoint_resyncs(client: AsyncClient):
     start = (await client.post("/game/start")).json()
-    state = await client.get(f"/game/{start['session_id']}/state")
+    state = await client.get(f"/game/state/{start['session_id']}")
     assert state.status_code == 200
     data = state.json()
     assert data["status"] == "asking"
@@ -233,7 +233,7 @@ async def test_session_rehydrates_after_cache_loss(client: AsyncClient):
     session_store.delete(uuid.UUID(session_id))
 
     # State endpoint must rehydrate from DB, not 404
-    state = await client.get(f"/game/{session_id}/state")
+    state = await client.get(f"/game/state/{session_id}")
     assert state.status_code == 200
     data = state.json()
     assert data["questions_asked"] == 1

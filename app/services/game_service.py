@@ -189,6 +189,33 @@ class GameService:
             "confidence": round(confidence, 4),
         }
 
+    async def learn(
+        self,
+        session_id: UUID,
+        character_id: UUID,
+        *,
+        wrong_guess: bool = False,
+        distinguishing_question_id: UUID | None = None,
+        distinguishing_answer: str | None = None,
+    ) -> dict:
+        """Apply post-game learning for a character (correct or wrong-guess path)."""
+        db_session = await self.repo.get_session(session_id)
+        if not db_session:
+            raise GameServiceError("Session not found", 404)
+
+        if wrong_guess:
+            updates = await self.learning.learn_from_wrong_guess(
+                session_id,
+                character_id,
+                distinguishing_question_id=distinguishing_question_id,
+                distinguishing_answer=distinguishing_answer,
+            )
+        else:
+            updates = await self.learning.learn_from_session(session_id, character_id)
+
+        await self.repo.commit()
+        return {"status": "learned", "updates": updates}
+
     async def confirm_guess(
         self,
         session_id: UUID,
