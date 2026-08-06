@@ -200,10 +200,15 @@ class GameService:
         distinguishing_question_id: UUID | None = None,
         distinguishing_answer: str | None = None,
     ) -> dict:
-        """Apply post-game learning for a character (correct or wrong-guess path)."""
+        """Apply post-game learning, persist guess stats, and close the session."""
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
+        if db_session.status != GameSessionStatus.IN_PROGRESS:
+            raise GameServiceError("Session is already closed", 409)
+
+        now = datetime.now(timezone.utc)
+        guessed_id = db_session.guessed_character_id
 
         if wrong_guess:
             updates = await self.learning.learn_from_wrong_guess(
@@ -212,10 +217,27 @@ class GameService:
                 distinguishing_question_id=distinguishing_question_id,
                 distinguishing_answer=distinguishing_answer,
             )
+            db_session.status = GameSessionStatus.GUESSED_INCORRECT
+            db_session.actual_character_id = character_id
+            if guessed_id:
+                char = await self.repo.get_character(guessed_id)
+                if char:
+                    char.times_guessed_incorrectly += 1
         else:
             updates = await self.learning.learn_from_session(session_id, character_id)
+            db_session.status = GameSessionStatus.GUESSED_CORRECT
+            db_session.actual_character_id = character_id
+            if not db_session.guessed_character_id:
+                db_session.guessed_character_id = character_id
+            target_id = db_session.guessed_character_id or character_id
+            char = await self.repo.get_character(target_id)
+            if char:
+                char.times_guessed_correctly += 1
 
+        db_session.ended_at = now
+        db_session.last_activity_at = now
         await self.repo.commit()
+        self.store.delete(session_id)
         return {"status": "learned", "updates": updates}
 
     async def confirm_guess(
