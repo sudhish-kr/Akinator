@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     Float,
@@ -106,7 +107,11 @@ class Question(Base):
 
 class CharacterAnswer(Base):
     __tablename__ = "character_answers"
-    __table_args__ = (UniqueConstraint("character_id", "question_id", name="uq_character_question"),)
+    __table_args__ = (
+        UniqueConstraint("character_id", "question_id", name="uq_character_question"),
+        CheckConstraint("likelihood >= 0.0 AND likelihood <= 1.0", name="ck_likelihood_range"),
+        CheckConstraint("sample_size >= 0", name="ck_sample_size_nonneg"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     character_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("characters.id"), nullable=False)
@@ -139,10 +144,31 @@ class GameSession(Base):
     )
     questions_asked_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_activity_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User | None"] = relationship(back_populates="sessions")
     answers: Mapped[list["GameAnswer"]] = relationship(back_populates="session")
+    rejected_guesses: Mapped[list["RejectedGuess"]] = relationship(back_populates="session")
+
+
+class RejectedGuess(Base):
+    """Characters the user rejected during a session. Persisted so session
+    rehydration can re-exclude them from the candidate pool after cache loss."""
+
+    __tablename__ = "rejected_guesses"
+    __table_args__ = (
+        UniqueConstraint("session_id", "character_id", name="uq_session_rejected_character"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("game_sessions.id"), nullable=False)
+    character_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("characters.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    session: Mapped["GameSession"] = relationship(back_populates="rejected_guesses")
 
 
 class GameAnswer(Base):

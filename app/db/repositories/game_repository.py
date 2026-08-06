@@ -12,6 +12,7 @@ from app.db.models import (
     GameSession,
     GameSessionStatus,
     Question,
+    RejectedGuess,
 )
 
 
@@ -154,6 +155,24 @@ class GameRepository:
         await self.db.flush()
         return record
 
+    async def record_rejected_guess(self, session_id: UUID, character_id: UUID) -> None:
+        existing = await self.db.execute(
+            select(RejectedGuess).where(
+                RejectedGuess.session_id == session_id,
+                RejectedGuess.character_id == character_id,
+            )
+        )
+        if existing.scalar_one_or_none():
+            return
+        self.db.add(RejectedGuess(session_id=session_id, character_id=character_id))
+        await self.db.flush()
+
+    async def get_rejected_character_ids(self, session_id: UUID) -> set[UUID]:
+        result = await self.db.execute(
+            select(RejectedGuess.character_id).where(RejectedGuess.session_id == session_id)
+        )
+        return set(result.scalars().all())
+
     async def increment_question_times_asked(self, question_id: UUID) -> None:
         question = await self.db.get(Question, question_id)
         if question:
@@ -224,10 +243,11 @@ class GameRepository:
         from datetime import datetime, timedelta, timezone
 
         cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        # Use last activity, not start time — a long active game is not stale
         result = await self.db.execute(
             select(GameSession).where(
                 GameSession.status == GameSessionStatus.IN_PROGRESS,
-                GameSession.started_at < cutoff,
+                func.coalesce(GameSession.last_activity_at, GameSession.started_at) < cutoff,
             )
         )
         sessions = list(result.scalars().all())

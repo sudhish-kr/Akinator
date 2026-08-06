@@ -140,6 +140,7 @@ class GameService:
         db_session = await self.repo.get_session(session_id)
         if db_session:
             db_session.questions_asked_count = turn.questions_asked
+            db_session.last_activity_at = datetime.now(timezone.utc)
 
         self.store.save(live)
         await self.repo.commit()
@@ -177,6 +178,7 @@ class GameService:
         db_session = await self.repo.get_session(session_id)
         if db_session:
             db_session.guessed_character_id = top_id
+            db_session.last_activity_at = datetime.now(timezone.utc)
 
         await self.repo.commit()
 
@@ -251,6 +253,9 @@ class GameService:
             char = await self.repo.get_character(guessed_id)
             if char:
                 char.times_guessed_incorrectly += 1
+            # Persist the rejection so rehydration can re-exclude this
+            # character after a cache loss (docs/ARCHITECTURE.md gap fix)
+            await self.repo.record_rejected_guess(session_id, guessed_id)
 
         await self.learning.learn_from_wrong_guess(session_id, actual_character_id)
 
@@ -270,6 +275,7 @@ class GameService:
         db_session.actual_character_id = actual_character_id
         db_session.status = GameSessionStatus.IN_PROGRESS
         db_session.guessed_character_id = None
+        db_session.last_activity_at = datetime.now(timezone.utc)
 
         next_q_id = select_next_question(
             live.engine,
@@ -327,6 +333,19 @@ class GameService:
 
         characters, questions, likelihoods, question_ids = await self._load_playable_data()
         engine = create_initial_state([c.id for c in characters], likelihoods)
+
+        # Re-exclude characters the user already rejected in this session
+        rejected = await self.repo.get_rejected_character_ids(session_id)
+        if rejected:
+            engine.probabilities = {
+                cid: p for cid, p in engine.probabilities.items() if cid not in rejected
+            }
+            engine.character_ids = [cid for cid in engine.character_ids if cid not in rejected]
+            total = sum(engine.probabilities.values())
+            if total > 0:
+                engine.probabilities = {
+                    cid: p / total for cid, p in engine.probabilities.items()
+                }
 
         answers = await self.repo.get_session_answers(session_id)
         stored: list[StoredAnswer] = []

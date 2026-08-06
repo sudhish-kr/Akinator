@@ -252,6 +252,60 @@ async def test_session_rehydrates_after_cache_loss(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient):
+    """A character rejected by the user must stay excluded even after the
+    session cache is wiped and state is rebuilt from the database."""
+    from app.services.session_store import session_store
+
+    result = await _play_until_guess(
+        client,
+        {
+            "Is this person alive today?": "no",
+            "Is this person a scientist?": "yes",
+        },
+    )
+    session_id = result["session_id"]
+
+    guess = await client.post("/game/guess", json={"session_id": session_id})
+    assert guess.json()["character"]["name"] == "Albert Einstein"
+
+    chars = (await client.get("/characters?is_active=true")).json()["items"]
+    musk_id = next(c["id"] for c in chars if c["name"] == "Elon Musk")
+
+    confirm = await client.post(
+        "/game/guess/confirm",
+        json={"session_id": session_id, "correct": False, "actual_character_id": musk_id},
+    )
+    assert confirm.status_code == 200
+
+    # Simulate a restart: wipe the cache, forcing DB rehydration
+    session_store.delete(uuid.UUID(session_id))
+
+    state = await client.get(f"/game/{session_id}/state")
+    assert state.status_code == 200
+    data = state.json()
+
+    # Play out any remaining questions, then guess
+    for _ in range(10):
+        if data["status"] == "ready_to_guess":
+            break
+        resp = await client.post(
+            "/game/answer",
+            json={
+                "session_id": session_id,
+                "question_id": data["next_question"]["id"],
+                "answer": "dont_know",
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+
+    guess2 = await client.post("/game/guess", json={"session_id": session_id})
+    assert guess2.status_code == 200
+    assert guess2.json()["character"]["name"] != "Albert Einstein"
+
+
+@pytest.mark.asyncio
 async def test_admin_crud_requires_admin(client: AsyncClient):
     # Regular user is forbidden
     reg = await client.post(
