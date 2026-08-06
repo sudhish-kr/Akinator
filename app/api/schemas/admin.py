@@ -77,8 +77,25 @@ class CharacterAccuracyItem(BaseModel):
     accuracy: float
 
 
+class CharacterGuessStatItem(BaseModel):
+    id: str
+    name: str
+    times_guessed: int
+    times_guessed_correctly: int
+    times_guessed_incorrectly: int
+
+
+class DailyActivityItem(BaseModel):
+    date: str
+    games: int
+
+
 class StatisticsResponse(BaseModel):
     total_games_played: int
     guess_accuracy_rate: float
+    learning_rate: float = 0.0
+    average_questions_per_game: float = 0.0
     most_asked_questions: list[QuestionStatItem]
+    most_guessed_characters: list[CharacterGuessStatItem] = []
+    daily_activity: list[DailyActivityItem] = []
     lowest_accuracy_characters: list[CharacterAccuracyItem]

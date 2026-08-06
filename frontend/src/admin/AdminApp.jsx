@@ -6,7 +6,7 @@ import QuestionsPage from "./pages/Questions.jsx";
 import StatisticsPage from "./pages/Statistics.jsx";
 
 const TABS = [
-  { id: "stats", label: "Statistics" },
+  { id: "stats", label: "Analytics" },
   { id: "characters", label: "Characters" },
   { id: "questions", label: "Questions" },
 ];

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -257,14 +258,16 @@ class GameRepository:
         return len(sessions)
 
     async def get_statistics(self) -> dict:
+        finished_statuses = [
+            GameSessionStatus.GUESSED_CORRECT,
+            GameSessionStatus.GUESSED_INCORRECT,
+        ]
+
         total_games = (
             await self.db.execute(
-                select(func.count()).select_from(GameSession).where(
-                    GameSession.status.in_([
-                        GameSessionStatus.GUESSED_CORRECT,
-                        GameSessionStatus.GUESSED_INCORRECT,
-                    ])
-                )
+                select(func.count())
+                .select_from(GameSession)
+                .where(GameSession.status.in_(finished_statuses))
             )
         ).scalar_one()
 
@@ -276,12 +279,45 @@ class GameRepository:
             )
         ).scalar_one()
 
+        abandoned_games = (
+            await self.db.execute(
+                select(func.count())
+                .select_from(GameSession)
+                .where(GameSession.status == GameSessionStatus.ABANDONED)
+            )
+        ).scalar_one()
+
         accuracy_rate = (correct_games / total_games) if total_games > 0 else 0.0
+        # Share of terminal sessions that completed into a learnable outcome
+        terminal = total_games + abandoned_games
+        learning_rate = (total_games / terminal) if terminal > 0 else 0.0
+
+        avg_questions = (
+            await self.db.execute(
+                select(func.avg(GameSession.questions_asked_count)).where(
+                    GameSession.status.in_(finished_statuses)
+                )
+            )
+        ).scalar_one()
+        average_questions_per_game = round(float(avg_questions or 0.0), 2)
 
         top_questions = await self.db.execute(
             select(Question.id, Question.text, Question.times_asked)
             .where(Question.is_active.is_(True))
             .order_by(Question.times_asked.desc())
+            .limit(10)
+        )
+
+        guessed_total = Character.times_guessed_correctly + Character.times_guessed_incorrectly
+        top_characters = await self.db.execute(
+            select(
+                Character.id,
+                Character.name,
+                Character.times_guessed_correctly,
+                Character.times_guessed_incorrectly,
+            )
+            .where(Character.is_active.is_(True), guessed_total > 0)
+            .order_by(guessed_total.desc())
             .limit(10)
         )
 
@@ -293,7 +329,7 @@ class GameRepository:
                 Character.times_guessed_incorrectly,
             ).where(
                 Character.is_active.is_(True),
-                Character.times_guessed_correctly + Character.times_guessed_incorrectly > 0,
+                guessed_total > 0,
             )
         )
         weak_sorted = sorted(
@@ -302,13 +338,42 @@ class GameRepository:
             / (r.times_guessed_correctly + r.times_guessed_incorrectly),
         )[:10]
 
+        # Daily activity for the last 14 calendar days (inclusive)
+        now = datetime.now(timezone.utc)
+        start_day = (now - timedelta(days=13)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_expr = func.date(GameSession.started_at)
+        daily_rows = await self.db.execute(
+            select(day_expr.label("day"), func.count().label("games"))
+            .where(GameSession.started_at >= start_day)
+            .group_by(day_expr)
+            .order_by(day_expr)
+        )
+        by_day = {str(row.day): int(row.games) for row in daily_rows.all()}
+        daily_activity = []
+        for offset in range(14):
+            day = (start_day + timedelta(days=offset)).date().isoformat()
+            daily_activity.append({"date": day, "games": by_day.get(day, 0)})
+
         return {
             "total_games_played": total_games,
             "guess_accuracy_rate": round(accuracy_rate, 4),
+            "learning_rate": round(learning_rate, 4),
+            "average_questions_per_game": average_questions_per_game,
             "most_asked_questions": [
                 {"id": str(row.id), "text": row.text, "times_asked": row.times_asked}
                 for row in top_questions
             ],
+            "most_guessed_characters": [
+                {
+                    "id": str(row.id),
+                    "name": row.name,
+                    "times_guessed": row.times_guessed_correctly + row.times_guessed_incorrectly,
+                    "times_guessed_correctly": row.times_guessed_correctly,
+                    "times_guessed_incorrectly": row.times_guessed_incorrectly,
+                }
+                for row in top_characters
+            ],
+            "daily_activity": daily_activity,
             "lowest_accuracy_characters": [
                 {
                     "id": str(row.id),

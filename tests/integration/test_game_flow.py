@@ -377,3 +377,10 @@ async def test_statistics_endpoint(client: AsyncClient):
     data = resp.json()
     assert "total_games_played" in data
     assert "guess_accuracy_rate" in data
+    assert "learning_rate" in data
+    assert "average_questions_per_game" in data
+    assert "most_asked_questions" in data
+    assert "most_guessed_characters" in data
+    assert "daily_activity" in data
+    assert len(data["daily_activity"]) == 14
+    assert all("date" in d and "games" in d for d in data["daily_activity"])
