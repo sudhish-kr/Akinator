@@ -200,10 +200,12 @@ class GameService:
         distinguishing_question_id: UUID | None = None,
         distinguishing_answer: str | None = None,
     ) -> dict:
-        """Apply post-game learning for a character (correct or wrong-guess path)."""
+        """Apply post-game learning, persist final stats, and close the session."""
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
+        if db_session.status != GameSessionStatus.IN_PROGRESS:
+            raise GameServiceError("Session already completed", 409)
 
         if wrong_guess:
             updates = await self.learning.learn_from_wrong_guess(
@@ -212,10 +214,25 @@ class GameService:
                 distinguishing_question_id=distinguishing_question_id,
                 distinguishing_answer=distinguishing_answer,
             )
+            db_session.status = GameSessionStatus.GUESSED_INCORRECT
+            db_session.actual_character_id = character_id
+            db_session.ended_at = datetime.now(timezone.utc)
+            guessed_id = db_session.guessed_character_id
+            if guessed_id:
+                char = await self.repo.get_character(guessed_id)
+                if char:
+                    char.times_guessed_incorrectly += 1
         else:
             updates = await self.learning.learn_from_session(session_id, character_id)
+            db_session.status = GameSessionStatus.GUESSED_CORRECT
+            db_session.actual_character_id = character_id
+            db_session.ended_at = datetime.now(timezone.utc)
+            char = await self.repo.get_character(character_id)
+            if char:
+                char.times_guessed_correctly += 1
 
         await self.repo.commit()
+        self.store.delete(session_id)
         return {"status": "learned", "updates": updates}
 
     async def confirm_guess(
