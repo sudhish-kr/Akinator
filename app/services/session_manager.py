@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.engine.confidence import evaluate_confidence, resolve_turn
 from app.engine.constants import (
     DEFAULT_CONFIDENCE_HIGH,
     DEFAULT_CONFIDENCE_MARGIN,
@@ -18,12 +19,7 @@ from app.engine.constants import (
     Answer,
 )
 from app.engine.models import LikelihoodEntry, QuestionRef
-from app.engine.selector import (
-    create_initial_state,
-    decide_after_answer,
-    process_answer,
-    select_next_question,
-)
+from app.engine.selector import create_initial_state, process_answer, select_next_question
 from app.services.session_store import LiveSession, StoredAnswer
 
 
@@ -37,6 +33,7 @@ class TurnResult:
     top_confidence: float
     best_guess_id: UUID | None
     entropy_before: float | None = None
+    confidence_reason: str | None = None
 
 
 @dataclass
@@ -113,16 +110,31 @@ class GameSessionManager:
         live.engine = engine
         live.last_answered_question_id = question_id
 
-        confidence, next_q_id = decide_after_answer(
+        # Confidence after every answer (0.0–1.0). High → guess; low → ask next.
+        confidence = evaluate_confidence(
             engine,
-            live.all_question_ids,
             confidence_high=self.thresholds.high,
             confidence_separation=self.thresholds.separation,
             confidence_margin=self.thresholds.margin,
             max_questions=self.thresholds.max_questions,
         )
 
-        must_end = confidence.should_guess or next_q_id is None
+        next_q_id: UUID | None = None
+        if not confidence.should_guess:
+            next_q_id = select_next_question(
+                engine, live.all_question_ids, min_samples=self.min_samples
+            )
+            # No useful questions left → best available guess
+            confidence = resolve_turn(
+                engine,
+                next_question_id=next_q_id,
+                confidence_high=self.thresholds.high,
+                confidence_separation=self.thresholds.separation,
+                confidence_margin=self.thresholds.margin,
+                max_questions=self.thresholds.max_questions,
+            )
+
+        must_end = confidence.should_guess
         live.pending_question_id = None if must_end else next_q_id
         live.awaiting_guess = must_end
 
@@ -134,6 +146,7 @@ class GameSessionManager:
             top_confidence=confidence.confidence,
             best_guess_id=best_id if must_end else None,
             entropy_before=entropy_before,
+            confidence_reason=confidence.reason,
         )
 
     @staticmethod
