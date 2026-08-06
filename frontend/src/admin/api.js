@@ -1,10 +1,12 @@
+import { apiUrl } from "../config.js";
+
 const TOKEN_KEY = "mg_admin_token";
 const USER_KEY = "mg_admin_user";
 
 async function request(method, path, { body, token } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
