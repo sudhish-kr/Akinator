@@ -134,13 +134,24 @@ def test_validate_rejects_duplicate_questions():
         validate_seed_payload(data)
 
 
-def test_generated_seed_has_500_plus_characters_and_validates():
+def test_generated_seed_has_2000_plus_characters_and_validates():
     seed = _load_build_seed()()
-    assert len(seed["characters"]) >= 500
-    assert len(seed["categories"]) >= 6
-    assert {"Movies", "Anime", "Sports", "Scientists", "Historical", "Gaming"} <= set(
-        seed["categories"]
-    )
+    assert len(seed["characters"]) >= 2000
+    assert set(seed["categories"]) == {
+        "Movies",
+        "TV Shows",
+        "Anime",
+        "Cartoons",
+        "Sports",
+        "Scientists",
+        "Historical Figures",
+        "Politicians",
+        "Musicians",
+        "Business Leaders",
+        "Gaming",
+        "Mythology",
+        "Literature",
+    }
     validate_seed_payload(seed)
     assert any(c.get("aliases") for c in seed["characters"])
     assert seed["likelihood_rules"]
@@ -150,7 +161,22 @@ def test_generated_seed_has_500_plus_characters_and_validates():
 def test_seed_v1_file_exists_and_is_valid():
     assert SEED_PATH.exists(), "Run scripts/generate_knowledge_seed.py to create seed_v1.json"
     data = load_seed_file(SEED_PATH)
-    assert len(data["characters"]) >= 500
+    assert len(data["characters"]) >= 2000
+    assert set(data["categories"]) == {
+        "Movies",
+        "TV Shows",
+        "Anime",
+        "Cartoons",
+        "Sports",
+        "Scientists",
+        "Historical Figures",
+        "Politicians",
+        "Musicians",
+        "Business Leaders",
+        "Gaming",
+        "Mythology",
+        "Literature",
+    }
     validate_seed_payload(data)
 
 
