@@ -67,7 +67,9 @@ class LearnRequest(BaseModel):
 
 class LearnResponse(BaseModel):
     status: str = "learned"
-    updates: int
+    updates: int = 0
+    learning_job_id: str | None = None
+    analytics_job_id: str | None = None
 
 
 class GuessConfirmRequest(BaseModel):

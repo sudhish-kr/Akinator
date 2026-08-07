@@ -17,6 +17,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.17",
     "redis>=5.0.0",
+    "celery[redis]>=5.4.0",
 ]
 
 [project.optional-dependencies]

@@ -12,7 +12,6 @@ from app.engine.selector import (
     process_answer,
     select_next_question,
 )
-from app.services.learning_service import LearningService
 from app.services.session_manager import ConfidenceThresholds, GameSessionManager
 from app.services.session_store import LiveSession, SessionStore, StoredAnswer, session_store
 
@@ -27,7 +26,6 @@ class GameService:
     def __init__(self, repo: GameRepository, store: SessionStore | None = None):
         self.repo = repo
         self.store = store or session_store
-        self.learning = LearningService(repo)
         self.sessions = GameSessionManager(
             thresholds=ConfidenceThresholds(
                 high=settings.confidence_high,
@@ -217,7 +215,9 @@ class GameService:
         distinguishing_question_id: UUID | None = None,
         distinguishing_answer: str | None = None,
     ) -> dict:
-        """Apply post-game learning, persist guess stats, and close the session."""
+        """Close the session quickly; learning + analytics run in Celery workers."""
+        from app.workers.queue import enqueue_post_game
+
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
@@ -228,34 +228,29 @@ class GameService:
         guessed_id = db_session.guessed_character_id
 
         if wrong_guess:
-            updates = await self.learning.learn_from_wrong_guess(
-                session_id,
-                character_id,
-                distinguishing_question_id=distinguishing_question_id,
-                distinguishing_answer=distinguishing_answer,
-            )
             db_session.status = GameSessionStatus.GUESSED_INCORRECT
             db_session.actual_character_id = character_id
-            if guessed_id:
-                char = await self.repo.get_character(guessed_id)
-                if char:
-                    char.times_guessed_incorrectly += 1
         else:
-            updates = await self.learning.learn_from_session(session_id, character_id)
             db_session.status = GameSessionStatus.GUESSED_CORRECT
             db_session.actual_character_id = character_id
             if not db_session.guessed_character_id:
                 db_session.guessed_character_id = character_id
-            target_id = db_session.guessed_character_id or character_id
-            char = await self.repo.get_character(target_id)
-            if char:
-                char.times_guessed_correctly += 1
 
         db_session.ended_at = now
         db_session.last_activity_at = now
         await self.repo.commit()
         self.store.delete(session_id)
-        return {"status": "learned", "updates": updates}
+
+        jobs = enqueue_post_game(
+            session_id,
+            character_id,
+            wrong_guess=wrong_guess,
+            guessed_character_id=guessed_id,
+            distinguishing_question_id=distinguishing_question_id,
+            distinguishing_answer=distinguishing_answer,
+        )
+        # updates stays 0 in the HTTP response — workers apply KB changes async
+        return {"status": "learned", "updates": 0, **jobs}
 
     async def confirm_guess(
         self,
@@ -263,6 +258,8 @@ class GameService:
         correct: bool,
         actual_character_id: UUID | None = None,
     ) -> dict:
+        from app.workers.queue import enqueue_post_game
+
         live = await self._get_live_session(session_id)
         db_session = await self.repo.get_session(session_id)
         if not db_session:
@@ -272,13 +269,15 @@ class GameService:
             db_session.status = GameSessionStatus.GUESSED_CORRECT
             db_session.actual_character_id = db_session.guessed_character_id
             db_session.ended_at = datetime.now(timezone.utc)
-            if db_session.guessed_character_id:
-                char = await self.repo.get_character(db_session.guessed_character_id)
-                if char:
-                    char.times_guessed_correctly += 1
-                await self.learning.learn_from_session(session_id, db_session.guessed_character_id)
             await self.repo.commit()
             self.store.delete(session_id)
+            if db_session.guessed_character_id:
+                enqueue_post_game(
+                    session_id,
+                    db_session.guessed_character_id,
+                    wrong_guess=False,
+                    guessed_character_id=db_session.guessed_character_id,
+                )
             return {"status": "guessed_correct"}
 
         if actual_character_id is None:
@@ -289,14 +288,9 @@ class GameService:
 
         guessed_id = db_session.guessed_character_id
         if guessed_id:
-            char = await self.repo.get_character(guessed_id)
-            if char:
-                char.times_guessed_incorrectly += 1
             # Persist the rejection so rehydration can re-exclude this
             # character after a cache loss (docs/ARCHITECTURE.md gap fix)
             await self.repo.record_rejected_guess(session_id, guessed_id)
-
-        await self.learning.learn_from_wrong_guess(session_id, actual_character_id)
 
         if guessed_id and guessed_id in live.engine.probabilities:
             del live.engine.probabilities[guessed_id]
@@ -324,6 +318,13 @@ class GameService:
         live.pending_question_id = next_q_id
         self.store.save(live)
         await self.repo.commit()
+
+        enqueue_post_game(
+            session_id,
+            actual_character_id,
+            wrong_guess=True,
+            guessed_character_id=guessed_id,
+        )
 
         if next_q_id is None:
             live.awaiting_guess = True

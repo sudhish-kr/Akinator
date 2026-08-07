@@ -13,20 +13,27 @@ from app.config import settings
 from app.core.logging import request_logging_middleware, setup_logging
 from app.db.session import async_session_factory
 from app.services.media_service import media_root
-from app.workers.session_cleanup import run_session_cleanup_loop
+from app.workers.monitoring import get_worker_status
 
 setup_logging(settings.log_level)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    cleanup_task = asyncio.create_task(run_session_cleanup_loop())
+    # Session cleanup runs on Celery beat (abandon_stale_sessions).
+    # Keep a lightweight in-process fallback only when workers run eager/local.
+    cleanup_task = None
+    if settings.celery_task_always_eager:
+        from app.workers.session_cleanup import run_session_cleanup_loop
+
+        cleanup_task = asyncio.create_task(run_session_cleanup_loop())
     yield
-    cleanup_task.cancel()
-    try:
-        await cleanup_task
-    except asyncio.CancelledError:
-        pass
+    if cleanup_task is not None:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(
@@ -73,3 +80,9 @@ async def readiness():
             status_code=503,
             media_type="application/json",
         )
+
+
+@app.get("/health/workers", tags=["health"])
+async def workers_health():
+    """Celery worker / queue monitoring endpoint."""
+    return get_worker_status()

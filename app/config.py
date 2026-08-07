@@ -38,6 +38,15 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_key_prefix: str = "mindguess:"
 
+    # Celery background workers (broker defaults to redis_url)
+    celery_broker_url: str | None = None
+    celery_result_backend: str | None = None
+    celery_task_always_eager: bool = False
+    celery_task_max_retries: int = 5
+    celery_retry_delay_seconds: int = 5
+    celery_result_expires_seconds: int = 86400
+    celery_cleanup_interval_seconds: int = 300
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
