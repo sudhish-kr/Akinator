@@ -15,6 +15,7 @@ from app.monitoring.db import instrument_engine
 from app.monitoring.health import build_health_report, check_database
 from app.monitoring.metrics import APP_INFO, render_prometheus_metrics
 from app.monitoring.middleware import monitoring_middleware
+from app.security.middleware import RateLimitMiddleware
 from app.services.media_service import media_root
 from app.workers.monitoring import get_worker_status
 
@@ -59,6 +60,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting wraps the app early; monitoring still records 429s as 4xx.
+app.add_middleware(RateLimitMiddleware)
 app.middleware("http")(monitoring_middleware)
 
 app.include_router(auth_router)

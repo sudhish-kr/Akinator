@@ -47,6 +47,17 @@ class Settings(BaseSettings):
     celery_result_expires_seconds: int = 86400
     celery_cleanup_interval_seconds: int = 300
 
+    # Rate limiting (auth + game). Admins can override at runtime via API.
+    rate_limit_enabled: bool = True
+    rate_limit_auth_ip: int = 20
+    rate_limit_auth_ip_window: int = 60
+    rate_limit_auth_user: int = 40
+    rate_limit_auth_user_window: int = 60
+    rate_limit_game_ip: int = 120
+    rate_limit_game_ip_window: int = 60
+    rate_limit_game_user: int = 180
+    rate_limit_game_user_window: int = 60
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

@@ -23,3 +23,22 @@ def _celery_eager_mode(monkeypatch):
         monkeypatch.setattr(celery_app.conf, "task_eager_propagates", True)
     except Exception:
         pass
+
+
+@pytest.fixture(autouse=True)
+def _disable_rate_limit_by_default(monkeypatch):
+    """Avoid cross-test 429 flakes; rate-limit tests inject their own limiter."""
+    try:
+        from app.security.rate_limit_backend import MemoryRateLimitBackend
+        from app.security.rate_limit_policy import RateLimitPolicy
+        from app.security.rate_limiter import RateLimiter
+
+        limiter = RateLimiter(
+            backend=MemoryRateLimitBackend(),
+            policy=RateLimitPolicy(enabled=False),
+        )
+        monkeypatch.setattr("app.security.middleware.rate_limiter", limiter)
+        monkeypatch.setattr("app.security.rate_limiter.rate_limiter", limiter)
+        monkeypatch.setattr("app.api.routes.admin.rate_limiter", limiter)
+    except Exception:
+        pass

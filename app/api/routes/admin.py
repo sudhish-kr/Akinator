@@ -17,9 +17,13 @@ from app.api.schemas.admin import (
     QuestionItem,
     QuestionListResponse,
     QuestionUpdate,
+    RateLimitConfig,
+    RateLimitConfigUpdate,
     StatisticsResponse,
 )
 from app.db.repositories.game_repository import GameRepository
+from app.security.rate_limit_policy import RateLimitPolicy
+from app.security.rate_limiter import rate_limiter
 from app.services.knowledge_io import KnowledgeIOError, KnowledgeIOService
 from app.services.media_service import MediaError, save_character_image
 
@@ -221,6 +225,22 @@ async def import_knowledge(
     except KnowledgeIOError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
     return KnowledgeImportResponse(**result)
+
+
+@admin_router.get("/rate-limits", response_model=RateLimitConfig)
+async def get_rate_limits():
+    """Current rate-limit policy (settings defaults + admin overrides)."""
+    return RateLimitConfig(**rate_limiter.get_policy().to_dict())
+
+
+@admin_router.put("/rate-limits", response_model=RateLimitConfig)
+async def update_rate_limits(body: RateLimitConfigUpdate):
+    """Admin-configurable rate limits for auth and game endpoints."""
+    current = rate_limiter.get_policy().to_dict()
+    updates = body.model_dump(exclude_unset=True)
+    current.update(updates)
+    saved = rate_limiter.set_policy(RateLimitPolicy.from_dict(current))
+    return RateLimitConfig(**saved.to_dict())
 
 
 router.include_router(admin_router)

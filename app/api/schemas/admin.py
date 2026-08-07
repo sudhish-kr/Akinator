@@ -131,3 +131,27 @@ class KnowledgeImportResponse(BaseModel):
     status: str = "imported"
     characters_imported: int
     questions_imported: int
+
+
+class RateLimitConfig(BaseModel):
+    enabled: bool = True
+    auth_ip_limit: int = Field(ge=1, le=10_000)
+    auth_ip_window_seconds: int = Field(ge=1, le=86_400)
+    auth_user_limit: int = Field(ge=1, le=10_000)
+    auth_user_window_seconds: int = Field(ge=1, le=86_400)
+    game_ip_limit: int = Field(ge=1, le=10_000)
+    game_ip_window_seconds: int = Field(ge=1, le=86_400)
+    game_user_limit: int = Field(ge=1, le=10_000)
+    game_user_window_seconds: int = Field(ge=1, le=86_400)
+
+
+class RateLimitConfigUpdate(BaseModel):
+    enabled: bool | None = None
+    auth_ip_limit: int | None = Field(default=None, ge=1, le=10_000)
+    auth_ip_window_seconds: int | None = Field(default=None, ge=1, le=86_400)
+    auth_user_limit: int | None = Field(default=None, ge=1, le=10_000)
+    auth_user_window_seconds: int | None = Field(default=None, ge=1, le=86_400)
+    game_ip_limit: int | None = Field(default=None, ge=1, le=10_000)
+    game_ip_window_seconds: int | None = Field(default=None, ge=1, le=86_400)
+    game_user_limit: int | None = Field(default=None, ge=1, le=10_000)
+    game_user_window_seconds: int | None = Field(default=None, ge=1, le=86_400)
