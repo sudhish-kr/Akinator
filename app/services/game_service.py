@@ -14,6 +14,7 @@ from app.engine.selector import (
 )
 from app.services.session_manager import ConfidenceThresholds, GameSessionManager
 from app.services.session_store import LiveSession, SessionStore, StoredAnswer, session_store
+from app.monitoring.instrumentation import track_ai_inference
 
 
 class GameServiceError(Exception):
@@ -68,14 +69,15 @@ class GameService:
         character_names = {c.id: c.name for c in characters}
 
         try:
-            live = self.sessions.start(
-                session_id=db_session.id,
-                character_ids=[c.id for c in characters],
-                likelihoods=likelihoods,
-                question_ids=question_ids,
-                question_refs=question_refs,
-                character_names=character_names,
-            )
+            with track_ai_inference("start_game"):
+                live = self.sessions.start(
+                    session_id=db_session.id,
+                    character_ids=[c.id for c in characters],
+                    likelihoods=likelihoods,
+                    question_ids=question_ids,
+                    question_refs=question_refs,
+                    character_names=character_names,
+                )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
 
@@ -121,7 +123,8 @@ class GameService:
             return self._state_payload(live)
 
         try:
-            turn = self.sessions.submit_answer(live, question_id, answer)
+            with track_ai_inference("submit_answer"):
+                turn = self.sessions.submit_answer(live, question_id, answer)
         except ValueError as exc:
             msg = str(exc)
             code = 409 if "ready to guess" in msg or "does not match" in msg else 400
@@ -165,36 +168,37 @@ class GameService:
         if not live.awaiting_guess:
             raise GameServiceError("Engine is not ready to guess yet", 409)
 
-        guess = self.sessions.best_guess(live)
-        if guess is None:
-            raise GameServiceError("No candidates available to guess", 500)
-        top_id, confidence = guess
+        with track_ai_inference("make_guess"):
+            guess = self.sessions.best_guess(live)
+            if guess is None:
+                raise GameServiceError("No candidates available to guess", 500)
+            top_id, confidence = guess
 
-        character = await self.repo.get_character(top_id)
-        if not character:
-            raise GameServiceError("Top candidate character not found", 500)
+            character = await self.repo.get_character(top_id)
+            if not character:
+                raise GameServiceError("Top candidate character not found", 500)
 
-        db_session = await self.repo.get_session(session_id)
-        if db_session:
-            db_session.guessed_character_id = top_id
-            db_session.last_activity_at = datetime.now(timezone.utc)
+            db_session = await self.repo.get_session(session_id)
+            if db_session:
+                db_session.guessed_character_id = top_id
+                db_session.last_activity_at = datetime.now(timezone.utc)
 
-        await self.repo.commit()
+            await self.repo.commit()
 
-        explanation = build_guess_explanation(
-            guessed_id=top_id,
-            guessed_name=character.name,
-            confidence=confidence,
-            probabilities=live.engine.probabilities,
-            character_ids=list(live.engine.character_ids),
-            character_names=live.character_names,
-            likelihoods=live.engine.likelihoods,
-            answers=[
-                AnswerObservation(question_id=a.question_id, answer=a.answer)
-                for a in live.answers
-            ],
-            question_refs=live.question_refs,
-        )
+            explanation = build_guess_explanation(
+                guessed_id=top_id,
+                guessed_name=character.name,
+                confidence=confidence,
+                probabilities=live.engine.probabilities,
+                character_ids=list(live.engine.character_ids),
+                character_names=live.character_names,
+                likelihoods=live.engine.likelihoods,
+                answers=[
+                    AnswerObservation(question_id=a.question_id, answer=a.answer)
+                    for a in live.answers
+                ],
+                question_refs=live.question_refs,
+            )
 
         return {
             "character": {

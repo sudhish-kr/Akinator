@@ -1,21 +1,30 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
 
 from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.game import router as game_router
 from app.config import settings
-from app.core.logging import request_logging_middleware, setup_logging
-from app.db.session import async_session_factory
+from app.core.logging import setup_logging
+from app.db.session import async_session_factory, engine
+from app.monitoring.db import instrument_engine
+from app.monitoring.health import build_health_report, check_database
+from app.monitoring.metrics import APP_INFO, render_prometheus_metrics
+from app.monitoring.middleware import monitoring_middleware
 from app.services.media_service import media_root
 from app.workers.monitoring import get_worker_status
 
 setup_logging(settings.log_level)
+instrument_engine(engine)
+APP_INFO.labels(
+    app=settings.app_name,
+    environment=settings.environment,
+    version="0.2.0",
+).set(1)
 
 
 @asynccontextmanager
@@ -50,7 +59,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.middleware("http")(request_logging_middleware)
+app.middleware("http")(monitoring_middleware)
 
 app.include_router(auth_router)
 app.include_router(game_router)
@@ -61,28 +70,35 @@ app.mount("/media", StaticFiles(directory=str(media_root())), name="media")
 
 @app.get("/health", tags=["health"])
 async def health():
-    """Liveness probe."""
-    return {"status": "ok", "environment": settings.environment}
+    """Liveness / aggregated health (database latency included)."""
+    return await build_health_report(include_workers=True)
 
 
 @app.get("/health/ready", tags=["health"])
 async def readiness():
-    """Readiness probe — verifies database connectivity."""
-    try:
-        async with async_session_factory() as db:
-            await db.execute(text("SELECT 1"))
-        return {"status": "ready", "database": "ok"}
-    except Exception:
-        from fastapi import Response
-
+    """Readiness probe — verifies database connectivity and latency."""
+    db = await check_database()
+    if db["status"] != "ok":
         return Response(
-            content='{"status": "not_ready", "database": "unreachable"}',
+            content='{"status":"not_ready","database":"unreachable"}',
             status_code=503,
             media_type="application/json",
         )
+    return {
+        "status": "ready",
+        "database": "ok",
+        "database_latency_seconds": db["latency_seconds"],
+    }
 
 
 @app.get("/health/workers", tags=["health"])
 async def workers_health():
     """Celery worker / queue monitoring endpoint."""
     return get_worker_status()
+
+
+@app.get("/metrics", tags=["monitoring"])
+async def metrics():
+    """Prometheus-compatible metrics scrape endpoint."""
+    body, content_type = render_prometheus_metrics()
+    return Response(content=body, media_type=content_type)
