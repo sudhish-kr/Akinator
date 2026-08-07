@@ -36,3 +36,6 @@ pgdata/
 media/characters/*
 !media/characters/.gitkeep
 !media/characters/default.svg
+
+# Generated training simulator reports
+reports/*.json
