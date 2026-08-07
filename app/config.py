@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     session_abandon_minutes: int = 30
     new_question_min_samples: int = 5
 
+    # Live session cache — Redis shared across workers; "memory" for local-only
+    session_cache_backend: str = "redis"
+    redis_url: str = "redis://localhost:6379/0"
+    redis_key_prefix: str = "mindguess:"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

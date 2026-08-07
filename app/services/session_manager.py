@@ -20,7 +20,7 @@ from app.engine.constants import (
 )
 from app.engine.models import LikelihoodEntry, QuestionRef
 from app.engine.selector import create_initial_state, process_answer, select_next_question
-from app.services.session_store import LiveSession, StoredAnswer
+from app.services.live_session import LiveSession, StoredAnswer
 
 
 @dataclass

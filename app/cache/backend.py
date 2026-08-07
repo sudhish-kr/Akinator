@@ -1,4 +1,4 @@
-"""Cache backend protocol. InMemory for single-process; Redis is a drop-in."""
+"""Cache backend protocol. MemoryCache for single-process; Redis for multi-instance."""
 
 from typing import Any, Protocol
 
