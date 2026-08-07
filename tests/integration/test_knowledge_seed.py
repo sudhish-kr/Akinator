@@ -162,6 +162,7 @@ def test_generated_seed_has_2000_plus_characters_and_validates():
     seed = _load_build_seed()()
     assert len(seed["characters"]) >= 2000
     assert len(seed["questions"]) >= 500
+    assert len(seed["likelihood_rules"]) > 1000
     assert set(seed["categories"]) == {
         "Movies",
         "TV Shows",

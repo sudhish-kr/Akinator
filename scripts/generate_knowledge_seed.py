@@ -16,6 +16,7 @@ if str(SCRIPTS) not in sys.path:
 
 from knowledge_phase1_data import CATEGORIES, CURATED_CORE, themed_fill  # noqa: E402
 from knowledge_questions_data import build_question_catalog, legacy_question_texts  # noqa: E402
+from likelihood_priors import assert_mapping_quality, build_likelihood_rules  # noqa: E402
 
 OUT = ROOT / "data" / "knowledge" / "seed_v1.json"
 TARGET = 2100
@@ -351,18 +352,18 @@ def build_seed() -> dict:
         },
     ]
 
+    rules = build_likelihood_rules(questions, explicit_rules=RULES)
+    assert_mapping_quality(characters, questions, rules)
+
     return {
-        "version": 3,
-        "phase": 2,
+        "version": 4,
+        "phase": 3,
         "question_phase": 1,
+        "mapping_phase": 1,
         "categories": list(CATEGORIES),
         "characters": characters,
         "questions": questions,
-        "likelihood_rules": [
-            {"category": cat, "question": q, "likelihood": lik, "sample_size": 40}
-            for cat, mapping in RULES.items()
-            for q, lik in mapping.items()
-        ],
+        "likelihood_rules": rules,
         "likelihood_overrides": overrides,
         "default_likelihood": 0.5,
         "default_sample_size": 10,
@@ -396,6 +397,7 @@ def main() -> None:
     )
     assert len(seed["questions"]) >= MIN_QUESTIONS
     assert len(seed["characters"]) >= MIN_CHARACTERS
+    assert len(seed["likelihood_rules"]) > 1000
     legacy_present = legacy_question_texts().issubset({q["text"] for q in seed["questions"]})
     print(f"Legacy RULES questions present: {legacy_present}")
 
