@@ -67,6 +67,7 @@ class GameService:
             q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
         }
         character_names = {c.id: c.name for c in characters}
+        character_categories = {c.id: c.category for c in characters}
 
         try:
             with track_ai_inference("start_game"):
@@ -77,6 +78,7 @@ class GameService:
                     question_ids=question_ids,
                     question_refs=question_refs,
                     character_names=character_names,
+                    character_categories=character_categories,
                 )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
@@ -318,6 +320,8 @@ class GameService:
             live.engine,
             live.all_question_ids,
             min_samples=settings.new_question_min_samples,
+            question_refs=live.question_refs,
+            character_categories=live.character_categories,
         )
         live.pending_question_id = next_q_id
         self.store.save(live)
@@ -377,6 +381,10 @@ class GameService:
 
         characters, questions, likelihoods, question_ids = await self._load_playable_data()
         engine = create_initial_state([c.id for c in characters], likelihoods)
+        question_refs = {
+            q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
+        }
+        character_categories = {c.id: c.category for c in characters}
 
         # Re-exclude characters the user already rejected in this session
         rejected = await self.repo.get_rejected_character_ids(session_id)
@@ -404,6 +412,8 @@ class GameService:
         confidence, next_q_id = decide_after_answer(
             engine,
             question_ids,
+            question_refs=question_refs,
+            character_categories=character_categories,
             confidence_high=settings.confidence_high,
             confidence_separation=settings.confidence_separation,
             confidence_margin=settings.confidence_margin,
@@ -414,10 +424,9 @@ class GameService:
         live = LiveSession(
             session_id=session_id,
             engine=engine,
-            question_refs={
-                q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
-            },
+            question_refs=question_refs,
             character_names={c.id: c.name for c in characters},
+            character_categories=character_categories,
             all_question_ids=question_ids,
             pending_question_id=None if must_guess else next_q_id,
             last_answered_question_id=last_qid,

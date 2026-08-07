@@ -47,6 +47,9 @@ def encode_live_session(session: LiveSession) -> dict[str, Any]:
             for qid, ref in session.question_refs.items()
         },
         "character_names": {str(cid): name for cid, name in session.character_names.items()},
+        "character_categories": {
+            str(cid): cat for cid, cat in session.character_categories.items()
+        },
         "all_question_ids": [str(qid) for qid in session.all_question_ids],
         "pending_question_id": (
             str(session.pending_question_id) if session.pending_question_id else None
@@ -110,6 +113,10 @@ def decode_live_session(payload: dict[str, Any]) -> LiveSession:
         question_refs=question_refs,
         character_names={
             _uuid(cid): name for cid, name in (payload.get("character_names") or {}).items()
+        },
+        character_categories={
+            _uuid(cid): cat
+            for cid, cat in (payload.get("character_categories") or {}).items()
         },
         all_question_ids=[_uuid(qid) for qid in payload.get("all_question_ids") or []],
         pending_question_id=_uuid(pending) if pending else None,

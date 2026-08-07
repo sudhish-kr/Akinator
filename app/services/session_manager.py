@@ -63,11 +63,17 @@ class GameSessionManager:
         question_ids: list[UUID],
         question_refs: dict[UUID, QuestionRef],
         character_names: dict[UUID, str],
+        character_categories: dict[UUID, str] | None = None,
     ) -> LiveSession:
         """Start a new session and select the first question."""
+        categories = dict(character_categories or {})
         engine = create_initial_state(character_ids, likelihoods)
         first_q = select_next_question(
-            engine, question_ids, min_samples=self.min_samples
+            engine,
+            question_ids,
+            min_samples=self.min_samples,
+            question_refs=question_refs,
+            character_categories=categories,
         )
         if first_q is None:
             raise ValueError("No eligible questions to start game")
@@ -78,6 +84,7 @@ class GameSessionManager:
             question_refs=question_refs,
             character_names=character_names,
             all_question_ids=list(question_ids),
+            character_categories=categories,
             pending_question_id=first_q,
             answers=[],
         )
@@ -122,7 +129,11 @@ class GameSessionManager:
         next_q_id: UUID | None = None
         if not confidence.should_guess:
             next_q_id = select_next_question(
-                engine, live.all_question_ids, min_samples=self.min_samples
+                engine,
+                live.all_question_ids,
+                min_samples=self.min_samples,
+                question_refs=live.question_refs,
+                character_categories=live.character_categories,
             )
             # No useful questions left → best available guess
             confidence = resolve_turn(

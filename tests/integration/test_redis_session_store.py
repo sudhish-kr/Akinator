@@ -56,12 +56,17 @@ def redis_cache(redis_client):
 
 def test_codec_roundtrip_preserves_engine_state():
     live = _live_session()
+    live.character_categories = {
+        next(iter(live.character_names)): "Scientists",
+        list(live.character_names)[1]: "Sports",
+    }
     restored = decode_live_session(encode_live_session(live))
     assert restored.session_id == live.session_id
     assert restored.pending_question_id == live.pending_question_id
     assert restored.engine.questions_asked == 1
     assert restored.answers[0].answer == "yes"
     assert set(restored.character_names.values()) == {"Einstein", "Messi"}
+    assert restored.character_categories == live.character_categories
     assert len(restored.engine.likelihoods) == 4
 
 

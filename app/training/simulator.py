@@ -140,7 +140,12 @@ class TrainingSimulator:
         true_id = self.rng.choice(self.snapshot.character_ids)
         engine = create_initial_state(list(self.snapshot.character_ids), likelihoods)
         pending = select_next_question(
-            engine, self.snapshot.question_ids, min_samples=self.min_samples
+            engine,
+            self.snapshot.question_ids,
+            min_samples=self.min_samples,
+            question_refs=self.snapshot.question_refs,
+            character_categories=self.snapshot.character_categories,
+            rng=self.rng,
         )
         if pending is None:
             return GameOutcome(
@@ -173,7 +178,12 @@ class TrainingSimulator:
             next_q: UUID | None = None
             if not confidence.should_guess:
                 next_q = select_next_question(
-                    engine, self.snapshot.question_ids, min_samples=self.min_samples
+                    engine,
+                    self.snapshot.question_ids,
+                    min_samples=self.min_samples,
+                    question_refs=self.snapshot.question_refs,
+                    character_categories=self.snapshot.character_categories,
+                    rng=self.rng,
                 )
                 confidence = resolve_turn(
                     engine,

@@ -56,5 +56,5 @@ def test_select_next_question_skips_used():
     }
     state = create_initial_state(chars, likelihoods)
     state.used_question_ids.add(q1)
-    next_q = select_next_question(state, [q1, q2], min_samples=1)
+    next_q = select_next_question(state, [q1, q2], min_samples=1, explore=False)
     assert next_q == q2

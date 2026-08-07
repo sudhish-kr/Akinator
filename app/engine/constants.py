@@ -35,3 +35,27 @@ DEFAULT_IG_TIE_THRESHOLD = 0.001
 DEFAULT_CONSECUTIVE_DONT_KNOW_CAP = 5
 DEFAULT_NEW_QUESTION_MIN_SAMPLES = 5
 DEFAULT_LEARNING_RATE = 0.07
+
+# Dynamic question selection (candidate-focused, category-aware, diverse)
+DEFAULT_CATEGORY_CONFIDENCE_GATE = 0.20
+DEFAULT_CATEGORY_IG_BONUS = 0.12
+DEFAULT_CANDIDATE_MASS_FOCUS = 0.92
+DEFAULT_DIVERSITY_TOP_K = 4
+DEFAULT_DIVERSITY_MARGIN = 0.04
+
+# Character KB category → preferred question.category tags (from knowledge seed).
+CHARACTER_CATEGORY_QUESTION_PREFERENCES: dict[str, frozenset[str]] = {
+    "Movies": frozenset({"media", "traits", "fame"}),
+    "TV Shows": frozenset({"media", "traits", "era"}),
+    "Anime": frozenset({"media", "traits", "origin"}),
+    "Cartoons": frozenset({"media", "traits"}),
+    "Sports": frozenset({"domain", "bio", "fame"}),
+    "Scientists": frozenset({"domain", "bio", "origin"}),
+    "Historical Figures": frozenset({"domain", "bio", "era"}),
+    "Politicians": frozenset({"domain", "bio", "era"}),
+    "Musicians": frozenset({"domain", "era", "fame"}),
+    "Business Leaders": frozenset({"domain", "bio", "fame"}),
+    "Gaming": frozenset({"media", "traits"}),
+    "Mythology": frozenset({"media", "traits", "domain"}),
+    "Literature": frozenset({"media", "traits", "domain"}),
+}
