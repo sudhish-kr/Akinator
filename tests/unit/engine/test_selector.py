@@ -93,7 +93,7 @@ def test_focus_candidate_state_shrinks_to_high_mass_frontier():
 
 
 def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent():
-    """Imported question.category mappings must influence selection above 20% conf."""
+    """Category preference applies only after category posterior mass exceeds threshold."""
     scientist = C1
     athlete = C2
     q_scientist = UUID("00000000-0000-0000-0000-0000000000b1")
@@ -109,7 +109,7 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
         (athlete, q_meta): LikelihoodEntry(0.45, 40),
     }
     state = create_initial_state([scientist, athlete], likelihoods)
-    # Scientist already leading at >20% confidence
+    # Scientists category mass 0.72 > preference threshold
     state.probabilities = {scientist: 0.72, athlete: 0.28}
 
     refs = {
@@ -125,10 +125,230 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
         min_samples=1,
         question_refs=refs,
         character_categories=categories,
+        category_preference_threshold=0.20,
         explore=False,
     )
     assert chosen in {q_scientist, q_athlete}
     assert refs[chosen].category in {"Science", "Sports"}
+
+
+def test_blocks_anime_sports_movie_questions_without_matching_candidates():
+    """Domain questions are irrelevant once their character categories are gone."""
+    from app.engine.selector import is_question_relevant_to_candidates, remaining_character_categories
+
+    einstein = C1
+    kohli = C2
+    q_anime = UUID("00000000-0000-0000-0000-0000000000aa")
+    q_sports = UUID("00000000-0000-0000-0000-0000000000ab")
+    q_movies = UUID("00000000-0000-0000-0000-0000000000ac")
+    q_science = UUID("00000000-0000-0000-0000-0000000000ad")
+
+    likelihoods = {
+        (einstein, q_anime): LikelihoodEntry(0.05, 40),
+        (kohli, q_anime): LikelihoodEntry(0.05, 40),
+        (einstein, q_sports): LikelihoodEntry(0.05, 40),
+        (kohli, q_sports): LikelihoodEntry(0.95, 40),
+        (einstein, q_movies): LikelihoodEntry(0.1, 40),
+        (kohli, q_movies): LikelihoodEntry(0.1, 40),
+        (einstein, q_science): LikelihoodEntry(0.95, 40),
+        (kohli, q_science): LikelihoodEntry(0.05, 40),
+    }
+    state = create_initial_state([einstein, kohli], likelihoods)
+    # Only Scientists + Sports remain — no Anime / Movies candidates
+    categories = {einstein: "Scientists", kohli: "Sports"}
+    refs = {
+        q_anime: QuestionRef(id=q_anime, text="Anime?", category="Anime"),
+        q_sports: QuestionRef(id=q_sports, text="Sports?", category="Sports"),
+        q_movies: QuestionRef(id=q_movies, text="Movies?", category="Movies"),
+        q_science: QuestionRef(id=q_science, text="Science?", category="Science"),
+    }
+
+    remaining = remaining_character_categories(state, categories)
+    assert remaining == frozenset({"Scientists", "Sports"})
+    assert not is_question_relevant_to_candidates(q_anime, refs, remaining)
+    assert not is_question_relevant_to_candidates(q_movies, refs, remaining)
+    assert is_question_relevant_to_candidates(q_sports, refs, remaining)
+    assert is_question_relevant_to_candidates(q_science, refs, remaining)
+
+    chosen = select_next_question(
+        state,
+        [q_anime, q_sports, q_movies, q_science],
+        min_samples=1,
+        question_refs=refs,
+        character_categories=categories,
+        explore=False,
+    )
+    assert chosen in {q_sports, q_science}
+    assert chosen not in {q_anime, q_movies}
+
+    # After Sports are eliminated, Sports questions must also be blocked
+    state.probabilities = {einstein: 1.0}
+    chosen2 = select_next_question(
+        state,
+        [q_anime, q_sports, q_movies, q_science],
+        min_samples=1,
+        question_refs=refs,
+        character_categories=categories,
+        explore=False,
+    )
+    assert chosen2 == q_science
+
+
+def test_virat_kohli_naruto_iron_man_einstein_receive_different_question_paths():
+    """Regression: four iconic characters must get distinct context-aware paths."""
+    kohli = UUID("00000000-0000-0000-0000-000000000101")
+    naruto = UUID("00000000-0000-0000-0000-000000000102")
+    iron_man = UUID("00000000-0000-0000-0000-000000000103")
+    einstein = UUID("00000000-0000-0000-0000-000000000104")
+
+    q_real = UUID("00000000-0000-0000-0000-000000000201")
+    q_anime = UUID("00000000-0000-0000-0000-000000000202")
+    q_sports = UUID("00000000-0000-0000-0000-000000000203")
+    q_movies = UUID("00000000-0000-0000-0000-000000000204")
+    q_science = UUID("00000000-0000-0000-0000-000000000205")
+    q_cricket = UUID("00000000-0000-0000-0000-000000000206")
+    q_ninja = UUID("00000000-0000-0000-0000-000000000207")
+    q_armor = UUID("00000000-0000-0000-0000-000000000208")
+    q_physics = UUID("00000000-0000-0000-0000-000000000209")
+
+    chars = [kohli, naruto, iron_man, einstein]
+    questions = [
+        q_real,
+        q_anime,
+        q_sports,
+        q_movies,
+        q_science,
+        q_cricket,
+        q_ninja,
+        q_armor,
+        q_physics,
+    ]
+    refs = {
+        q_real: QuestionRef(id=q_real, text="Real person?", category="Personality"),
+        q_anime: QuestionRef(id=q_anime, text="From anime?", category="Anime"),
+        q_sports: QuestionRef(id=q_sports, text="Athlete?", category="Sports"),
+        q_movies: QuestionRef(id=q_movies, text="Movies?", category="Movies"),
+        q_science: QuestionRef(id=q_science, text="Scientist?", category="Science"),
+        q_cricket: QuestionRef(id=q_cricket, text="Cricket?", category="Sports"),
+        q_ninja: QuestionRef(id=q_ninja, text="Ninja?", category="Anime"),
+        q_armor: QuestionRef(id=q_armor, text="Power armor?", category="Movies"),
+        q_physics: QuestionRef(id=q_physics, text="Physics?", category="Science"),
+    }
+    categories = {
+        kohli: "Sports",
+        naruto: "Anime",
+        iron_man: "Movies",
+        einstein: "Scientists",
+    }
+    profile = {
+        kohli: {
+            q_real: 0.95,
+            q_anime: 0.02,
+            q_sports: 0.97,
+            q_movies: 0.1,
+            q_science: 0.05,
+            q_cricket: 0.96,
+            q_ninja: 0.02,
+            q_armor: 0.05,
+            q_physics: 0.05,
+        },
+        naruto: {
+            q_real: 0.05,
+            q_anime: 0.97,
+            q_sports: 0.05,
+            q_movies: 0.2,
+            q_science: 0.05,
+            q_cricket: 0.05,
+            q_ninja: 0.95,
+            q_armor: 0.1,
+            q_physics: 0.05,
+        },
+        iron_man: {
+            q_real: 0.1,
+            q_anime: 0.05,
+            q_sports: 0.05,
+            q_movies: 0.96,
+            q_science: 0.35,
+            q_cricket: 0.05,
+            q_ninja: 0.05,
+            q_armor: 0.95,
+            q_physics: 0.4,
+        },
+        einstein: {
+            q_real: 0.95,
+            q_anime: 0.02,
+            q_sports: 0.05,
+            q_movies: 0.15,
+            q_science: 0.96,
+            q_cricket: 0.05,
+            q_ninja: 0.02,
+            q_armor: 0.05,
+            q_physics: 0.95,
+        },
+    }
+    likelihoods = {
+        (cid, qid): LikelihoodEntry(lik, 50)
+        for cid, answers in profile.items()
+        for qid, lik in answers.items()
+    }
+
+    def play(true_id: UUID) -> tuple[list[UUID], list[str]]:
+        seq = _play_question_sequence(
+            true_id,
+            chars,
+            questions,
+            likelihoods,
+            refs,
+            categories,
+            max_questions=6,
+            seed=7,
+        )
+        cats = [refs[qid].category for qid in seq]
+        return seq, cats
+
+    seq_kohli, cats_kohli = play(kohli)
+    seq_naruto, cats_naruto = play(naruto)
+    seq_iron, cats_iron = play(iron_man)
+    seq_einstein, cats_einstein = play(einstein)
+
+    assert len(seq_kohli) >= 2
+    assert len(seq_naruto) >= 2
+    assert len(seq_iron) >= 2
+    assert len(seq_einstein) >= 2
+
+    paths = {tuple(seq_kohli), tuple(seq_naruto), tuple(seq_iron), tuple(seq_einstein)}
+    assert len(paths) == 4
+
+    # After the pool narrows, domain questions must stay context-relevant.
+    def assert_no_irrelevant_domain(seq: list[UUID], true_id: UUID) -> None:
+        state = create_initial_state(chars, likelihoods)
+        rng = random.Random(7)
+        for qid in seq:
+            remaining = {
+                categories[cid]
+                for cid, p in state.probabilities.items()
+                if p > 1e-6 and cid in categories
+            }
+            qcat = refs[qid].category
+            if qcat == "Anime":
+                assert "Anime" in remaining
+            if qcat == "Sports":
+                assert "Sports" in remaining
+            if qcat == "Movies":
+                assert "Movies" in remaining
+            answer = oracle_answer(likelihoods, true_id, qid, rng, noise=0.0)
+            state, _ = process_answer(state, qid, answer)
+
+    assert_no_irrelevant_domain(seq_kohli, kohli)
+    assert_no_irrelevant_domain(seq_naruto, naruto)
+    assert_no_irrelevant_domain(seq_iron, iron_man)
+    assert_no_irrelevant_domain(seq_einstein, einstein)
+
+    # Late-path specialization: each icon should eventually hit its domain question.
+    assert "Sports" in cats_kohli
+    assert "Anime" in cats_naruto
+    assert "Movies" in cats_iron
+    assert "Science" in cats_einstein
 
 
 def test_imported_likelihood_mappings_drive_information_gain():

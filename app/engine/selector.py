@@ -1,10 +1,10 @@
-"""Dynamic question selection via candidate-focused information gain.
+"""Context-aware question selection via candidate-focused information gain.
 
-IG(Q) = H(current) − E[H | Q] is scored on the current high-mass candidate set
-(not a static global ranking). Already-asked questions are never repeated.
-Once top confidence exceeds 20%, category-aligned questions (from imported
-question.category mappings) are preferred. Near-tied top questions are sampled
-for cross-game diversity. Bayesian update itself is unchanged.
+IG(Q) = H(current) − E[H | Q] is scored on the current high-mass candidate set.
+Domain questions (Anime / Sports / Movies / …) are blocked unless matching
+character categories still remain among active candidates. Category-specific
+preference applies only after a category's posterior mass exceeds a configurable
+threshold. Bayesian update itself is unchanged.
 """
 
 from __future__ import annotations
@@ -15,18 +15,20 @@ from uuid import UUID
 
 from app.engine.bayesian import bayesian_update, initialize_uniform_priors
 from app.engine.cold_start import get_likelihood, is_question_eligible, likelihood_match
-from app.engine.confidence import confidence_score, evaluate_confidence
+from app.engine.confidence import evaluate_confidence
 from app.engine.constants import (
     ALL_ANSWERS,
     CHARACTER_CATEGORY_QUESTION_PREFERENCES,
     DEFAULT_CANDIDATE_MASS_FOCUS,
-    DEFAULT_CATEGORY_CONFIDENCE_GATE,
     DEFAULT_CATEGORY_IG_BONUS,
+    DEFAULT_CATEGORY_PREFERENCE_THRESHOLD,
+    DEFAULT_CATEGORY_REMAIN_MASS,
     DEFAULT_CONSECUTIVE_DONT_KNOW_CAP,
     DEFAULT_DIVERSITY_MARGIN,
     DEFAULT_DIVERSITY_TOP_K,
     DEFAULT_IG_TIE_THRESHOLD,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
     Answer,
 )
 from app.engine.elimination import eliminate_candidates, entropy
@@ -143,6 +145,40 @@ def focus_candidate_state(
     )
 
 
+def category_probability_mass(
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+    category: str,
+) -> float:
+    """Posterior mass for a single character category among active candidates."""
+    if not character_categories:
+        return 0.0
+    return sum(
+        p
+        for cid, p in state.probabilities.items()
+        if character_categories.get(cid) == category
+    )
+
+
+def remaining_character_categories(
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+    *,
+    min_mass: float = DEFAULT_CATEGORY_REMAIN_MASS,
+) -> frozenset[str]:
+    """Character categories still present in the active candidate pool."""
+    if not character_categories:
+        return frozenset()
+    present: set[str] = set()
+    for cid, p in state.probabilities.items():
+        if p < min_mass:
+            continue
+        cat = character_categories.get(cid)
+        if cat:
+            present.add(cat)
+    return frozenset(present)
+
+
 def inferred_character_category(
     state: GameEngineState,
     character_categories: dict[UUID, str] | None,
@@ -165,6 +201,32 @@ def preferred_question_categories(character_category: str | None) -> frozenset[s
     if not character_category:
         return frozenset()
     return CHARACTER_CATEGORY_QUESTION_PREFERENCES.get(character_category, frozenset())
+
+
+def is_question_relevant_to_candidates(
+    question_id: UUID,
+    question_refs: dict[UUID, QuestionRef] | None,
+    remaining_categories: frozenset[str],
+) -> bool:
+    """
+    Return False for domain questions whose required character categories
+    are absent from the current candidate set.
+
+    Universal / ungated question categories always remain eligible.
+    Without question metadata or category maps, questions stay eligible.
+    """
+    if not question_refs:
+        return True
+    ref = question_refs.get(question_id)
+    if ref is None or not ref.category:
+        return True
+    required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(ref.category)
+    if required is None:
+        return True
+    if not remaining_categories:
+        # No category metadata → cannot gate; keep question eligible.
+        return True
+    return bool(required & remaining_categories)
 
 
 def _category_aligned(
@@ -230,25 +292,34 @@ def select_next_question(
     *,
     question_refs: dict[UUID, QuestionRef] | None = None,
     character_categories: dict[UUID, str] | None = None,
-    category_confidence_gate: float = DEFAULT_CATEGORY_CONFIDENCE_GATE,
+    category_confidence_gate: float = DEFAULT_CATEGORY_PREFERENCE_THRESHOLD,
+    category_preference_threshold: float | None = None,
     category_ig_bonus: float = DEFAULT_CATEGORY_IG_BONUS,
     candidate_mass_focus: float = DEFAULT_CANDIDATE_MASS_FOCUS,
+    category_remain_mass: float = DEFAULT_CATEGORY_REMAIN_MASS,
     diversity_top_k: int = DEFAULT_DIVERSITY_TOP_K,
     diversity_margin: float = DEFAULT_DIVERSITY_MARGIN,
     rng: random.Random | None = None,
     explore: bool = True,
 ) -> UUID | None:
     """
-    Select the next question from the current candidate frontier.
+    Select the next context-relevant question for the current candidate set.
 
     - Skips questions in ``state.used_question_ids`` (never repeats)
+    - Drops domain questions (Anime/Sports/Movies/…) unless matching character
+      categories still remain among active candidates
     - Scores IG on a focused high-mass candidate set (dynamic after each answer)
-    - When confidence > ``category_confidence_gate``, boosts questions whose
-      imported ``question.category`` matches the inferred character category
+    - Prefers category-aligned questions only when that category's posterior mass
+      exceeds ``category_preference_threshold``
     - Among near-tied top scores, samples for cross-game diversity
-    - Returns None when no unanswered questions remain
+    - Returns None when no unanswered relevant questions remain
     """
     del consecutive_dont_know_cap  # reserved for future dont_know streak policy
+    preference_threshold = (
+        category_confidence_gate
+        if category_preference_threshold is None
+        else category_preference_threshold
+    )
 
     unused = [
         qid
@@ -264,16 +335,32 @@ def select_next_question(
     if not unused:
         return None
 
+    # Narrow to the live candidate frontier for both relevance and IG.
     focus = focus_candidate_state(state, mass_threshold=candidate_mass_focus)
-    conf = confidence_score(state)
+    remaining_cats = remaining_character_categories(
+        focus if character_categories else state,
+        character_categories,
+        min_mass=category_remain_mass,
+    )
+
+    relevant = [
+        qid
+        for qid in unused
+        if is_question_relevant_to_candidates(qid, question_refs, remaining_cats)
+    ]
+    if not relevant:
+        # Fall back to unused if gating would leave nothing (e.g. missing metadata)
+        relevant = unused
+
     preferred_cats = frozenset()
-    if conf > category_confidence_gate:
-        preferred_cats = preferred_question_categories(
-            inferred_character_category(state, character_categories)
-        )
+    inferred = inferred_character_category(focus, character_categories)
+    if inferred is not None:
+        mass = category_probability_mass(focus, character_categories, inferred)
+        if mass > preference_threshold:
+            preferred_cats = preferred_question_categories(inferred)
 
     scored: list[tuple[float, int, UUID]] = []
-    for qid in unused:
+    for qid in relevant:
         ig = information_gain(focus, qid)
         score = ig
         if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):

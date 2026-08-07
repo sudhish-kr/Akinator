@@ -42,6 +42,28 @@ DEFAULT_CATEGORY_IG_BONUS = 0.12
 DEFAULT_CANDIDATE_MASS_FOCUS = 0.92
 DEFAULT_DIVERSITY_TOP_K = 4
 DEFAULT_DIVERSITY_MARGIN = 0.04
+# Prefer category-specific questions only once this category's posterior mass is exceeded.
+DEFAULT_CATEGORY_PREFERENCE_THRESHOLD = 0.20
+# Ignore residual mass below this when deciding which character categories "remain".
+DEFAULT_CATEGORY_REMAIN_MASS = 1e-6
+
+# Question.category → character categories that must still be in the candidate set.
+# Domain questions are blocked when none of the required character categories remain.
+DOMAIN_QUESTION_CATEGORY_REQUIREMENTS: dict[str, frozenset[str]] = {
+    "Anime": frozenset({"Anime"}),
+    "Sports": frozenset({"Sports"}),
+    "Movies": frozenset({"Movies"}),
+    "TV": frozenset({"TV Shows"}),
+    "Cartoons": frozenset({"Cartoons"}),
+    "Gaming": frozenset({"Gaming"}),
+    "Science": frozenset({"Scientists"}),
+    "History": frozenset({"Historical Figures"}),
+    "Politics": frozenset({"Politicians"}),
+    "Music": frozenset({"Musicians"}),
+    "Literature": frozenset({"Literature"}),
+    "Mythology": frozenset({"Mythology"}),
+    "Technology": frozenset({"Business Leaders", "Scientists"}),
+}
 
 # Character KB category → preferred question.category tags (from knowledge seed).
 CHARACTER_CATEGORY_QUESTION_PREFERENCES: dict[str, frozenset[str]] = {
