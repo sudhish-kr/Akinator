@@ -86,8 +86,26 @@ def validate_seed_payload(data: dict[str, Any]) -> None:
         if not isinstance(item, dict):
             raise KnowledgeSeedError(f"questions[{i}] must be an object")
         text = item.get("text")
+        category = item.get("category")
         if not isinstance(text, str) or not text.strip():
             raise KnowledgeSeedError(f"questions[{i}] missing text")
+        if not isinstance(category, str) or not category.strip():
+            raise KnowledgeSeedError(f"questions[{i}] missing category")
+        if "is_active" in item and not isinstance(item["is_active"], bool):
+            raise KnowledgeSeedError(f"questions[{i}] is_active must be a boolean")
+        ig = item.get("avg_information_gain", item.get("initial_information_gain"))
+        if ig is None:
+            raise KnowledgeSeedError(
+                f"questions[{i}] missing initial information-gain metadata "
+                "(avg_information_gain)"
+            )
+        if not isinstance(ig, (int, float)) or not 0.0 <= float(ig) <= 1.0:
+            raise KnowledgeSeedError(
+                f"questions[{i}] has invalid avg_information_gain"
+            )
+        times_asked = item.get("times_asked", 0)
+        if not isinstance(times_asked, int) or times_asked < 0:
+            raise KnowledgeSeedError(f"questions[{i}] has invalid times_asked")
         question_texts.append(text)
 
     dup_questions = _duplicate_keys(question_texts)
@@ -227,10 +245,13 @@ class KnowledgeSeedService:
 
         q_by_text: dict[str, Any] = {}
         for item in data["questions"]:
+            ig = item.get("avg_information_gain", item.get("initial_information_gain"))
             question = await self.repo.create_question(
                 text=item["text"].strip(),
-                category=item.get("category"),
+                category=str(item["category"]).strip(),
                 is_active=bool(item.get("is_active", True)),
+                times_asked=int(item.get("times_asked", 0)),
+                avg_information_gain=float(ig) if ig is not None else None,
             )
             q_by_text[_norm(question.text)] = question
 

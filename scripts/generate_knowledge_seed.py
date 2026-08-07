@@ -15,45 +15,12 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from knowledge_phase1_data import CATEGORIES, CURATED_CORE, themed_fill  # noqa: E402
+from knowledge_questions_data import build_question_catalog, legacy_question_texts  # noqa: E402
 
 OUT = ROOT / "data" / "knowledge" / "seed_v1.json"
 TARGET = 2100
 MIN_CHARACTERS = 2000
-
-QUESTIONS = [
-    ("Is this character fictional?", "meta"),
-    ("Is this a real person?", "meta"),
-    ("Is this person alive today?", "bio"),
-    ("Is this associated with movies?", "media"),
-    ("Is this from anime or manga?", "media"),
-    ("Is this from a video game?", "media"),
-    ("Is this from television?", "media"),
-    ("Is this from comics or superhero media?", "media"),
-    ("Is this from a cartoon or animated series?", "media"),
-    ("Is this from mythology or legend?", "media"),
-    ("Is this an athlete or sports figure?", "domain"),
-    ("Is this a scientist or inventor?", "domain"),
-    ("Is this a historical figure from before 1900?", "domain"),
-    ("Is this known for music?", "domain"),
-    ("Is this known for literature or writing?", "domain"),
-    ("Is this a political leader?", "domain"),
-    ("Is this known for business or technology entrepreneurship?", "domain"),
-    ("Is this character primarily a hero / protagonist?", "traits"),
-    ("Is this character a villain or antagonist?", "traits"),
-    ("Is this associated with magic or fantasy?", "traits"),
-    ("Is this associated with science fiction?", "traits"),
-    ("Is this person/character from Asia?", "origin"),
-    ("Is this person/character from Europe?", "origin"),
-    ("Is this person/character from the Americas?", "origin"),
-    ("Is this primarily known in the 21st century?", "era"),
-    ("Is this primarily known from the 20th century?", "era"),
-    ("Does this character wear a costume or mask?", "traits"),
-    ("Is this a child or teenager (in their main story)?", "traits"),
-    ("Is this known for winning major awards or titles?", "fame"),
-    ("Is this associated with space or astronomy?", "domain"),
-    ("Is this associated with war or military leadership?", "domain"),
-    ("Is this a member of a famous team or group?", "traits"),
-]
+MIN_QUESTIONS = 500
 
 RULES: dict[str, dict[str, float]] = {
     "Movies": {
@@ -254,6 +221,17 @@ def _collect_characters() -> tuple[list[dict], dict[str, int]]:
     return characters, per_category
 
 
+def _duplicate_texts(texts) -> list[str]:
+    seen: set[str] = set()
+    out: set[str] = set()
+    for t in texts:
+        k = t.casefold().strip()
+        if k in seen:
+            out.add(t)
+        seen.add(k)
+    return sorted(out)
+
+
 def _assert_no_duplicates(characters: list[dict]) -> None:
     names: list[str] = []
     aliases: list[str] = []
@@ -288,7 +266,16 @@ def build_seed() -> dict:
         raise RuntimeError(f"Only {len(characters)} characters; need >= {MIN_CHARACTERS}")
     _assert_no_duplicates(characters)
 
-    questions = [{"text": text, "category": cat, "is_active": True} for text, cat in QUESTIONS]
+    questions = build_question_catalog(520)
+    question_texts = {q["text"] for q in questions}
+    missing_legacy = legacy_question_texts() - question_texts
+    if missing_legacy:
+        raise RuntimeError(f"Legacy RULES questions missing from catalog: {sorted(missing_legacy)}")
+    if len(questions) < MIN_QUESTIONS:
+        raise RuntimeError(f"Only {len(questions)} questions; need >= {MIN_QUESTIONS}")
+    dup_q = _duplicate_texts(q["text"] for q in questions)
+    if dup_q:
+        raise RuntimeError(f"Duplicate question texts: {dup_q[:5]}")
     overrides = [
         {
             "character": "Albert Einstein",
@@ -365,8 +352,9 @@ def build_seed() -> dict:
     ]
 
     return {
-        "version": 2,
-        "phase": 1,
+        "version": 3,
+        "phase": 2,
+        "question_phase": 1,
         "categories": list(CATEGORIES),
         "characters": characters,
         "questions": questions,
@@ -390,14 +378,26 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(seed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    q_counts: dict[str, int] = {}
+    for q in seed["questions"]:
+        q_counts[q["category"]] = q_counts.get(q["category"], 0) + 1
+
     print(f"Wrote {OUT} with {len(seed['characters'])} characters.")
-    print("Category breakdown:")
+    print("Character category breakdown:")
     for cat in CATEGORIES:
         print(f"  {cat}: {counts[cat]}")
+    print(f"Questions: {len(seed['questions'])}")
+    print("Question category breakdown:")
+    for cat in sorted(q_counts, key=lambda c: (-q_counts[c], c)):
+        print(f"  {cat}: {q_counts[cat]}")
     print(
-        f"Questions: {len(seed['questions'])}, rules: {len(seed['likelihood_rules'])}, "
+        f"Rules: {len(seed['likelihood_rules'])}, "
         f"overrides: {len(seed['likelihood_overrides'])}"
     )
+    assert len(seed["questions"]) >= MIN_QUESTIONS
+    assert len(seed["characters"]) >= MIN_CHARACTERS
+    legacy_present = legacy_question_texts().issubset({q["text"] for q in seed["questions"]})
+    print(f"Legacy RULES questions present: {legacy_present}")
 
 
 if __name__ == "__main__":

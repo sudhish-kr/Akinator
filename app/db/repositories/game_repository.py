@@ -234,8 +234,17 @@ class GameRepository:
         text: str,
         category: str | None = None,
         is_active: bool = True,
+        *,
+        times_asked: int = 0,
+        avg_information_gain: float | None = None,
     ) -> Question:
-        question = Question(text=text, category=category, is_active=is_active)
+        question = Question(
+            text=text,
+            category=category,
+            is_active=is_active,
+            times_asked=times_asked,
+            avg_information_gain=avg_information_gain,
+        )
         self.db.add(question)
         await self.db.flush()
         return question

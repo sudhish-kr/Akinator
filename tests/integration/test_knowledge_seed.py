@@ -53,13 +53,17 @@ def _mini_seed(**overrides) -> dict:
         "questions": [
             {
                 "text": "Is this a scientist or inventor?",
-                "category": "domain",
+                "category": "Science",
                 "is_active": True,
+                "avg_information_gain": 0.55,
+                "times_asked": 0,
             },
             {
                 "text": "Is this an athlete or sports figure?",
-                "category": "domain",
+                "category": "Sports",
                 "is_active": True,
+                "avg_information_gain": 0.52,
+                "times_asked": 0,
             },
         ],
         "likelihood_rules": [
@@ -128,15 +132,36 @@ def test_validate_rejects_alias_matching_character_name():
 def test_validate_rejects_duplicate_questions():
     data = _mini_seed()
     data["questions"].append(
-        {"text": "Is this a scientist or inventor?", "category": "domain"}
+        {
+            "text": "Is this a scientist or inventor?",
+            "category": "Science",
+            "is_active": True,
+            "avg_information_gain": 0.4,
+            "times_asked": 0,
+        }
     )
     with pytest.raises(KnowledgeSeedError, match="Duplicate questions"):
+        validate_seed_payload(data)
+
+
+def test_validate_rejects_question_missing_category():
+    data = _mini_seed()
+    data["questions"][0].pop("category")
+    with pytest.raises(KnowledgeSeedError, match="missing category"):
+        validate_seed_payload(data)
+
+
+def test_validate_rejects_question_missing_information_gain():
+    data = _mini_seed()
+    data["questions"][0].pop("avg_information_gain")
+    with pytest.raises(KnowledgeSeedError, match="information-gain"):
         validate_seed_payload(data)
 
 
 def test_generated_seed_has_2000_plus_characters_and_validates():
     seed = _load_build_seed()()
     assert len(seed["characters"]) >= 2000
+    assert len(seed["questions"]) >= 500
     assert set(seed["categories"]) == {
         "Movies",
         "TV Shows",
@@ -152,16 +177,47 @@ def test_generated_seed_has_2000_plus_characters_and_validates():
         "Mythology",
         "Literature",
     }
+    required_q_cats = {
+        "Physical appearance",
+        "Gender",
+        "Age",
+        "Nationality",
+        "Profession",
+        "Sports",
+        "Movies",
+        "TV",
+        "Anime",
+        "Cartoons",
+        "Gaming",
+        "Science",
+        "History",
+        "Politics",
+        "Music",
+        "Literature",
+        "Mythology",
+        "Technology",
+        "Relationships",
+        "Awards",
+        "Personality",
+        "Fictional traits",
+        "Time period",
+    }
+    assert required_q_cats <= {q["category"] for q in seed["questions"]}
     validate_seed_payload(seed)
     assert any(c.get("aliases") for c in seed["characters"])
     assert seed["likelihood_rules"]
     assert seed["likelihood_overrides"]
+    assert all(
+        isinstance(q.get("avg_information_gain"), (int, float)) and q.get("is_active") is True
+        for q in seed["questions"]
+    )
 
 
 def test_seed_v1_file_exists_and_is_valid():
     assert SEED_PATH.exists(), "Run scripts/generate_knowledge_seed.py to create seed_v1.json"
     data = load_seed_file(SEED_PATH)
     assert len(data["characters"]) >= 2000
+    assert len(data["questions"]) >= 500
     assert set(data["categories"]) == {
         "Movies",
         "TV Shows",
@@ -178,6 +234,10 @@ def test_seed_v1_file_exists_and_is_valid():
         "Literature",
     }
     validate_seed_payload(data)
+    assert all(
+        q.get("category") and q.get("is_active") is True and q.get("avg_information_gain") is not None
+        for q in data["questions"]
+    )
 
 
 @pytest.mark.asyncio
@@ -235,6 +295,65 @@ async def test_import_persists_characters_aliases_and_likelihoods(db: AsyncSessi
         if a.character_id == ada.id and a.question_id == scientist_q.id
     )
     assert ada_answer.likelihood == pytest.approx(0.99)
+
+
+@pytest.mark.asyncio
+async def test_import_persists_question_metadata_and_active_flag(db: AsyncSession):
+    service = KnowledgeSeedService(GameRepository(db))
+    await service.import_seed(_mini_seed())
+
+    questions = (await db.execute(select(Question))).scalars().all()
+    assert len(questions) == 2
+    by_text = {q.text: q for q in questions}
+    scientist_q = by_text["Is this a scientist or inventor?"]
+    assert scientist_q.category == "Science"
+    assert scientist_q.is_active is True
+    assert scientist_q.avg_information_gain == pytest.approx(0.55)
+    assert scientist_q.times_asked == 0
+
+    athlete_q = by_text["Is this an athlete or sports figure?"]
+    assert athlete_q.category == "Sports"
+    assert athlete_q.avg_information_gain == pytest.approx(0.52)
+
+
+@pytest.mark.asyncio
+async def test_import_full_seed_questions_into_database(db: AsyncSession):
+    """Import complete question knowledge base from seed_v1.json."""
+    full = load_seed_file(SEED_PATH)
+    keep_cats = {"Scientists", "Sports"}
+    chars: list[dict] = []
+    for cat in sorted(keep_cats):
+        chars.extend([c for c in full["characters"] if c["category"] == cat][:10])
+    present_cats = {c["category"] for c in chars}
+    char_names = {c["name"] for c in chars}
+    data = {
+        **full,
+        "characters": chars,
+        "likelihood_rules": [
+            r
+            for r in (full.get("likelihood_rules") or [])
+            if r["category"] in present_cats
+        ],
+        "likelihood_overrides": [
+            ov
+            for ov in (full.get("likelihood_overrides") or [])
+            if ov["character"] in char_names
+        ],
+    }
+    assert len(data["questions"]) >= 500
+    assert present_cats == keep_cats
+
+    service = KnowledgeSeedService(GameRepository(db))
+    result = await service.import_seed(data)
+
+    assert result["questions"] == len(data["questions"])
+    questions = (await db.execute(select(Question))).scalars().all()
+    assert len(questions) >= 500
+    assert all(q.is_active for q in questions)
+    assert all(q.category for q in questions)
+    assert all(q.avg_information_gain is not None for q in questions)
+    texts = [q.text.casefold() for q in questions]
+    assert len(texts) == len(set(texts))
 
 
 @pytest.mark.asyncio

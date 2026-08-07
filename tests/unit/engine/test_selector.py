@@ -113,9 +113,9 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
     state.probabilities = {scientist: 0.72, athlete: 0.28}
 
     refs = {
-        q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="domain"),
-        q_athlete: QuestionRef(id=q_athlete, text="Athlete?", category="domain"),
-        q_meta: QuestionRef(id=q_meta, text="Alive?", category="meta"),
+        q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="Science"),
+        q_athlete: QuestionRef(id=q_athlete, text="Athlete?", category="Sports"),
+        q_meta: QuestionRef(id=q_meta, text="Alive?", category="Age"),
     }
     categories = {scientist: "Scientists", athlete: "Sports"}
 
@@ -128,7 +128,7 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
         explore=False,
     )
     assert chosen in {q_scientist, q_athlete}
-    assert refs[chosen].category == "domain"
+    assert refs[chosen].category in {"Science", "Sports"}
 
 
 def test_imported_likelihood_mappings_drive_information_gain():
@@ -239,14 +239,14 @@ def test_different_characters_produce_different_question_sequences():
             q_space: 0.05,
             q_athlete: 0.97,
             q_fictional: 0.05,
-            q_movies: 0.2,
+            q_movies: 0.15,
         },
         potter: {
-            q_scientist: 0.05,
+            q_scientist: 0.35,
             q_space: 0.05,
-            q_athlete: 0.1,
-            q_fictional: 0.95,
-            q_movies: 0.9,
+            q_athlete: 0.08,
+            q_fictional: 0.97,
+            q_movies: 0.95,
         },
     }
     likelihoods = {
@@ -255,11 +255,11 @@ def test_different_characters_produce_different_question_sequences():
         for qid, lik in answers.items()
     }
     refs = {
-        q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="domain"),
-        q_space: QuestionRef(id=q_space, text="Space?", category="domain"),
-        q_athlete: QuestionRef(id=q_athlete, text="Athlete?", category="domain"),
-        q_fictional: QuestionRef(id=q_fictional, text="Fictional?", category="meta"),
-        q_movies: QuestionRef(id=q_movies, text="Movies?", category="media"),
+        q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="Science"),
+        q_space: QuestionRef(id=q_space, text="Space?", category="Science"),
+        q_athlete: QuestionRef(id=q_athlete, text="Athlete?", category="Sports"),
+        q_fictional: QuestionRef(id=q_fictional, text="Fictional?", category="Fictional traits"),
+        q_movies: QuestionRef(id=q_movies, text="Movies?", category="Movies"),
     }
     categories = {
         einstein: "Scientists",

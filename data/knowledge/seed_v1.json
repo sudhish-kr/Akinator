@@ -1,6 +1,7 @@
 {
-  "version": 2,
-  "phase": 1,
+  "version": 3,
+  "phase": 2,
+  "question_phase": 1,
   "categories": [
     "Movies",
     "TV Shows",
@@ -17005,163 +17006,4798 @@
   "questions": [
     {
       "text": "Is this character fictional?",
-      "category": "meta",
-      "is_active": true
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
     },
     {
       "text": "Is this a real person?",
-      "category": "meta",
-      "is_active": true
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.52,
+      "times_asked": 0
     },
     {
       "text": "Is this person alive today?",
-      "category": "bio",
-      "is_active": true
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
     },
     {
       "text": "Is this associated with movies?",
-      "category": "media",
-      "is_active": true
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.58,
+      "times_asked": 0
     },
     {
       "text": "Is this from anime or manga?",
-      "category": "media",
-      "is_active": true
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
     },
     {
       "text": "Is this from a video game?",
-      "category": "media",
-      "is_active": true
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
     },
     {
       "text": "Is this from television?",
-      "category": "media",
-      "is_active": true
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.54,
+      "times_asked": 0
     },
     {
       "text": "Is this from comics or superhero media?",
-      "category": "media",
-      "is_active": true
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.45,
+      "times_asked": 0
     },
     {
       "text": "Is this from a cartoon or animated series?",
-      "category": "media",
-      "is_active": true
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
     },
     {
       "text": "Is this from mythology or legend?",
-      "category": "media",
-      "is_active": true
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.57,
+      "times_asked": 0
     },
     {
       "text": "Is this an athlete or sports figure?",
-      "category": "domain",
-      "is_active": true
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.58,
+      "times_asked": 0
     },
     {
       "text": "Is this a scientist or inventor?",
-      "category": "domain",
-      "is_active": true
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
     },
     {
       "text": "Is this a historical figure from before 1900?",
-      "category": "domain",
-      "is_active": true
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.52,
+      "times_asked": 0
     },
     {
       "text": "Is this known for music?",
-      "category": "domain",
-      "is_active": true
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
     },
     {
       "text": "Is this known for literature or writing?",
-      "category": "domain",
-      "is_active": true
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.52,
+      "times_asked": 0
     },
     {
       "text": "Is this a political leader?",
-      "category": "domain",
-      "is_active": true
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
     },
     {
       "text": "Is this known for business or technology entrepreneurship?",
-      "category": "domain",
-      "is_active": true
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
     },
     {
       "text": "Is this character primarily a hero / protagonist?",
-      "category": "traits",
-      "is_active": true
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
     },
     {
       "text": "Is this character a villain or antagonist?",
-      "category": "traits",
-      "is_active": true
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.46,
+      "times_asked": 0
     },
     {
       "text": "Is this associated with magic or fantasy?",
-      "category": "traits",
-      "is_active": true
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
     },
     {
       "text": "Is this associated with science fiction?",
-      "category": "traits",
-      "is_active": true
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
     },
     {
       "text": "Is this person/character from Asia?",
-      "category": "origin",
-      "is_active": true
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
     },
     {
       "text": "Is this person/character from Europe?",
-      "category": "origin",
-      "is_active": true
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
     },
     {
       "text": "Is this person/character from the Americas?",
-      "category": "origin",
-      "is_active": true
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
     },
     {
       "text": "Is this primarily known in the 21st century?",
-      "category": "era",
-      "is_active": true
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.45,
+      "times_asked": 0
     },
     {
       "text": "Is this primarily known from the 20th century?",
-      "category": "era",
-      "is_active": true
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.44,
+      "times_asked": 0
     },
     {
       "text": "Does this character wear a costume or mask?",
-      "category": "traits",
-      "is_active": true
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
     },
     {
       "text": "Is this a child or teenager (in their main story)?",
-      "category": "traits",
-      "is_active": true
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
     },
     {
       "text": "Is this known for winning major awards or titles?",
-      "category": "fame",
-      "is_active": true
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
     },
     {
       "text": "Is this associated with space or astronomy?",
-      "category": "domain",
-      "is_active": true
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
     },
     {
       "text": "Is this associated with war or military leadership?",
-      "category": "domain",
-      "is_active": true
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.44,
+      "times_asked": 0
     },
     {
       "text": "Is this a member of a famous team or group?",
-      "category": "traits",
-      "is_active": true
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have blonde or light-colored hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have dark brown or black hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have red or auburn hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have white, silver, or gray hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have an unusual hair color (blue, pink, green, etc.)?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character notably tall?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character notably short or petite?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have a beard or mustache?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character wear glasses?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.25,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have visible scars or marks?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character often depicted wearing a uniform?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have a distinctive hat or headwear?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character muscular or physically imposing?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have tattoos or body art?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character often shown in formal attire?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have a cape or cloak?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character bald or mostly bald?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have pointed ears or non-human features?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character male?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character female?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character typically portrayed as male?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character typically portrayed as female?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character non-binary or gender-fluid in canon?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a queen, empress, or princess?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a king, emperor, or prince?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character commonly referred to with he/him pronouns?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.46,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character commonly referred to with she/her pronouns?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.46,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a mother or maternal figure?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a father or paternal figure?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a sibling in their main story?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character married or in a long-term partnership?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character single in their most famous portrayal?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a widow or widower?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character depicted as androgynous?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a goddess or female deity?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a god or male deity?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character elderly (roughly 60+)?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character middle-aged (roughly 35–59)?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a young adult (roughly 18–34)?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born before 1950?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born after 1980?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1990s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 2000s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character ageless or immortal?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character depicted as an infant or toddler?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Did this person die young (before age 40)?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Did this person live past age 80?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a student in their main story?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character retired in real life or in canon?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character centuries or millennia old?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character an adult in their main story?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character still active in their career today?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Africa?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Australia or Oceania?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Middle East?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the United States?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the United Kingdom?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Japan?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from China?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from India?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from France?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Germany?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Brazil?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Canada?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Italy?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Spain?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Mexico?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from South Korea?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Russia?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from Scandinavia (Denmark, Norway, Sweden, etc.)?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a doctor or medical professional?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a lawyer or judge?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a teacher or professor?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an actor or actress?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a chef or restaurateur?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a journalist or news anchor?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a military officer or soldier?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a police officer or detective?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a pilot or astronaut?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an artist or painter?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a fashion model?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a comedian or stand-up performer?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a religious leader or clergy member?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a farmer or agricultural worker?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an architect or engineer?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a spy or secret agent?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a royalty or nobility figure?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a pirate or outlaw?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for soccer (football)?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for basketball?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for tennis?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for American football?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for baseball?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for golf?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for boxing or combat sports?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for cricket?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for hockey (ice or field)?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for swimming or aquatic sports?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for track and field or athletics?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for gymnastics?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for motorsport or racing?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an Olympic medalist?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a world-record holder in their sport?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a coach or manager rather than a player?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for martial arts?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for skiing or winter sports?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a superhero film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a horror movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a romantic comedy?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an action or blockbuster franchise?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Disney or Pixar animated film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a science-fiction film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a fantasy film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a war or historical drama film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a spy or thriller film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a film director?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a famous Hollywood actor?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a movie based on a book?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a movie series with multiple sequels?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a classic black-and-white era film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a martial-arts film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Western film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a musical film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Studio Ghibli film?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sitcom?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a crime or detective series?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a medical or hospital drama?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a fantasy or period TV drama?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a reality TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a late-night or talk show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a streaming-service original series?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a long-running soap opera?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a science-fiction TV series?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a children's TV program?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a game show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a news or documentary program?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a British TV series?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an anthology or limited series?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a superhero TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a cooking or lifestyle show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a police procedural?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a teen or high-school drama?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a shonen action anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a shojo romance anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a mecha anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an isekai (other-world) anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have superpowers or special abilities?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a ninja or samurai?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sports anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a slice-of-life anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a magical-girl anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a horror or psychological anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Studio Ghibli anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a long-running anime franchise?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character transform or have multiple forms?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a seinen or mature anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a student at a school in their anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a One Piece–style adventure anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Dragon Ball–style battle anime?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character use a signature weapon or technique?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a classic Looney Tunes–style cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Nickelodeon cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Cartoon Network series?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character an anthropomorphic animal?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Saturday-morning cartoon era show?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Disney animated TV series?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an adult animated comedy?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a stop-motion animated series?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a sidekick or comic-relief figure?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a preschool or early-education cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a superhero cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Hanna-Barbera production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a DreamWorks animated series?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for catchphrases or silly humor?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a web cartoon or online animation?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an anime-influenced Western cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a villain in a cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a family-friendly adventure cartoon?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Nintendo franchise?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a first-person shooter game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a role-playing game (RPG)?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a fighting game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a platformer game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a survival or horror game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a multiplayer online game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a mobile game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a PlayStation exclusive?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an Xbox exclusive?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a PC gaming franchise?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a playable protagonist?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an open-world game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a retro arcade game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sports video game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a strategy or simulation game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a battle royale game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from an indie game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a physicist?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a biologist or life scientist?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a chemist?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a mathematician?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for medical or health research?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a Nobel Prize winner in science?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with evolution or natural history?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with quantum physics?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with computer science?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a famous astronomer?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for environmental or climate science?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with genetics or DNA research?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a science communicator or popularizer?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with nuclear or atomic research?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with robotics or AI research?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with paleontology or dinosaurs?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with neuroscience?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a fictional scientist?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from ancient Greece or Rome?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from ancient Egypt?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from medieval Europe?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the Renaissance era?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the 18th century?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the 19th century?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a monarch or royal ruler?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a revolutionary or rebel leader?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an explorer or navigator?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with World War I?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with World War II?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the American Civil War?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with colonialism or empire-building?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a philosopher from antiquity?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Cold War era?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with civil-rights or liberation movements?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from ancient China or East Asia?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the Viking or Norse era?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a current or former head of state?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a U.S. president?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a prime minister?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a dictator or authoritarian ruler?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a diplomat or ambassador?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a member of a royal family?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the United Nations?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a civil-rights activist?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a feminist or women's-rights advocate?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with socialism or communism?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with conservatism or the right wing?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with liberalism or the left wing?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a senator or parliament member?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a governor or regional leader?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for a famous speech?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with independence movements?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a Nobel Peace Prize laureate?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person still actively involved in politics?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a pop musician?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a rock musician?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a hip-hop or rap artist?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a classical composer?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a country musician?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a jazz musician?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a K-pop artist?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a singer-songwriter?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a member of a famous band or group?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a solo artist?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a Grammy Award winner?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the guitar?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the piano or keyboard?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the drums?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the violin or strings?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person an opera singer?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a DJ or electronic music producer?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for a famous music video?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a novelist?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a poet?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a playwright?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a fantasy novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a mystery or detective novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a science-fiction novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a children's book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a classic 19th-century novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Shakespeare play?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a Nobel Prize winner in literature?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a young-adult (YA) novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a comic book or graphic novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a detective or investigator in literature?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a dystopian novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a romance novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a horror novel?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a journalist or essayist?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a series with multiple books?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Greek mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Norse mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Egyptian mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Hindu mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Japanese mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Roman mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure a god or goddess?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure a hero or demigod?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure a monster or creature?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure associated with the underworld?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure associated with the sea or oceans?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure a trickster?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Celtic mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Chinese mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Aztec or Mesoamerican mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure associated with creation myths?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure associated with war or battle?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure associated with love or beauty?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a tech company founder or CEO?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Apple?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Microsoft?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Google or Alphabet?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Amazon?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Tesla or electric vehicles?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with social media platforms?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a software developer or programmer?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with artificial intelligence?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with space exploration companies?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a venture capitalist or investor?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with cryptocurrency or blockchain?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with semiconductors or hardware?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with open-source software?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a billionaire?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with gaming companies?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with e-commerce?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for a famous product launch or keynote?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a famous duo?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a famous trio?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a leader of a group or organization?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a sidekick to someone more famous?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a royal family?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a band or musical group?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a sports team?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a superhero team?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a mentor to others?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a rival to another famous figure?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character married to another famous person?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character siblings with another famous figure?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a fictional guild or clan?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character an only child?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character an orphan in their story?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character part of a famous fictional family?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character a founding member of an organization?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character known for a famous friendship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won an Oscar or Academy Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Grammy Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won an Emmy Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Nobel Prize?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won an Olympic gold medal?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Pulitzer Prize?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Tony Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Golden Globe?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person been knighted or received a royal honor?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person been inducted into a hall of fame?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Booker Prize or major literary award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Ballon d'Or or major soccer award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a MVP award in their sport?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person received a Presidential Medal or national honor?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Cannes or major film festival award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won multiple Grammy Awards?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Turing Award or major tech honor?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a record-holder recognized by Guinness World Records?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being humorous or comedic?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being serious or stoic?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being controversial?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for philanthropy or charity work?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being outspoken or blunt?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being shy or private?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being charismatic or charming?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being rebellious?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being wise or philosophical?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being eccentric or quirky?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being arrogant or confident?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being kind or compassionate?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being ruthless or aggressive?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being introverted?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being extroverted?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for a famous quote or catchphrase?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person widely considered a role model?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for overcoming adversity?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have superhuman strength?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Can this character fly or levitate?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character use magic?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character wield a sword?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character use guns or firearms?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character an alien or extraterrestrial?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a robot, android, or AI?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character undead (vampire, zombie, ghost, etc.)?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a shapeshifter?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character royalty in their fictional world?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character an antihero?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have a secret identity?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character immortal or very long-lived?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have a tragic backstory?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a dystopian or post-apocalyptic setting?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have animal companions or pets?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a mentor figure?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character die and return in their story?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 19th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 18th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 17th century or earlier?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 1960s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 1970s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 1980s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 1990s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 2000s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily associated with the 2010s?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from ancient times (before 500 CE)?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the medieval period?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Renaissance?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Victorian era?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Roaring Twenties?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Great Depression era?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character from the Cold War period?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character set in the future?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character set in a timeless or fantasy world?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have blonde hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have brunette hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have black hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have red hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have auburn hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have silver hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have white hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have blue hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have pink hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this person or character have green hair?",
+      "category": "Physical appearance",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for soccer?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for basketball?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for tennis?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for golf?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for boxing?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for cricket?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for swimming?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for cycling?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for skiing?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for rugby?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for volleyball?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for wrestling?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for archery?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for fencing?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person famous for surfing?",
+      "category": "Sports",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the piano?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the violin?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the saxophone?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the trumpet?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the flute?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the cello?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the bass guitar?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the harmonica?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the ukulele?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the synthesizer?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the harp?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the banjo?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for playing the clarinet?",
+      "category": "Music",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Aztec mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Mayan mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Persian mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Slavic mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Polynesian mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from Inuit mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this figure from African mythology?",
+      "category": "Mythology",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the United States?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from the United Kingdom?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Japan?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from China?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from India?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from France?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Germany?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Brazil?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Canada?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Italy?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Spain?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Mexico?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from South Korea?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Russia?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Australia?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Argentina?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Egypt?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Nigeria?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Sweden?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person from Turkey?",
+      "category": "Nationality",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a doctor?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a lawyer?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a teacher?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a engineer?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a architect?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a chef?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a pilot?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a soldier?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a journalist?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a artist?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a scientist?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a farmer?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a mechanic?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a nurse?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a firefighter?",
+      "category": "Profession",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a power-up transformation?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a rival character?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a mentor figure?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a catchphrase attack?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a school uniform?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a tragic past?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a comedic sidekick?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a love triangle?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a tournament arc?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a beach episode?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a filler arc?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this anime character have a time skip?",
+      "category": "Anime",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a action-adventure game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a role-playing game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a platform game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a puzzle game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a racing game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a survival horror game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sandbox game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a stealth game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a visual novel game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a rhythm game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a tower defense game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a metroidvania game?",
+      "category": "Gaming",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Oscar?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Grammy?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Emmy?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Tony?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Pulitzer?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Olympic gold medal?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Ballon d'Or?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a MVP?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Cannes Palme d'Or?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Booker Prize?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a MTV Video Music Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Brit Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Has this person won a Academy of Country Music Award?",
+      "category": "Awards",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sitcom TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a crime drama TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a medical drama TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a talk show TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a documentary TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a soap opera TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a anthology TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a miniseries TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a late-night TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a news TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a game show TV show?",
+      "category": "TV",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a comedy movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a romance movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a action movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a thriller movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a war movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a western movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a musical movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a documentary movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a noir movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a biographical movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a animated movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a superhero movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a disaster movie?",
+      "category": "Movies",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with physics?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with chemistry?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with biology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with astronomy?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with geology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with psychology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with ecology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with paleontology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with genetics?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with meteorology?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with oceanography?",
+      "category": "Science",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Ancient Rome?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Ancient Greece?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Ancient Egypt?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Middle Ages?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Renaissance?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Industrial Revolution?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Cold War?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the American Revolution?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the French Revolution?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with the Viking Age?",
+      "category": "History",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Google?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Meta?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Tesla?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with IBM?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Intel?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Samsung?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Sony?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Netflix?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Spotify?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Adobe?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Oracle?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person associated with Nvidia?",
+      "category": "Technology",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being optimistic?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being pessimistic?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being ambitious?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being lazy?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being loyal?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being betrayal-prone?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being patient?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being impulsive?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being creative?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being analytical?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being empathetic?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person known for being cold?",
+      "category": "Personality",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have telepathy?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have telekinesis?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have invisibility?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have time travel?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have healing?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have fire manipulation?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have ice manipulation?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have lightning powers?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have super speed?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Does this character have super intelligence?",
+      "category": "Fictional traits",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a warrior?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a wizard?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a princess?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a knight?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a assassin?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character a healer?",
+      "category": "Gender",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1920s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1930s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1940s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1950s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1960s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1970s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 1980s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Was this person born in the 2010s?",
+      "category": "Age",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous best friend relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous mentor relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous rival relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous love interest relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous parent relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous sibling relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character known for a famous partner relationship?",
+      "category": "Relationships",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Disney production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Pixar production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a DreamWorks production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Nickelodeon production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Cartoon Network production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a Adult Swim production?",
+      "category": "Cartoons",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a president?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a senator?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a governor?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a mayor?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person a monarch?",
+      "category": "Politics",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a mystery book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a romance book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a horror book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a fantasy book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a sci-fi book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a historical fiction book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this character from a satire book?",
+      "category": "Literature",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 16th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 17th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 18th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 19th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 20th century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person or character primarily from the 21st century?",
+      "category": "Time period",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
     }
   ],
   "likelihood_rules": [
