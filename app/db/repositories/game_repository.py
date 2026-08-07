@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models import (
     Character,
+    CharacterAlias,
     CharacterAnswer,
     GameAnswer,
     GameAnswerValue,
@@ -102,6 +103,19 @@ class GameRepository:
         lowered = {t.casefold() for t in texts}
         result = await self.db.execute(select(Question))
         return [q for q in result.scalars().all() if q.text.casefold() in lowered]
+
+    async def find_aliases_by_values(self, aliases: list[str]) -> list[CharacterAlias]:
+        if not aliases:
+            return []
+        lowered = {a.casefold() for a in aliases}
+        result = await self.db.execute(select(CharacterAlias))
+        return [row for row in result.scalars().all() if row.alias.casefold() in lowered]
+
+    async def create_alias(self, character_id: UUID, alias: str) -> CharacterAlias:
+        row = CharacterAlias(character_id=character_id, alias=alias)
+        self.db.add(row)
+        await self.db.flush()
+        return row
 
     async def get_likelihoods(
         self,
