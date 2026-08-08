@@ -40,6 +40,15 @@ export const api = {
       wrong_guess: wrongGuess,
     }),
 
-  /** Character list for the Learn page picker (existing public API). */
-  listCharacters: () => request("GET", "/characters?is_active=true&page_size=100"),
+  /** Character list for the Learn wizard (popular first). */
+  listCharacters: ({ category, q, pageSize = 40 } = {}) => {
+    const params = new URLSearchParams({
+      is_active: "true",
+      page_size: String(pageSize),
+      sort: "popularity",
+    });
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    return request("GET", `/characters?${params.toString()}`);
+  },
 };

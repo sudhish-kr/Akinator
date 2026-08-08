@@ -193,6 +193,46 @@
       "times_asked": 0
     },
     {
+      "text": "Are they from India?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Japan?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the United States?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the United Kingdom?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
       "text": "Are they from Asia?",
       "category": "Nationality",
       "hierarchy_level": 1,
@@ -240,46 +280,6 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
-    },
-    {
-      "text": "Are they from India?",
-      "category": "Nationality",
-      "hierarchy_level": 1,
-      "hierarchy_name": "Identity",
-      "dataset": "v2",
-      "is_active": true,
-      "avg_information_gain": 0.3,
-      "times_asked": 0
-    },
-    {
-      "text": "Are they from Japan?",
-      "category": "Nationality",
-      "hierarchy_level": 1,
-      "hierarchy_name": "Identity",
-      "dataset": "v2",
-      "is_active": true,
-      "avg_information_gain": 0.32,
-      "times_asked": 0
-    },
-    {
-      "text": "Are they from the United States?",
-      "category": "Nationality",
-      "hierarchy_level": 1,
-      "hierarchy_name": "Identity",
-      "dataset": "v2",
-      "is_active": true,
-      "avg_information_gain": 0.34,
-      "times_asked": 0
-    },
-    {
-      "text": "Are they from the United Kingdom?",
-      "category": "Nationality",
-      "hierarchy_level": 1,
-      "hierarchy_name": "Identity",
-      "dataset": "v2",
-      "is_active": true,
-      "avg_information_gain": 0.32,
       "times_asked": 0
     },
     {
@@ -500,6 +500,36 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from another country?",
+      "category": "Nationality",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from modern times?",
+      "category": "Time period",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from history?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
       "times_asked": 0
     },
     {

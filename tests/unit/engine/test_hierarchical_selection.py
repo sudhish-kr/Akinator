@@ -227,13 +227,13 @@ def _play(true_id: UUID, *, max_questions: int = 8, seed: int = 11) -> list[UUID
 
 
 def test_question_hierarchy_marks_profession_and_franchise_as_stage_c():
-    assert question_hierarchy_stage(REFS[Q_REAL]) == "A"
-    assert question_hierarchy_stage(REFS[Q_SPORTS]) == "B"
-    assert question_hierarchy_stage(REFS[Q_ANIME]) == "B"
-    assert question_hierarchy_stage(REFS[Q_CHEF]) == "C"
-    assert question_hierarchy_stage(REFS[Q_CRICKET]) == "C"
-    assert question_hierarchy_stage(REFS[Q_NINJA]) == "C"
-    assert question_hierarchy_stage(REFS[Q_NOBEL]) == "C"
+    assert question_hierarchy_stage(REFS[Q_REAL]) == "1"
+    assert question_hierarchy_stage(REFS[Q_SPORTS]) == "3"
+    assert question_hierarchy_stage(REFS[Q_ANIME]) == "3"
+    assert question_hierarchy_stage(REFS[Q_CHEF]) == "4"
+    assert question_hierarchy_stage(REFS[Q_CRICKET]) == "4"
+    assert question_hierarchy_stage(REFS[Q_NINJA]) == "4"
+    assert question_hierarchy_stage(REFS[Q_NOBEL]) == "4"
 
 
 def test_uniform_start_is_stage_a():
@@ -247,7 +247,7 @@ def test_uniform_start_is_stage_a():
     }
     state = create_initial_state(equal_chars, equal_L)
     stage, _ = resolve_selection_stage(state, equal_cats)
-    assert stage == "A"
+    assert stage == "1"
     qid = select_next_question(
         state,
         QUESTIONS,
@@ -257,7 +257,7 @@ def test_uniform_start_is_stage_a():
         explore=False,
     )
     assert qid is not None
-    assert question_hierarchy_stage(REFS[qid]) == "A"
+    assert question_hierarchy_stage(REFS[qid]) == "1"
     assert qid not in {Q_CHEF, Q_ARCHITECT, Q_LAWYER, Q_ANIME, Q_SPORTS, Q_CRICKET}
 
 
@@ -272,7 +272,7 @@ def test_missing_category_map_fails_safe_to_broad_only():
         explore=False,
     )
     assert qid is not None
-    assert question_hierarchy_stage(REFS[qid]) == "A"
+    assert question_hierarchy_stage(REFS[qid]) == "1"
 
 
 def test_early_gameplay_never_asks_profession_specific_questions():
@@ -295,7 +295,7 @@ def test_early_gameplay_never_asks_profession_specific_questions():
             )
             assert qid is not None, true_id
             text = REFS[qid].text.casefold()
-            if stage in {"A", "B"}:
+            if stage in {"1", "2", "3"}:
                 assert "chef" not in text
                 assert "architect" not in text
                 assert "lawyer" not in text
@@ -317,7 +317,7 @@ def test_virat_path_never_asks_anime_questions_early():
     rng = random.Random(11)
     for qid in asked:
         stage, dominant = resolve_selection_stage(state, CATEGORIES)
-        if stage == "A":
+        if stage == "1":
             assert REFS[qid].category != "Anime"
         if REFS[qid].category == "Anime":
             assert dominant == "Anime"
@@ -332,7 +332,7 @@ def test_naruto_path_never_asks_sports_questions_early():
     rng = random.Random(11)
     for qid in asked:
         stage, dominant = resolve_selection_stage(state, CATEGORIES)
-        if stage == "A":
+        if stage == "1":
             assert REFS[qid].category != "Sports"
             assert qid not in {Q_CRICKET, Q_FOOTBALL, Q_SPORTS}
         if REFS[qid].category == "Sports":

@@ -40,6 +40,7 @@ class CharacterItem(BaseModel):
     category: str
     image_url: str | None = None
     is_active: bool
+    popularity_score: int = 0
     times_guessed_correctly: int
     times_guessed_incorrectly: int
 

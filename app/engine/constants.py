@@ -36,7 +36,7 @@ DEFAULT_CONSECUTIVE_DONT_KNOW_CAP = 5
 DEFAULT_NEW_QUESTION_MIN_SAMPLES = 5
 DEFAULT_LEARNING_RATE = 0.07
 
-# --- Hierarchical question selection (Stage A → B → C) ---
+# --- Natural gameplay question selection (Stage 1 → 2 → 3 → 4) ---
 DEFAULT_CANDIDATE_MASS_FOCUS = 0.92
 DEFAULT_DIVERSITY_TOP_K = 4
 DEFAULT_DIVERSITY_MARGIN = 0.04
@@ -44,18 +44,73 @@ DEFAULT_CATEGORY_IG_BONUS = 0.12
 DEFAULT_BROAD_QUESTION_BONUS = 0.15
 DEFAULT_CATEGORY_REMAIN_MASS = 1e-6
 
-# Exit Stage A once a character category is clearly dominant.
+# Exit Stage 1 (Identity) once a character category is clearly dominant.
 DEFAULT_STAGE_A_EXIT_THRESHOLD = 0.35
 DEFAULT_STAGE_A_EXIT_MARGIN = 0.10
-# Enter Stage C (profession / franchise / niche) once domain dominance is stronger.
-DEFAULT_STAGE_C_ENTER_THRESHOLD = 0.50
+# Enter Stage 2 (Origin) after identity; Stage 3 (Category) after origin mass.
+DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD = 0.42
+DEFAULT_STAGE_ORIGIN_EXIT_MARGIN = 0.08
+# Enter Stage 4 (Subcategory) once domain dominance is stronger.
+DEFAULT_STAGE_C_ENTER_THRESHOLD = 0.55
 
 # Backward-compatible aliases used by older call sites / tests.
 DEFAULT_CATEGORY_CONFIDENCE_GATE = DEFAULT_STAGE_A_EXIT_THRESHOLD
 DEFAULT_CATEGORY_PREFERENCE_THRESHOLD = DEFAULT_STAGE_A_EXIT_THRESHOLD
 DEFAULT_CATEGORY_UNLOCK_THRESHOLD = DEFAULT_STAGE_A_EXIT_THRESHOLD
 
-# Stage A — broad identity only.
+# Stage 1 — Identity only (real/fictional, gender, age, human, famous).
+STAGE_1_IDENTITY_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "real person",
+        "made-up",
+        "fictional",
+        "still alive",
+        "alive today",
+        "are they male",
+        "girl or woman",
+        "kid or teen",
+        "grown-up",
+        "are they human",
+        "an animal",
+        "famous worldwide",
+        "people still talk",
+        "are they a hero",
+        "are they a villain",
+    }
+)
+
+# Stage 2 — Origin (place / era), before domain category.
+STAGE_2_ORIGIN_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "from india",
+        "from japan",
+        "from asia",
+        "from europe",
+        "from the americas",
+        "from africa",
+        "from australia",
+        "from the united states",
+        "from the united kingdom",
+        "another country",
+        "known today",
+        "modern times",
+        "from long ago",
+        "from history",
+        "famous in the 1900s",
+        "were they famous long ago",
+        "from ancient times",
+        "before cars",
+    }
+)
+
+STAGE_2_ORIGIN_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "Nationality",
+        "Time period",
+    }
+)
+
+# Stage A / 1 categories (metadata bucket; Stage 1 still keyword-gated).
 STAGE_A_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     {
         "Personality",
@@ -67,7 +122,7 @@ STAGE_A_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
-# Stage B — domain detection (general domain questions).
+# Stage 3 — Category / domain detection.
 STAGE_B_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     {
         "Sports",
@@ -86,7 +141,7 @@ STAGE_B_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
-# Stage C — specific professions / awards / niche (category-tagged).
+# Stage 4 — Subcategory / specific (and Stage-C tagged categories).
 STAGE_C_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     {
         "Profession",
@@ -96,7 +151,7 @@ STAGE_C_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
-# Keywords that push an otherwise Stage-B domain question into Stage C.
+# Keywords that push an otherwise domain question into Stage 4 (subcategory).
 STAGE_C_KEYWORDS: frozenset[str] = frozenset(
     {
         "chef",
@@ -129,15 +184,44 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "jedi",
         "wizard",
         "superhero",
+        "pirate",
+        "magic",
         "k-pop",
         "robot anime",
         "love story anime",
         "sports anime",
         "another-world",
+        "queen",
+        "princess",
+        "vampire",
+        "ice powers",
+        "filler",
+        "love triangle",
+        "dj",
     }
 )
 
-# Profession-like words that must never appear in Stage A / early Stage B picks.
+# Forbidden until Stage 4 — never ask these early.
+FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "chef",
+        "architect",
+        "dj",
+        "queen",
+        "princess",
+        "vampire",
+        "ice powers",
+        "filler",
+        "love triangle",
+        "marvel",
+        "dc comic",
+        "jedi",
+        "k-pop",
+        "franchise",
+    }
+)
+
+# Profession-like words that must never appear before category detection.
 PROFESSION_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
     {
         "chef",
@@ -157,6 +241,9 @@ PROFESSION_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
         "rapper",
         "prime minister",
         "president",
+        "dj",
+        "queen",
+        "princess",
     }
 )
 

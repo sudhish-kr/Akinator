@@ -31,9 +31,15 @@ from app.engine.constants import (
     DEFAULT_STAGE_A_EXIT_MARGIN,
     DEFAULT_STAGE_A_EXIT_THRESHOLD,
     DEFAULT_STAGE_C_ENTER_THRESHOLD,
+    DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
+    DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
     DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
     FICTIONAL_CHARACTER_CATEGORIES,
+    FORBIDDEN_EARLY_KEYWORDS,
     PROFESSION_SPECIFIC_KEYWORDS,
+    STAGE_1_IDENTITY_KEYWORDS,
+    STAGE_2_ORIGIN_CATEGORIES,
+    STAGE_2_ORIGIN_KEYWORDS,
     STAGE_A_QUESTION_CATEGORIES,
     STAGE_B_QUESTION_CATEGORIES,
     STAGE_C_KEYWORDS,
@@ -45,7 +51,25 @@ from app.engine.models import ConfidenceResult, GameEngineState, LikelihoodEntry
 
 # Outcomes used when estimating E[H | Q]. Includes yes / no / unknown (dont_know).
 _IG_ANSWERS: tuple[Answer, ...] = ALL_ANSWERS
-SelectionStage = str  # "A" | "B" | "C"
+# Natural gameplay stages: 1 Identity → 2 Origin → 3 Category → 4 Subcategory
+# Legacy aliases A/B/C still accepted by allow-list helpers.
+SelectionStage = str  # "1" | "2" | "3" | "4" | "A" | "B" | "C"
+
+
+def _normalize_stage(stage: SelectionStage) -> SelectionStage:
+    if stage in {"A", "1"}:
+        return "1"
+    if stage in {"O", "2"}:
+        return "2"
+    if stage in {"B", "3"}:
+        return "3"
+    if stage in {"C", "4"}:
+        return "4"
+    return stage
+
+
+def _text_matches_any(text: str, keywords: frozenset[str]) -> bool:
+    return any(kw in text for kw in keywords)
 
 
 def expected_entropy_after_question(
@@ -244,34 +268,39 @@ def top_category_masses(
 
 
 def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage:
-    """Classify a question into Stage A (broad), B (domain), or C (specific)."""
+    """Classify a question into natural Stage 1–4 (Identity → Subcategory)."""
     if question_ref is None or not question_ref.category:
-        # Missing metadata → treat as specific so fail-safe broad path excludes it
-        # unless we are already in a permissive fallback.
-        return "C"
+        return "4"
     category = question_ref.category
     text = (question_ref.text or "").casefold()
 
-    if category in STAGE_A_QUESTION_CATEGORIES:
-        # Franchise / profession wording must not sneak into Stage A.
-        if any(kw in text for kw in STAGE_C_KEYWORDS) or any(
-            kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS
+    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS):
+        return "4"
+    if _text_matches_any(text, STAGE_1_IDENTITY_KEYWORDS):
+        return "1"
+    if _text_matches_any(text, STAGE_2_ORIGIN_KEYWORDS) or (
+        category in STAGE_2_ORIGIN_CATEGORIES
+        and not _text_matches_any(text, STAGE_C_KEYWORDS)
+        and not _text_matches_any(text, PROFESSION_SPECIFIC_KEYWORDS)
+    ):
+        # Pure origin / nationality / era — Stage 2
+        if category in STAGE_2_ORIGIN_CATEGORIES or _text_matches_any(
+            text, STAGE_2_ORIGIN_KEYWORDS
         ):
-            return "C"
-        return "A"
+            return "2"
 
     if category in STAGE_C_QUESTION_CATEGORIES:
-        return "C"
-
+        return "4"
     if category in STAGE_B_QUESTION_CATEGORIES:
-        if any(kw in text for kw in STAGE_C_KEYWORDS) or any(
-            kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS
+        if _text_matches_any(text, STAGE_C_KEYWORDS) or _text_matches_any(
+            text, PROFESSION_SPECIFIC_KEYWORDS
         ):
-            return "C"
-        return "B"
-
-    # Unknown category → Stage C (locked until domain is strong).
-    return "C"
+            return "4"
+        return "3"
+    if category in STAGE_A_QUESTION_CATEGORIES:
+        # Non-identity Stage-A metadata (e.g. hair color) waits for later stages.
+        return "4"
+    return "4"
 
 
 def resolve_selection_stage(
@@ -280,23 +309,29 @@ def resolve_selection_stage(
     *,
     stage_a_exit_threshold: float = DEFAULT_STAGE_A_EXIT_THRESHOLD,
     stage_a_exit_margin: float = DEFAULT_STAGE_A_EXIT_MARGIN,
+    stage_origin_exit_threshold: float = DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
+    stage_origin_exit_margin: float = DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
 ) -> tuple[SelectionStage, str | None]:
     """
-    Determine the current questioning stage from category posterior mass.
+    Determine natural questioning stage from category posterior mass.
 
-    Missing category mappings → Stage A only (fail safe).
+    Missing category mappings → Stage 1 only (fail safe).
     """
     if not character_categories:
-        return "A", None
+        return "1", None
 
     dominant, top, second = top_category_masses(state, character_categories)
     if dominant is None or top < stage_a_exit_threshold or (top - second) < stage_a_exit_margin:
-        return "A", dominant
+        return "1", dominant
+
+    # Stage 2 Origin until the dominant category is clearer.
+    if top < stage_origin_exit_threshold or (top - second) < stage_origin_exit_margin:
+        return "2", dominant
 
     if top >= stage_c_enter_threshold:
-        return "C", dominant
-    return "B", dominant
+        return "4", dominant
+    return "3", dominant
 
 
 def is_question_relevant_to_candidates(
@@ -353,7 +388,7 @@ def _domain_matches_dominant(
         return False
     required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(question_category)
     if required is None:
-        # Non-domain Stage C (Profession/Awards): allowed once a dominant exists.
+        # Non-domain Stage 4 (Profession/Awards): allowed once a dominant exists.
         return True
     return dominant_category in required
 
@@ -376,30 +411,37 @@ def is_question_allowed_for_stage(
     stage: SelectionStage,
     dominant_category: str | None,
 ) -> bool:
-    """Hierarchical allow-list for Stage A / B / C."""
-    q_stage = question_hierarchy_stage(question_ref)
+    """Natural gameplay allow-list for Stage 1 / 2 / 3 / 4."""
+    stage = _normalize_stage(stage)
+    q_stage = _normalize_stage(question_hierarchy_stage(question_ref))
     category = question_ref.category if question_ref else None
     text = (question_ref.text or "").casefold() if question_ref else ""
 
-    if stage == "A":
-        return q_stage == "A"
+    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS) and stage != "4":
+        return False
 
-    if stage == "B":
-        if q_stage == "A":
+    if stage == "1":
+        return q_stage == "1"
+
+    if stage == "2":
+        return q_stage in {"1", "2"}
+
+    if stage == "3":
+        if q_stage in {"1", "2"}:
             return True
-        if q_stage != "B":
+        if q_stage != "3":
             return False
         if category == "Anime":
             return _anime_requires_fictional_dominant(dominant_category)
         return _domain_matches_dominant(category, dominant_category)
 
-    # Stage C — never allow generic profession wording without a matching preference.
+    # Stage 4 — subcategory / specific
     if any(kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS):
         return _profession_or_award_allowed(dominant_category, "Profession")
     if category in {"Profession", "Awards", "Relationships", "Time period"}:
         return _profession_or_award_allowed(dominant_category, category)
 
-    if q_stage == "A":
+    if q_stage in {"1", "2"}:
         return True
     if category == "Anime":
         return _anime_requires_fictional_dominant(dominant_category)
@@ -475,6 +517,8 @@ def select_next_question(
     stage_a_exit_threshold: float | None = None,
     stage_a_exit_margin: float = DEFAULT_STAGE_A_EXIT_MARGIN,
     stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
+    stage_origin_exit_threshold: float = DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
+    stage_origin_exit_margin: float = DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     category_ig_bonus: float = DEFAULT_CATEGORY_IG_BONUS,
     broad_question_bonus: float = DEFAULT_BROAD_QUESTION_BONUS,
     candidate_mass_focus: float = DEFAULT_CANDIDATE_MASS_FOCUS,
@@ -485,13 +529,13 @@ def select_next_question(
     explore: bool = True,
 ) -> UUID | None:
     """
-    Select the next question using hierarchical Stage A → B → C gating.
+    Select the next question using natural Stage 1 → 2 → 3 → 4 gating.
 
-    - Stage A: broad identity only
-    - Stage B: dominant-domain questions after Stage A exit
-    - Stage C: profession / franchise / niche after stronger domain confidence
-    - Missing question/category mappings → Stage A broad-only (fail safe)
-    - Scores IG on the focused candidate set among allowed questions only
+    - Stage 1: identity only
+    - Stage 2: origin (place / era)
+    - Stage 3: category / domain after enough confidence
+    - Stage 4: subcategory / specific
+    - Missing mappings → Stage 1 identity-only (fail safe)
     """
     del consecutive_dont_know_cap  # reserved for future dont_know streak policy
     preference_threshold = (
@@ -545,12 +589,12 @@ def select_next_question(
         min_mass=category_remain_mass,
     )
 
-    # Hierarchy engaged but category map missing → Stage A broad-only (fail safe).
+    # Hierarchy engaged but category map missing → Stage 1 identity-only (fail safe).
     if not character_categories:
         broad_only = [
             qid
             for qid in unused
-            if question_hierarchy_stage(question_refs.get(qid)) == "A"
+            if question_hierarchy_stage(question_refs.get(qid)) == "1"
         ]
         if not broad_only:
             return None
@@ -577,6 +621,8 @@ def select_next_question(
         character_categories,
         stage_a_exit_threshold=a_exit,
         stage_a_exit_margin=stage_a_exit_margin,
+        stage_origin_exit_threshold=stage_origin_exit_threshold,
+        stage_origin_exit_margin=stage_origin_exit_margin,
         stage_c_enter_threshold=stage_c_enter_threshold,
     )
 
@@ -586,8 +632,8 @@ def select_next_question(
         if ref is None:
             continue
         if not is_question_relevant_to_candidates(qid, question_refs, remaining_cats):
-            # Stage A questions are never domain-gated by remaining_cats
-            if question_hierarchy_stage(ref) != "A":
+            # Stage 1–2 questions are never domain-gated by remaining_cats
+            if question_hierarchy_stage(ref) not in {"1", "2"}:
                 continue
         if not is_question_allowed_for_stage(
             ref, stage=stage, dominant_category=dominant
@@ -596,11 +642,11 @@ def select_next_question(
         relevant.append(qid)
 
     if not relevant:
-        # Always fall back to Stage A broad questions — never open the floodgates.
+        # Always fall back to Stage 1 identity — never open the floodgates.
         relevant = [
             qid
             for qid in unused
-            if question_hierarchy_stage(question_refs.get(qid)) == "A"
+            if question_hierarchy_stage(question_refs.get(qid)) == "1"
         ]
     if not relevant:
         return None
@@ -619,7 +665,7 @@ def select_next_question(
         q_stage = question_hierarchy_stage(ref)
         if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):
             score += category_ig_bonus
-        if stage == "A" and q_stage == "A":
+        if stage in {"1", "2"} and q_stage in {"1", "2"}:
             score += broad_question_bonus
         samples = total_sample_size_for_question(state, qid)
         scored.append((score, samples, qid))

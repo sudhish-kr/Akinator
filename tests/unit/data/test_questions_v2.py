@@ -96,13 +96,20 @@ def test_v2_questions_are_kid_friendly(v2_questions):
 
 
 def test_level1_identity_uses_broad_categories_only(v2_questions):
+    from app.engine.constants import STAGE_1_IDENTITY_KEYWORDS, STAGE_2_ORIGIN_KEYWORDS
+
     for q in v2_questions:
         if q["hierarchy_level"] != 1:
             continue
         assert q["category"] in STAGE_A_QUESTION_CATEGORIES, q
-        assert question_hierarchy_stage(
+        text = q["text"].casefold()
+        stage = question_hierarchy_stage(
             QuestionRef(id=uuid4(), text=q["text"], category=q["category"])
-        ) == "A"
+        )
+        if any(kw in text for kw in STAGE_2_ORIGIN_KEYWORDS):
+            assert stage == "2", q
+        elif any(kw in text for kw in STAGE_1_IDENTITY_KEYWORDS):
+            assert stage == "1", q
 
 
 def test_seed_defaults_to_active_v2_and_deactivated_legacy(seed):
@@ -146,7 +153,7 @@ def test_early_questions_are_broad(v2_questions):
 
     state = create_initial_state(chars, likelihoods)
     stage, _ = resolve_selection_stage(state, categories)
-    assert stage == "A"
+    assert stage == "1"
     chosen = select_next_question(
         state,
         qids,
@@ -156,7 +163,7 @@ def test_early_questions_are_broad(v2_questions):
         explore=False,
     )
     assert chosen is not None
-    assert question_hierarchy_stage(refs[chosen]) == "A"
+    assert question_hierarchy_stage(refs[chosen]) == "1"
     assert refs[chosen].category in STAGE_A_QUESTION_CATEGORIES
 
 
@@ -253,7 +260,7 @@ def test_profession_questions_never_before_category_detection(v2_questions):
             )
             assert qid is not None
             text = text_by_id[qid]
-            if stage in {"A", "B"}:
+            if stage in {"1", "2", "3"}:
                 assert text not in profession_texts
                 assert refs[qid].category != "Profession"
                 for kw in ("singer", "actor", "actress"):
@@ -316,7 +323,7 @@ def test_anime_questions_never_appear_for_real_person_paths(v2_questions):
                 break
             if refs[qid].category == "Anime" or "anime" in refs[qid].text.casefold():
                 assert dominant == "Anime", (stage, dominant, refs[qid].text)
-            if stage == "A":
+            if stage == "1":
                 assert refs[qid].category != "Anime"
             answer = oracle_answer(likelihoods, true_id, qid, rng, noise=0.0)
             state, _ = process_answer(state, qid, answer)

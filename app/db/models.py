@@ -84,6 +84,7 @@ class Character(Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    popularity_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     times_guessed_correctly: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     times_guessed_incorrectly: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

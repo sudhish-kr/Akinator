@@ -234,6 +234,23 @@ body {
   overflow: auto;
 }
 
+.learn-search {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.learn-search .input {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  background: var(--sand);
+  color: var(--ink);
+}
+
 .actions {
   grid-template-columns: 1fr;
 }

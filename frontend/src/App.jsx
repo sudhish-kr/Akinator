@@ -122,15 +122,46 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      const data = await api.listCharacters();
-      setCharacters((data.items || []).filter((c) => c.id !== guess?.character?.id));
+      setCharacters([]);
       setScreen("learn");
     } catch (err) {
       fail(err);
     } finally {
       setBusy(false);
     }
-  }, [busy, guess, t]);
+  }, [busy, t]);
+
+  const loadLearnSuggestions = useCallback(
+    async (category) => {
+      setBusy(true);
+      setError(null);
+      try {
+        const data = await api.listCharacters({ category, pageSize: 40 });
+        setCharacters((data.items || []).filter((c) => c.id !== guess?.character?.id));
+      } catch (err) {
+        fail(err);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [guess, t]
+  );
+
+  const searchLearnCharacters = useCallback(
+    async (q, category) => {
+      setBusy(true);
+      setError(null);
+      try {
+        const data = await api.listCharacters({ category, q, pageSize: 40 });
+        setCharacters((data.items || []).filter((c) => c.id !== guess?.character?.id));
+      } catch (err) {
+        fail(err);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [guess, t]
+  );
 
   const onLearnPick = useCallback(
     async (characterId, characterName) => {
@@ -193,6 +224,8 @@ export default function App() {
           busy={busy}
           onPick={onLearnPick}
           onHome={goHome}
+          onLoadSuggestions={loadLearnSuggestions}
+          onSearch={searchLearnCharacters}
         />
       )}
       {screen === "done" && (

@@ -24,7 +24,9 @@ class GameRepository:
 
     async def get_active_characters(self) -> list[Character]:
         result = await self.db.execute(
-            select(Character).where(Character.is_active.is_(True)).order_by(Character.name)
+            select(Character)
+            .where(Character.is_active.is_(True))
+            .order_by(Character.popularity_score.desc(), Character.name)
         )
         return list(result.scalars().all())
 
@@ -40,6 +42,9 @@ class GameRepository:
         page_size: int = 20,
         category: str | None = None,
         is_active: bool | None = None,
+        q: str | None = None,
+        *,
+        sort: str = "popularity",
     ) -> tuple[list[Character], int]:
         query = select(Character)
         count_query = select(func.count()).select_from(Character)
@@ -50,12 +55,18 @@ class GameRepository:
         if is_active is not None:
             query = query.where(Character.is_active.is_(is_active))
             count_query = count_query.where(Character.is_active.is_(is_active))
+        if q is not None and q.strip():
+            like = f"%{q.strip()}%"
+            query = query.where(Character.name.ilike(like))
+            count_query = count_query.where(Character.name.ilike(like))
 
         total = (await self.db.execute(count_query)).scalar_one()
         offset = (page - 1) * page_size
-        result = await self.db.execute(
-            query.order_by(Character.name).offset(offset).limit(page_size)
-        )
+        if sort == "name":
+            ordered = query.order_by(Character.name)
+        else:
+            ordered = query.order_by(Character.popularity_score.desc(), Character.name)
+        result = await self.db.execute(ordered.offset(offset).limit(page_size))
         return list(result.scalars().all()), total
 
     async def list_questions(
@@ -221,9 +232,14 @@ class GameRepository:
         category: str,
         image_url: str | None = None,
         is_active: bool = True,
+        popularity_score: int = 0,
     ) -> Character:
         character = Character(
-            name=name, category=category, image_url=image_url, is_active=is_active
+            name=name,
+            category=category,
+            image_url=image_url,
+            is_active=is_active,
+            popularity_score=popularity_score,
         )
         self.db.add(character)
         await self.db.flush()

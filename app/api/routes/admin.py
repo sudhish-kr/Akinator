@@ -37,6 +37,7 @@ def _character_item(c) -> CharacterItem:
         category=c.category,
         image_url=c.image_url,
         is_active=c.is_active,
+        popularity_score=getattr(c, "popularity_score", 0) or 0,
         times_guessed_correctly=c.times_guessed_correctly,
         times_guessed_incorrectly=c.times_guessed_incorrectly,
     )
@@ -68,22 +69,15 @@ async def list_characters(
     page_size: int = Query(20, ge=1, le=100),
     category: str | None = None,
     is_active: bool | None = None,
+    q: str | None = None,
+    sort: str = Query("popularity", pattern="^(popularity|name)$"),
     repo: GameRepository = Depends(get_game_repository),
 ):
-    items, total = await repo.list_characters(page, page_size, category, is_active)
+    items, total = await repo.list_characters(
+        page, page_size, category, is_active, q=q, sort=sort
+    )
     return CharacterListResponse(
-        items=[
-            CharacterItem(
-                id=str(c.id),
-                name=c.name,
-                category=c.category,
-                image_url=c.image_url,
-                is_active=c.is_active,
-                times_guessed_correctly=c.times_guessed_correctly,
-                times_guessed_incorrectly=c.times_guessed_incorrectly,
-            )
-            for c in items
-        ],
+        items=[_character_item(c) for c in items],
         meta=_paginated_meta(page, page_size, total),
     )
 

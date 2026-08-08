@@ -237,6 +237,7 @@ class KnowledgeSeedService:
                 category=item["category"].strip(),
                 image_url=item.get("image_url"),
                 is_active=bool(item.get("is_active", True)),
+                popularity_score=int(item.get("popularity_score", 0) or 0),
             )
             char_by_name[_norm(character.name)] = character
             for alias in item.get("aliases") or []:
