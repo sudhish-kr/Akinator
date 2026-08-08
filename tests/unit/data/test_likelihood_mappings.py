@@ -41,9 +41,9 @@ def seed():
 
 def test_priors_are_deterministic(priors):
     questions = [
-        {"text": "Is this from anime or manga?", "category": "Anime"},
-        {"text": "Is this an athlete or sports figure?", "category": "Sports"},
-        {"text": "Is this person alive today?", "category": "Age"},
+        {"text": "Is this from anime?", "category": "Anime"},
+        {"text": "Is this a sports player?", "category": "Sports"},
+        {"text": "Is this person still alive?", "category": "Age"},
     ]
     a = priors.build_likelihood_rules(questions)
     b = priors.build_likelihood_rules(questions)
@@ -65,12 +65,12 @@ def test_category_specific_questions_linked_appropriately(seed):
         (r["category"], r["question"]): float(r["likelihood"])
         for r in seed["likelihood_rules"]
     }
-    assert index[("Anime", "Is this from anime or manga?")] >= 0.9
-    assert index[("Sports", "Is this from anime or manga?")] <= 0.2
-    assert index[("Sports", "Is this an athlete or sports figure?")] >= 0.9
-    assert index[("Anime", "Is this an athlete or sports figure?")] <= 0.2
-    assert index[("Scientists", "Is this a scientist or inventor?")] >= 0.9
-    assert index[("Cartoons", "Is this a scientist or inventor?")] <= 0.2
+    assert index[("Anime", "Is this from anime?")] >= 0.9
+    assert index[("Sports", "Is this from anime?")] <= 0.2
+    assert index[("Sports", "Is this a sports player?")] >= 0.9
+    assert index[("Anime", "Is this a sports player?")] <= 0.2
+    assert index[("Scientists", "Is this a scientist?")] >= 0.9
+    assert index[("Cartoons", "Is this a scientist?")] <= 0.2
     assert index[("Gaming", "Is this from a video game?")] >= 0.9
     assert index[("Politicians", "Is this from a video game?")] <= 0.2
 
@@ -109,4 +109,4 @@ def test_build_seed_expands_mappings_without_engine_changes():
         (r["category"], r["question"]): float(r["likelihood"])
         for r in built["likelihood_rules"]
     }
-    assert index[("Scientists", "Is this a scientist or inventor?")] == pytest.approx(0.95)
+    assert index[("Scientists", "Is this a scientist?")] == pytest.approx(0.95)

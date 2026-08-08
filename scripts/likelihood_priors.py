@@ -435,9 +435,9 @@ def refine_prior(
     # Reality / fiction
     if "real person" in text:
         p = 0.92 if character_category in REAL_WORLD else 0.1
-    elif "fictional" in text:
+    elif "made-up" in text or "fictional" in text:
         p = 0.92 if character_category in FICTIONAL_MEDIA else 0.08
-    elif "alive today" in text or "living person" in text:
+    elif "still alive" in text or "alive today" in text:
         if character_category in {"Historical Figures", "Mythology"}:
             p = 0.06
         elif character_category in {"Sports", "Politicians", "Musicians", "Business Leaders"}:
@@ -448,18 +448,18 @@ def refine_prior(
     # Strong domain anchors
     anchors = [
         ("video game", "Gaming", 0.96, 0.08),
-        ("anime or manga", "Anime", 0.96, 0.06),
-        ("cartoon or animated", "Cartoons", 0.95, 0.08),
-        ("from television", "TV Shows", 0.94, 0.2),
-        ("associated with movies", "Movies", 0.94, 0.2),
-        ("athlete or sports", "Sports", 0.96, 0.07),
-        ("scientist or inventor", "Scientists", 0.95, 0.08),
+        ("from anime", "Anime", 0.96, 0.06),
+        ("from a cartoon", "Cartoons", 0.95, 0.08),
+        ("tv show", "TV Shows", 0.94, 0.2),
+        ("from a movie", "Movies", 0.94, 0.2),
+        ("sports player", "Sports", 0.96, 0.07),
+        ("a scientist", "Scientists", 0.95, 0.08),
         ("political leader", "Politicians", 0.95, 0.08),
-        ("known for music", "Musicians", 0.96, 0.1),
-        ("literature or writing", "Literature", 0.88, 0.15),
-        ("mythology or legend", "Mythology", 0.96, 0.08),
-        ("business or technology", "Business Leaders", 0.94, 0.12),
-        ("historical figure from before 1900", "Historical Figures", 0.8, 0.15),
+        ("a musician", "Musicians", 0.96, 0.1),
+        ("a writer", "Literature", 0.88, 0.15),
+        ("old legend", "Mythology", 0.96, 0.08),
+        ("business leader", "Business Leaders", 0.94, 0.12),
+        ("from long ago", "Historical Figures", 0.8, 0.15),
     ]
     for needle, match_cat, high, low in anchors:
         if needle in text:
@@ -475,13 +475,14 @@ def refine_prior(
         p = max(p, 0.55)
 
     # Era
-    if "21st century" in text:
+    if "known today" in text or "21st century" in text:
         if character_category in {"Business Leaders", "Sports", "Politicians", "Gaming"}:
             p = max(p, 0.7)
         if character_category in {"Historical Figures", "Mythology"}:
             p = min(p, 0.15)
-    if "20th century" in text and character_category == "Historical Figures":
-        p = max(p, 0.45)
+    if "1900s" in text or "20th century" in text:
+        if character_category == "Historical Figures":
+            p = max(p, 0.45)
 
     # Appearance / costume more common in fiction & sports
     if "costume" in text or "mask" in text:
@@ -490,12 +491,12 @@ def refine_prior(
         elif character_category in REAL_WORLD:
             p = min(p, 0.2)
 
-    # Space / astronomy leans Scientists
-    if "space" in text or "astronomy" in text:
+    # Space leans Scientists
+    if "about space" in text or "astronomy" in text:
         p = 0.7 if character_category == "Scientists" else min(p, 0.25)
 
-    # War / military leans Historical / Politicians / Mythology
-    if "war" in text or "military" in text:
+    # War leans Historical / Politicians / Mythology
+    if "linked to war" in text or "military" in text:
         if character_category in {"Historical Figures", "Politicians", "Mythology"}:
             p = max(p, 0.55)
         elif character_category in {"Sports", "Musicians"}:
@@ -616,11 +617,11 @@ def assert_mapping_quality(
     # Category-specific appropriateness: primary domain questions must be high
     # for their aligned category and low for a clearly wrong real/fiction pair.
     checks = [
-        ("Is this from anime or manga?", "Anime", "Sports", 0.8, 0.25),
-        ("Is this an athlete or sports figure?", "Sports", "Anime", 0.8, 0.25),
-        ("Is this a scientist or inventor?", "Scientists", "Cartoons", 0.8, 0.25),
+        ("Is this from anime?", "Anime", "Sports", 0.8, 0.25),
+        ("Is this a sports player?", "Sports", "Anime", 0.8, 0.25),
+        ("Is this a scientist?", "Scientists", "Cartoons", 0.8, 0.25),
         ("Is this from a video game?", "Gaming", "Politicians", 0.8, 0.25),
-        ("Is this from mythology or legend?", "Mythology", "Business Leaders", 0.8, 0.25),
+        ("Is this from an old legend?", "Mythology", "Business Leaders", 0.8, 0.25),
     ]
     index = {(r["category"], r["question"]): float(r["likelihood"]) for r in rules}
     for text, high_cat, low_cat, high_min, low_max in checks:

@@ -1,0 +1,2516 @@
+{
+  "dataset": "v2",
+  "question_phase": 2,
+  "questions": [
+    {
+      "text": "Is this a real person?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a made-up character?",
+      "category": "Fictional traits",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this person still alive?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they male?",
+      "category": "Gender",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a girl or woman?",
+      "category": "Gender",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a kid or teen?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a grown-up?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they human?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.45,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they an animal?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear a costume?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear a mask?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have long hair?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have short hair?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have dark hair?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have light hair?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear glasses?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they tall?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known by one name?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous worldwide?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.35,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Asia?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Europe?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the Americas?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Africa?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Australia?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from India?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Japan?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the United States?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the United Kingdom?",
+      "category": "Nationality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they kind and helpful?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they mostly serious?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they mostly funny?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they brave?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they very smart?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they strong?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have a special outfit?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they look young?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they look old?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a hero?",
+      "category": "Fictional traits",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a villain?",
+      "category": "Fictional traits",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about magic?",
+      "category": "Fictional traits",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this sci-fi?",
+      "category": "Fictional traits",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Can they talk like a person?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they live in a city?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they live in nature?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they part of a big story?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do people still talk about them?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Were they famous long ago?",
+      "category": "Age",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have a best friend?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do people dress like them?",
+      "category": "Physical appearance",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they smile a lot?",
+      "category": "Personality",
+      "hierarchy_level": 1,
+      "hierarchy_name": "Identity",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a sports player?",
+      "category": "Sports",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.58,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from a movie?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.58,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from a TV show?",
+      "category": "TV",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.54,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from anime?",
+      "category": "Anime",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from a cartoon?",
+      "category": "Cartoons",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from a video game?",
+      "category": "Gaming",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a scientist?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a musician?",
+      "category": "Music",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.56,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a writer?",
+      "category": "Literature",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.52,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a political leader?",
+      "category": "Politics",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.55,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a business leader?",
+      "category": "Technology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from an old legend?",
+      "category": "Mythology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.57,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from long-ago history?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.5,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play team sports?",
+      "category": "Sports",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play alone sports?",
+      "category": "Sports",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in action movies?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in funny movies?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in kids movies?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they on a kids TV show?",
+      "category": "TV",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they on a funny TV show?",
+      "category": "TV",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they on a serious TV show?",
+      "category": "TV",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from kids anime?",
+      "category": "Anime",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from action anime?",
+      "category": "Anime",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a funny cartoon?",
+      "category": "Cartoons",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a school cartoon?",
+      "category": "Cartoons",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from an adventure game?",
+      "category": "Gaming",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a fighting game?",
+      "category": "Gaming",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they study nature?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they study stars?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they study numbers?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they sing songs?",
+      "category": "Music",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play an instrument?",
+      "category": "Music",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write books?",
+      "category": "Literature",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write poems?",
+      "category": "Literature",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they lead a country?",
+      "category": "Politics",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they run a big company?",
+      "category": "Technology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Greek myths?",
+      "category": "Mythology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Norse myths?",
+      "category": "Mythology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from Egyptian myths?",
+      "category": "Mythology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they live before cars?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they live with kings?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from space stories?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from animal stories?",
+      "category": "Cartoons",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from robot stories?",
+      "category": "Gaming",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about sports games?",
+      "category": "Sports",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about school life?",
+      "category": "Anime",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about music shows?",
+      "category": "Music",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about science work?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about old wars?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about kings and queens?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about computers?",
+      "category": "Technology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about phones or apps?",
+      "category": "Technology",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this a superhero?",
+      "category": "Movies",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.45,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this about space?",
+      "category": "Science",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they linked to war?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Is this from long ago?",
+      "category": "History",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.48,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known today?",
+      "category": "Time period",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.4,
+      "times_asked": 0
+    },
+    {
+      "text": "Were they famous in the 1900s?",
+      "category": "Time period",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.38,
+      "times_asked": 0
+    },
+    {
+      "text": "Have they won big awards?",
+      "category": "Awards",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.42,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play with a ball?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they race or run fast?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they swim in contests?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play on ice?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they fight in a ring?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a movie hero?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a movie villain?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in cartoon movies?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in scary movies?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in love story movies?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in a police TV show?",
+      "category": "TV",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in a hospital TV show?",
+      "category": "TV",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in a family TV show?",
+      "category": "TV",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they in a cooking TV show?",
+      "category": "TV",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they train hard in anime?",
+      "category": "Anime",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they go to school in anime?",
+      "category": "Anime",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have anime powers?",
+      "category": "Anime",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a talking cartoon animal?",
+      "category": "Cartoons",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a cartoon kid?",
+      "category": "Cartoons",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a cartoon adult?",
+      "category": "Cartoons",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they explore game worlds?",
+      "category": "Gaming",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they race in games?",
+      "category": "Gaming",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they solve puzzles in games?",
+      "category": "Gaming",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they build things in games?",
+      "category": "Gaming",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they study living things?",
+      "category": "Science",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they invent new things?",
+      "category": "Science",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they work with computers?",
+      "category": "Science",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they sing pop songs?",
+      "category": "Music",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they sing rock songs?",
+      "category": "Music",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they make classical music?",
+      "category": "Music",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write kids books?",
+      "category": "Literature",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write adventure books?",
+      "category": "Literature",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write mystery books?",
+      "category": "Literature",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a president?",
+      "category": "Politics",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a prime minister?",
+      "category": "Politics",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a king or queen?",
+      "category": "Politics",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they start a tech company?",
+      "category": "Technology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they make cars or rockets?",
+      "category": "Technology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a sky god?",
+      "category": "Mythology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a sea god?",
+      "category": "Mythology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a trickster in myths?",
+      "category": "Mythology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they lead armies long ago?",
+      "category": "History",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they explore new lands?",
+      "category": "History",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they help change laws?",
+      "category": "History",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they on a famous team?",
+      "category": "Relationships",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have a famous rival?",
+      "category": "Relationships",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have a famous mentor?",
+      "category": "Relationships",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for a special move?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for a catchphrase?",
+      "category": "Personality",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear team colors?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear a cape?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they fly or jump very high?",
+      "category": "Fictional traits",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they use tools or gadgets?",
+      "category": "Technology",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they work in a lab?",
+      "category": "Science",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they perform on a stage?",
+      "category": "Music",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they appear in comics too?",
+      "category": "Movies",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous for cricket?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous for football?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous for basketball?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous for tennis?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they famous for baseball?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they an Olympic winner?",
+      "category": "Awards",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a singer?",
+      "category": "Profession",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they an actor?",
+      "category": "Profession",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.36,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they an actress?",
+      "category": "Profession",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they win a Nobel science prize?",
+      "category": "Awards",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they win a big music prize?",
+      "category": "Awards",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they win a big movie prize?",
+      "category": "Awards",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a ninja or samurai?",
+      "category": "Anime",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a space traveler?",
+      "category": "Movies",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a pirate?",
+      "category": "Movies",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a detective?",
+      "category": "TV",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a doctor in the story?",
+      "category": "TV",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a teacher in the story?",
+      "category": "Anime",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a student in the story?",
+      "category": "Anime",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a robot or cyborg?",
+      "category": "Gaming",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a wizard?",
+      "category": "Fictional traits",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a princess?",
+      "category": "Fictional traits",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a knight?",
+      "category": "Fictional traits",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play guitar?",
+      "category": "Music",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play piano?",
+      "category": "Music",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they play drums?",
+      "category": "Music",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write for kids?",
+      "category": "Literature",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they write fantasy stories?",
+      "category": "Literature",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they lead during a war?",
+      "category": "History",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they invent something famous?",
+      "category": "Science",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0
+    },
+    {
+      "text": "Did they discover something new?",
+      "category": "Science",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they linked to phones?",
+      "category": "Technology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they linked to electric cars?",
+      "category": "Technology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they linked to online shops?",
+      "category": "Technology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a book series?",
+      "category": "Literature",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a movie series?",
+      "category": "Movies",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a game series?",
+      "category": "Gaming",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear a sports jersey?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they wear a school uniform?",
+      "category": "Anime",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they fight with a sword?",
+      "category": "Anime",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they use a shield?",
+      "category": "Mythology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they throw lightning?",
+      "category": "Mythology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they control the sea?",
+      "category": "Mythology",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for speed?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for goals scored?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for home runs?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for slam dunks?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.24,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they known for serve and volley?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the 2000s?",
+      "category": "Time period",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the 1800s?",
+      "category": "Time period",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.26,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they mainly from ancient times?",
+      "category": "Time period",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have blue skin?",
+      "category": "Physical appearance",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have green skin?",
+      "category": "Physical appearance",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.16,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have one eye?",
+      "category": "Physical appearance",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.16,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have wings?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have a tail?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a talking animal?",
+      "category": "Cartoons",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.28,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they made of metal?",
+      "category": "Gaming",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they invisible sometimes?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Can they shrink or grow?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Can they turn into animals?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Can they stop time?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Can they read minds?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they live underwater?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they live in space?",
+      "category": "Movies",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they live underground?",
+      "category": "Gaming",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a ghost?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a vampire?",
+      "category": "Movies",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a dragon?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a giant?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they tiny like a toy?",
+      "category": "Cartoons",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have four arms?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.16,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they breathe fire?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they freeze things?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they shoot lasers?",
+      "category": "Movies",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they ride a flying broom?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.16,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they ride a flying carpet?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.14,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they a clone or twin?",
+      "category": "Movies",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.16,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from the future?",
+      "category": "Time period",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from another planet?",
+      "category": "Movies",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.22,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they from a dream world?",
+      "category": "Anime",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they change shape?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.2,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they have no shadow?",
+      "category": "Fictional traits",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.14,
+      "times_asked": 0
+    },
+    {
+      "text": "Do they glow in the dark?",
+      "category": "Gaming",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.14,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they stuck as a kid forever?",
+      "category": "Cartoons",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    },
+    {
+      "text": "Are they older than countries?",
+      "category": "Mythology",
+      "hierarchy_level": 5,
+      "hierarchy_name": "Rare",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.18,
+      "times_asked": 0
+    }
+  ]
+}

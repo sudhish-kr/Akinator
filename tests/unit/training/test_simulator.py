@@ -170,19 +170,19 @@ class TestSnapshotFromSeed:
                 {"name": "Messi", "category": "Sports", "aliases": []},
             ],
             "questions": [
-                {"text": "Is this a scientist or inventor?", "category": "domain"},
-                {"text": "Is this an athlete or sports figure?", "category": "domain"},
+                {"text": "Is this a scientist?", "category": "domain"},
+                {"text": "Is this a sports player?", "category": "domain"},
             ],
             "likelihood_rules": [
                 {
                     "category": "Scientists",
-                    "question": "Is this a scientist or inventor?",
+                    "question": "Is this a scientist?",
                     "likelihood": 0.95,
                     "sample_size": 40,
                 },
                 {
                     "category": "Sports",
-                    "question": "Is this an athlete or sports figure?",
+                    "question": "Is this a sports player?",
                     "likelihood": 0.97,
                     "sample_size": 40,
                 },

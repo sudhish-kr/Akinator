@@ -52,14 +52,14 @@ def _mini_seed(**overrides) -> dict:
         ],
         "questions": [
             {
-                "text": "Is this a scientist or inventor?",
+                "text": "Is this a scientist?",
                 "category": "Science",
                 "is_active": True,
                 "avg_information_gain": 0.55,
                 "times_asked": 0,
             },
             {
-                "text": "Is this an athlete or sports figure?",
+                "text": "Is this a sports player?",
                 "category": "Sports",
                 "is_active": True,
                 "avg_information_gain": 0.52,
@@ -69,13 +69,13 @@ def _mini_seed(**overrides) -> dict:
         "likelihood_rules": [
             {
                 "category": "Scientists",
-                "question": "Is this a scientist or inventor?",
+                "question": "Is this a scientist?",
                 "likelihood": 0.95,
                 "sample_size": 40,
             },
             {
                 "category": "Sports",
-                "question": "Is this an athlete or sports figure?",
+                "question": "Is this a sports player?",
                 "likelihood": 0.97,
                 "sample_size": 40,
             },
@@ -83,7 +83,7 @@ def _mini_seed(**overrides) -> dict:
         "likelihood_overrides": [
             {
                 "character": "Ada Lovelace",
-                "question": "Is this a scientist or inventor?",
+                "question": "Is this a scientist?",
                 "likelihood": 0.99,
                 "sample_size": 100,
             }
@@ -133,7 +133,7 @@ def test_validate_rejects_duplicate_questions():
     data = _mini_seed()
     data["questions"].append(
         {
-            "text": "Is this a scientist or inventor?",
+            "text": "Is this a scientist?",
             "category": "Science",
             "is_active": True,
             "avg_information_gain": 0.4,
@@ -208,10 +208,16 @@ def test_generated_seed_has_2000_plus_characters_and_validates():
     assert any(c.get("aliases") for c in seed["characters"])
     assert seed["likelihood_rules"]
     assert seed["likelihood_overrides"]
+    active = [q for q in seed["questions"] if q.get("is_active")]
+    inactive = [q for q in seed["questions"] if not q.get("is_active")]
+    assert 220 <= len(active) <= 280
+    assert len(inactive) >= 400
     assert all(
         isinstance(q.get("avg_information_gain"), (int, float)) and q.get("is_active") is True
-        for q in seed["questions"]
+        for q in active
     )
+    assert seed.get("question_phase") == 2
+    assert seed.get("active_question_dataset") == "v2"
 
 
 def test_seed_v1_file_exists_and_is_valid():
@@ -219,6 +225,8 @@ def test_seed_v1_file_exists_and_is_valid():
     data = load_seed_file(SEED_PATH)
     assert len(data["characters"]) >= 2000
     assert len(data["questions"]) >= 500
+    active = [q for q in data["questions"] if q.get("is_active")]
+    assert 220 <= len(active) <= 280
     assert set(data["categories"]) == {
         "Movies",
         "TV Shows",
@@ -236,9 +244,11 @@ def test_seed_v1_file_exists_and_is_valid():
     }
     validate_seed_payload(data)
     assert all(
-        q.get("category") and q.get("is_active") is True and q.get("avg_information_gain") is not None
+        q.get("category") and q.get("avg_information_gain") is not None
         for q in data["questions"]
     )
+    assert all(q.get("is_active") is True and q.get("dataset") == "v2" for q in active)
+    assert data.get("active_question_dataset") == "v2"
 
 
 @pytest.mark.asyncio
@@ -287,7 +297,7 @@ async def test_import_persists_characters_aliases_and_likelihoods(db: AsyncSessi
     ada = next(c for c in chars if c.name == "Ada Lovelace")
     scientist_q = (
         await db.execute(
-            select(Question).where(Question.text == "Is this a scientist or inventor?")
+            select(Question).where(Question.text == "Is this a scientist?")
         )
     ).scalar_one()
     ada_answer = next(
@@ -306,13 +316,13 @@ async def test_import_persists_question_metadata_and_active_flag(db: AsyncSessio
     questions = (await db.execute(select(Question))).scalars().all()
     assert len(questions) == 2
     by_text = {q.text: q for q in questions}
-    scientist_q = by_text["Is this a scientist or inventor?"]
+    scientist_q = by_text["Is this a scientist?"]
     assert scientist_q.category == "Science"
     assert scientist_q.is_active is True
     assert scientist_q.avg_information_gain == pytest.approx(0.55)
     assert scientist_q.times_asked == 0
 
-    athlete_q = by_text["Is this an athlete or sports figure?"]
+    athlete_q = by_text["Is this a sports player?"]
     assert athlete_q.category == "Sports"
     assert athlete_q.avg_information_gain == pytest.approx(0.52)
 
@@ -350,7 +360,10 @@ async def test_import_full_seed_questions_into_database(db: AsyncSession):
     assert result["questions"] == len(data["questions"])
     questions = (await db.execute(select(Question))).scalars().all()
     assert len(questions) >= 500
-    assert all(q.is_active for q in questions)
+    active = [q for q in questions if q.is_active]
+    inactive = [q for q in questions if not q.is_active]
+    assert 220 <= len(active) <= 280
+    assert len(inactive) >= 400
     assert all(q.category for q in questions)
     assert all(q.avg_information_gain is not None for q in questions)
     texts = [q.text.casefold() for q in questions]

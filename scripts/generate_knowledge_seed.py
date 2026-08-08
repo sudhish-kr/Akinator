@@ -17,108 +17,116 @@ if str(SCRIPTS) not in sys.path:
 from knowledge_phase1_data import CATEGORIES, CURATED_CORE, themed_fill  # noqa: E402
 from knowledge_questions_data import build_question_catalog, legacy_question_texts  # noqa: E402
 from likelihood_priors import assert_mapping_quality, build_likelihood_rules  # noqa: E402
+from questions_v2_data import (  # noqa: E402
+    DATASET_ID as V2_DATASET_ID,
+    QUESTION_PHASE as V2_QUESTION_PHASE,
+    build_v2_questions,
+)
 
 OUT = ROOT / "data" / "knowledge" / "seed_v1.json"
+QUESTIONS_V2_OUT = ROOT / "data" / "knowledge" / "questions_v2.json"
 TARGET = 2100
 MIN_CHARACTERS = 2000
 MIN_QUESTIONS = 500
+MIN_ACTIVE_V2 = 220
+MAX_ACTIVE_V2 = 280
 
 RULES: dict[str, dict[str, float]] = {
     "Movies": {
-        "Is this character fictional?": 0.9,
+        "Is this a made-up character?": 0.9,
         "Is this a real person?": 0.15,
-        "Is this associated with movies?": 0.95,
-        "Is this from television?": 0.25,
-        "Is this from anime or manga?": 0.05,
+        "Is this from a movie?": 0.95,
+        "Is this from a TV show?": 0.25,
+        "Is this from anime?": 0.05,
         "Is this from a video game?": 0.1,
-        "Is this from comics or superhero media?": 0.45,
+        "Is this a superhero?": 0.45,
     },
     "TV Shows": {
-        "Is this character fictional?": 0.9,
+        "Is this a made-up character?": 0.9,
         "Is this a real person?": 0.1,
-        "Is this from television?": 0.95,
-        "Is this associated with movies?": 0.3,
-        "Is this primarily known in the 21st century?": 0.55,
+        "Is this from a TV show?": 0.95,
+        "Is this from a movie?": 0.3,
+        "Are they known today?": 0.55,
     },
     "Anime": {
-        "Is this character fictional?": 0.97,
+        "Is this a made-up character?": 0.97,
         "Is this a real person?": 0.03,
-        "Is this from anime or manga?": 0.97,
-        "Is this associated with movies?": 0.35,
-        "Is this person/character from Asia?": 0.85,
-        "Is this associated with magic or fantasy?": 0.55,
+        "Is this from anime?": 0.97,
+        "Is this from a movie?": 0.35,
+        "Are they from Asia?": 0.85,
+        "Is this about magic?": 0.55,
     },
     "Cartoons": {
-        "Is this character fictional?": 0.97,
+        "Is this a made-up character?": 0.97,
         "Is this a real person?": 0.03,
-        "Is this from a cartoon or animated series?": 0.96,
-        "Is this from television?": 0.7,
-        "Is this a child or teenager (in their main story)?": 0.35,
-        "Is this associated with magic or fantasy?": 0.25,
+        "Is this from a cartoon?": 0.96,
+        "Is this from a TV show?": 0.7,
+        "Are they a kid or teen?": 0.35,
+        "Is this about magic?": 0.25,
     },
     "Sports": {
         "Is this a real person?": 0.95,
-        "Is this character fictional?": 0.05,
-        "Is this an athlete or sports figure?": 0.97,
-        "Is this person alive today?": 0.7,
-        "Is this known for winning major awards or titles?": 0.75,
-        "Is this a scientist or inventor?": 0.05,
+        "Is this a made-up character?": 0.05,
+        "Is this a sports player?": 0.97,
+        "Is this person still alive?": 0.7,
+        "Have they won big awards?": 0.75,
+        "Is this a scientist?": 0.05,
     },
     "Scientists": {
         "Is this a real person?": 0.95,
-        "Is this character fictional?": 0.05,
-        "Is this a scientist or inventor?": 0.95,
-        "Is this associated with movies?": 0.15,
-        "Is this from anime or manga?": 0.02,
+        "Is this a made-up character?": 0.05,
+        "Is this a scientist?": 0.95,
+        "Is this from a movie?": 0.15,
+        "Is this from anime?": 0.02,
         "Is this from a video game?": 0.02,
-        "Is this an athlete or sports figure?": 0.05,
-        "Is this associated with science fiction?": 0.25,
-        "Is this associated with space or astronomy?": 0.45,
+        "Is this a sports player?": 0.05,
+        "Is this sci-fi?": 0.25,
+        "Is this about space?": 0.45,
     },
     "Historical Figures": {
         "Is this a real person?": 0.97,
-        "Is this character fictional?": 0.05,
-        "Is this a historical figure from before 1900?": 0.75,
-        "Is this person alive today?": 0.05,
-        "Is this associated with war or military leadership?": 0.45,
+        "Is this a made-up character?": 0.05,
+        "Is this from long ago?": 0.75,
+        "Is this person still alive?": 0.05,
+        "Are they linked to war?": 0.45,
     },
     "Politicians": {
         "Is this a real person?": 0.97,
-        "Is this character fictional?": 0.03,
+        "Is this a made-up character?": 0.03,
         "Is this a political leader?": 0.95,
-        "Is this person alive today?": 0.65,
+        "Is this person still alive?": 0.65,
     },
     "Musicians": {
         "Is this a real person?": 0.9,
-        "Is this character fictional?": 0.1,
-        "Is this known for music?": 0.97,
-        "Is this primarily known in the 21st century?": 0.45,
+        "Is this a made-up character?": 0.1,
+        "Is this a musician?": 0.97,
+        "Are they known today?": 0.45,
     },
     "Business Leaders": {
         "Is this a real person?": 0.97,
-        "Is this character fictional?": 0.03,
-        "Is this known for business or technology entrepreneurship?": 0.95,
-        "Is this person alive today?": 0.75,
+        "Is this a made-up character?": 0.03,
+        "Is this a business leader?": 0.95,
+        "Is this person still alive?": 0.75,
     },
     "Gaming": {
-        "Is this character fictional?": 0.95,
+        "Is this a made-up character?": 0.95,
         "Is this a real person?": 0.05,
         "Is this from a video game?": 0.97,
-        "Is this associated with movies?": 0.3,
-        "Does this character wear a costume or mask?": 0.4,
+        "Is this from a movie?": 0.3,
+        "Do they wear a costume?": 0.4,
     },
     "Mythology": {
-        "Is this character fictional?": 0.85,
+        "Is this a made-up character?": 0.85,
         "Is this a real person?": 0.05,
-        "Is this from mythology or legend?": 0.97,
-        "Is this associated with magic or fantasy?": 0.75,
-        "Is this a historical figure from before 1900?": 0.6,
+        "Is this from an old legend?": 0.97,
+        "Is this about magic?": 0.75,
+        "Is this from long ago?": 0.6,
     },
     "Literature": {
-        "Is this character fictional?": 0.85,
+        "Is this a made-up character?": 0.85,
         "Is this a real person?": 0.2,
-        "Is this known for literature or writing?": 0.7,
-        "Is this associated with magic or fantasy?": 0.4,
+        "Is this a writer?": 0.7,
+        "Is this about magic?": 0.4,
     },
 }
 
@@ -261,32 +269,73 @@ def _assert_no_duplicates(characters: list[dict]) -> None:
         )
 
 
+def _merge_question_datasets() -> list[dict]:
+    """Active curated v2 + deactivated legacy/AI catalog (kept, not deleted)."""
+    v2 = build_v2_questions()
+    v2_keys = {q["text"].casefold().strip() for q in v2}
+
+    legacy_catalog = build_question_catalog(520)
+    merged: list[dict] = []
+    seen: set[str] = set()
+
+    for item in v2:
+        key = item["text"].casefold().strip()
+        seen.add(key)
+        merged.append(dict(item))
+
+    for item in legacy_catalog:
+        key = item["text"].casefold().strip()
+        if key in seen or key in v2_keys:
+            continue
+        seen.add(key)
+        deactivated = dict(item)
+        deactivated["is_active"] = False
+        deactivated["dataset"] = "v1"
+        deactivated.pop("hierarchy_level", None)
+        deactivated.pop("hierarchy_name", None)
+        merged.append(deactivated)
+
+    return merged
+
+
 def build_seed() -> dict:
     characters, _ = _collect_characters()
     if len(characters) < MIN_CHARACTERS:
         raise RuntimeError(f"Only {len(characters)} characters; need >= {MIN_CHARACTERS}")
     _assert_no_duplicates(characters)
 
-    questions = build_question_catalog(520)
+    questions = _merge_question_datasets()
+    active = [q for q in questions if q.get("is_active")]
+    inactive = [q for q in questions if not q.get("is_active")]
+    if not (MIN_ACTIVE_V2 <= len(active) <= MAX_ACTIVE_V2):
+        raise RuntimeError(
+            f"Active v2 questions={len(active)}; expected {MIN_ACTIVE_V2}-{MAX_ACTIVE_V2}"
+        )
+    if len(questions) < MIN_QUESTIONS:
+        raise RuntimeError(f"Only {len(questions)} total questions; need >= {MIN_QUESTIONS}")
+
     question_texts = {q["text"] for q in questions}
     missing_legacy = legacy_question_texts() - question_texts
     if missing_legacy:
         raise RuntimeError(f"Legacy RULES questions missing from catalog: {sorted(missing_legacy)}")
-    if len(questions) < MIN_QUESTIONS:
-        raise RuntimeError(f"Only {len(questions)} questions; need >= {MIN_QUESTIONS}")
+    if any(q.get("dataset") != V2_DATASET_ID for q in active):
+        raise RuntimeError("All active questions must be dataset=v2")
+    if any(q.get("is_active") for q in inactive):
+        raise RuntimeError("Inactive catalog entries must have is_active=False")
+
     dup_q = _duplicate_texts(q["text"] for q in questions)
     if dup_q:
         raise RuntimeError(f"Duplicate question texts: {dup_q[:5]}")
     overrides = [
         {
             "character": "Albert Einstein",
-            "question": "Is this a scientist or inventor?",
+            "question": "Is this a scientist?",
             "likelihood": 0.99,
             "sample_size": 100,
         },
         {
             "character": "Lionel Messi",
-            "question": "Is this an athlete or sports figure?",
+            "question": "Is this a sports player?",
             "likelihood": 0.99,
             "sample_size": 100,
         },
@@ -298,31 +347,31 @@ def build_seed() -> dict:
         },
         {
             "character": "Naruto Uzumaki",
-            "question": "Is this from anime or manga?",
+            "question": "Is this from anime?",
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Darth Vader",
-            "question": "Is this character a villain or antagonist?",
+            "question": "Is this a villain?",
             "likelihood": 0.95,
             "sample_size": 80,
         },
         {
             "character": "SpongeBob SquarePants",
-            "question": "Is this from a cartoon or animated series?",
+            "question": "Is this from a cartoon?",
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Zeus",
-            "question": "Is this from mythology or legend?",
+            "question": "Is this from an old legend?",
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Elizabeth Bennet",
-            "question": "Is this known for literature or writing?",
+            "question": "Is this a writer?",
             "likelihood": 0.92,
             "sample_size": 80,
         },
@@ -334,19 +383,19 @@ def build_seed() -> dict:
         },
         {
             "character": "Beyoncé",
-            "question": "Is this known for music?",
+            "question": "Is this a musician?",
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Elon Musk",
-            "question": "Is this known for business or technology entrepreneurship?",
+            "question": "Is this a business leader?",
             "likelihood": 0.98,
             "sample_size": 80,
         },
         {
             "character": "Walter White",
-            "question": "Is this from television?",
+            "question": "Is this from a TV show?",
             "likelihood": 0.97,
             "sample_size": 80,
         },
@@ -356,10 +405,11 @@ def build_seed() -> dict:
     assert_mapping_quality(characters, questions, rules)
 
     return {
-        "version": 4,
+        "version": 5,
         "phase": 3,
-        "question_phase": 1,
+        "question_phase": V2_QUESTION_PHASE,
         "mapping_phase": 1,
+        "active_question_dataset": V2_DATASET_ID,
         "categories": list(CATEGORIES),
         "characters": characters,
         "questions": questions,
@@ -379,23 +429,45 @@ def main() -> None:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(seed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    v2_only = [q for q in seed["questions"] if q.get("dataset") == V2_DATASET_ID]
+    QUESTIONS_V2_OUT.write_text(
+        json.dumps(
+            {
+                "dataset": V2_DATASET_ID,
+                "question_phase": V2_QUESTION_PHASE,
+                "questions": v2_only,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
     q_counts: dict[str, int] = {}
+    active_counts: dict[str, int] = {}
     for q in seed["questions"]:
         q_counts[q["category"]] = q_counts.get(q["category"], 0) + 1
+        if q.get("is_active"):
+            active_counts[q["category"]] = active_counts.get(q["category"], 0) + 1
+
+    active_n = sum(1 for q in seed["questions"] if q.get("is_active"))
+    inactive_n = len(seed["questions"]) - active_n
 
     print(f"Wrote {OUT} with {len(seed['characters'])} characters.")
     print("Character category breakdown:")
     for cat in CATEGORIES:
         print(f"  {cat}: {counts[cat]}")
-    print(f"Questions: {len(seed['questions'])}")
-    print("Question category breakdown:")
-    for cat in sorted(q_counts, key=lambda c: (-q_counts[c], c)):
-        print(f"  {cat}: {q_counts[cat]}")
+    print(f"Questions total: {len(seed['questions'])} (active={active_n}, inactive={inactive_n})")
+    print(f"Wrote {QUESTIONS_V2_OUT} with {len(v2_only)} curated v2 questions.")
+    print("Active question category breakdown:")
+    for cat in sorted(active_counts, key=lambda c: (-active_counts[c], c)):
+        print(f"  {cat}: {active_counts[cat]}")
     print(
         f"Rules: {len(seed['likelihood_rules'])}, "
         f"overrides: {len(seed['likelihood_overrides'])}"
     )
-    assert len(seed["questions"]) >= MIN_QUESTIONS
+    assert active_n >= MIN_ACTIVE_V2
     assert len(seed["characters"]) >= MIN_CHARACTERS
     assert len(seed["likelihood_rules"]) > 1000
     legacy_present = legacy_question_texts().issubset({q["text"] for q in seed["questions"]})
