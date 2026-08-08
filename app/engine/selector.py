@@ -1,10 +1,8 @@
-"""Context-aware question selection via candidate-focused information gain.
+"""Hierarchical question selection via candidate-focused information gain.
 
-IG(Q) = H(current) − E[H | Q] is scored on the current high-mass candidate set.
-Domain questions (Anime / Sports / Movies / …) are blocked unless matching
-character categories still remain among active candidates. Category-specific
-preference applies only after a category's posterior mass exceeds a configurable
-threshold. Bayesian update itself is unchanged.
+Stage A (broad identity) → Stage B (domain) → Stage C (specific).
+IG(Q) is scored only among questions allowed for the current stage.
+Bayesian update itself is unchanged.
 """
 
 from __future__ import annotations
@@ -19,16 +17,27 @@ from app.engine.confidence import evaluate_confidence
 from app.engine.constants import (
     ALL_ANSWERS,
     CHARACTER_CATEGORY_QUESTION_PREFERENCES,
+    DEFAULT_BROAD_QUESTION_BONUS,
     DEFAULT_CANDIDATE_MASS_FOCUS,
     DEFAULT_CATEGORY_IG_BONUS,
     DEFAULT_CATEGORY_PREFERENCE_THRESHOLD,
     DEFAULT_CATEGORY_REMAIN_MASS,
+    DEFAULT_CATEGORY_UNLOCK_THRESHOLD,
     DEFAULT_CONSECUTIVE_DONT_KNOW_CAP,
     DEFAULT_DIVERSITY_MARGIN,
     DEFAULT_DIVERSITY_TOP_K,
     DEFAULT_IG_TIE_THRESHOLD,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    DEFAULT_STAGE_A_EXIT_MARGIN,
+    DEFAULT_STAGE_A_EXIT_THRESHOLD,
+    DEFAULT_STAGE_C_ENTER_THRESHOLD,
     DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
+    FICTIONAL_CHARACTER_CATEGORIES,
+    PROFESSION_SPECIFIC_KEYWORDS,
+    STAGE_A_QUESTION_CATEGORIES,
+    STAGE_B_QUESTION_CATEGORIES,
+    STAGE_C_KEYWORDS,
+    STAGE_C_QUESTION_CATEGORIES,
     Answer,
 )
 from app.engine.elimination import eliminate_candidates, entropy
@@ -36,6 +45,7 @@ from app.engine.models import ConfidenceResult, GameEngineState, LikelihoodEntry
 
 # Outcomes used when estimating E[H | Q]. Includes yes / no / unknown (dont_know).
 _IG_ANSWERS: tuple[Answer, ...] = ALL_ANSWERS
+SelectionStage = str  # "A" | "B" | "C"
 
 
 def expected_entropy_after_question(
@@ -203,6 +213,92 @@ def preferred_question_categories(character_category: str | None) -> frozenset[s
     return CHARACTER_CATEGORY_QUESTION_PREFERENCES.get(character_category, frozenset())
 
 
+def category_masses(
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+) -> dict[str, float]:
+    if not character_categories:
+        return {}
+    masses: dict[str, float] = {}
+    for cid, p in state.probabilities.items():
+        cat = character_categories.get(cid)
+        if not cat:
+            continue
+        masses[cat] = masses.get(cat, 0.0) + p
+    return masses
+
+
+def top_category_masses(
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+) -> tuple[str | None, float, float]:
+    """Return (dominant_category, top_mass, second_mass)."""
+    masses = category_masses(state, character_categories)
+    if not masses:
+        return None, 0.0, 0.0
+    ordered = sorted(masses.values(), reverse=True)
+    dominant = max(masses, key=masses.get)
+    top = ordered[0]
+    second = ordered[1] if len(ordered) > 1 else 0.0
+    return dominant, top, second
+
+
+def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage:
+    """Classify a question into Stage A (broad), B (domain), or C (specific)."""
+    if question_ref is None or not question_ref.category:
+        # Missing metadata → treat as specific so fail-safe broad path excludes it
+        # unless we are already in a permissive fallback.
+        return "C"
+    category = question_ref.category
+    text = (question_ref.text or "").casefold()
+
+    if category in STAGE_A_QUESTION_CATEGORIES:
+        # Franchise / profession wording must not sneak into Stage A.
+        if any(kw in text for kw in STAGE_C_KEYWORDS) or any(
+            kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS
+        ):
+            return "C"
+        return "A"
+
+    if category in STAGE_C_QUESTION_CATEGORIES:
+        return "C"
+
+    if category in STAGE_B_QUESTION_CATEGORIES:
+        if any(kw in text for kw in STAGE_C_KEYWORDS) or any(
+            kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS
+        ):
+            return "C"
+        return "B"
+
+    # Unknown category → Stage C (locked until domain is strong).
+    return "C"
+
+
+def resolve_selection_stage(
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+    *,
+    stage_a_exit_threshold: float = DEFAULT_STAGE_A_EXIT_THRESHOLD,
+    stage_a_exit_margin: float = DEFAULT_STAGE_A_EXIT_MARGIN,
+    stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
+) -> tuple[SelectionStage, str | None]:
+    """
+    Determine the current questioning stage from category posterior mass.
+
+    Missing category mappings → Stage A only (fail safe).
+    """
+    if not character_categories:
+        return "A", None
+
+    dominant, top, second = top_category_masses(state, character_categories)
+    if dominant is None or top < stage_a_exit_threshold or (top - second) < stage_a_exit_margin:
+        return "A", dominant
+
+    if top >= stage_c_enter_threshold:
+        return "C", dominant
+    return "B", dominant
+
+
 def is_question_relevant_to_candidates(
     question_id: UUID,
     question_refs: dict[UUID, QuestionRef] | None,
@@ -211,22 +307,105 @@ def is_question_relevant_to_candidates(
     """
     Return False for domain questions whose required character categories
     are absent from the current candidate set.
-
-    Universal / ungated question categories always remain eligible.
-    Without question metadata or category maps, questions stay eligible.
     """
     if not question_refs:
-        return True
+        return False  # fail closed without metadata
     ref = question_refs.get(question_id)
     if ref is None or not ref.category:
-        return True
+        return False
     required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(ref.category)
     if required is None:
         return True
     if not remaining_categories:
-        # No category metadata → cannot gate; keep question eligible.
-        return True
+        return False
     return bool(required & remaining_categories)
+
+
+def is_domain_category_unlocked(
+    question_category: str | None,
+    state: GameEngineState,
+    character_categories: dict[UUID, str] | None,
+    *,
+    unlock_threshold: float = DEFAULT_CATEGORY_UNLOCK_THRESHOLD,
+) -> bool:
+    """
+    Domain questions unlock only after a matching character category's mass
+    exceeds ``unlock_threshold``. Missing mappings fail closed.
+    """
+    if not question_category:
+        return False
+    required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(question_category)
+    if required is None:
+        return True
+    if not character_categories:
+        return False
+    return any(
+        category_probability_mass(state, character_categories, cat) > unlock_threshold
+        for cat in required
+    )
+
+
+def _domain_matches_dominant(
+    question_category: str | None,
+    dominant_category: str | None,
+) -> bool:
+    if not question_category or not dominant_category:
+        return False
+    required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(question_category)
+    if required is None:
+        # Non-domain Stage C (Profession/Awards): allowed once a dominant exists.
+        return True
+    return dominant_category in required
+
+
+def _anime_requires_fictional_dominant(dominant_category: str | None) -> bool:
+    return dominant_category == "Anime" and dominant_category in FICTIONAL_CHARACTER_CATEGORIES
+
+
+def _profession_or_award_allowed(dominant_category: str | None, question_category: str | None) -> bool:
+    """Profession / Awards only after domain ID, and only for categories that prefer them."""
+    if not dominant_category or not question_category:
+        return False
+    preferred = preferred_question_categories(dominant_category)
+    return question_category in preferred
+
+
+def is_question_allowed_for_stage(
+    question_ref: QuestionRef | None,
+    *,
+    stage: SelectionStage,
+    dominant_category: str | None,
+) -> bool:
+    """Hierarchical allow-list for Stage A / B / C."""
+    q_stage = question_hierarchy_stage(question_ref)
+    category = question_ref.category if question_ref else None
+    text = (question_ref.text or "").casefold() if question_ref else ""
+
+    if stage == "A":
+        return q_stage == "A"
+
+    if stage == "B":
+        if q_stage == "A":
+            return True
+        if q_stage != "B":
+            return False
+        if category == "Anime":
+            return _anime_requires_fictional_dominant(dominant_category)
+        return _domain_matches_dominant(category, dominant_category)
+
+    # Stage C — never allow generic profession wording without a matching preference.
+    if any(kw in text for kw in PROFESSION_SPECIFIC_KEYWORDS):
+        return _profession_or_award_allowed(dominant_category, "Profession")
+    if category in {"Profession", "Awards", "Relationships", "Time period"}:
+        return _profession_or_award_allowed(dominant_category, category)
+
+    if q_stage == "A":
+        return True
+    if category == "Anime":
+        return _anime_requires_fictional_dominant(dominant_category)
+    if category in {"Sports", "Movies"}:
+        return _domain_matches_dominant(category, dominant_category)
+    return _domain_matches_dominant(category, dominant_category)
 
 
 def _category_aligned(
@@ -256,7 +435,6 @@ def _pick_from_near_best(
     best_score, best_samples, best_qid = scored[0]
 
     if not explore or len(scored) == 1:
-        # Deterministic argmax with sample-size tie-break (legacy behavior).
         chosen = best_qid
         chosen_samples = best_samples
         for score, samples, qid in scored[1:]:
@@ -277,7 +455,6 @@ def _pick_from_near_best(
         return pool[0][2]
 
     picker = rng if rng is not None else random.Random()
-    # Softmax over shifted scores so near-ties rotate across games.
     max_s = pool[0][0]
     weights = [math.exp((score - max_s) / max(diversity_margin, 1e-6)) for score, _, _ in pool]
     return picker.choices([qid for _, _, qid in pool], weights=weights, k=1)[0]
@@ -294,7 +471,12 @@ def select_next_question(
     character_categories: dict[UUID, str] | None = None,
     category_confidence_gate: float = DEFAULT_CATEGORY_PREFERENCE_THRESHOLD,
     category_preference_threshold: float | None = None,
+    category_unlock_threshold: float = DEFAULT_CATEGORY_UNLOCK_THRESHOLD,
+    stage_a_exit_threshold: float | None = None,
+    stage_a_exit_margin: float = DEFAULT_STAGE_A_EXIT_MARGIN,
+    stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
     category_ig_bonus: float = DEFAULT_CATEGORY_IG_BONUS,
+    broad_question_bonus: float = DEFAULT_BROAD_QUESTION_BONUS,
     candidate_mass_focus: float = DEFAULT_CANDIDATE_MASS_FOCUS,
     category_remain_mass: float = DEFAULT_CATEGORY_REMAIN_MASS,
     diversity_top_k: int = DEFAULT_DIVERSITY_TOP_K,
@@ -303,22 +485,24 @@ def select_next_question(
     explore: bool = True,
 ) -> UUID | None:
     """
-    Select the next context-relevant question for the current candidate set.
+    Select the next question using hierarchical Stage A → B → C gating.
 
-    - Skips questions in ``state.used_question_ids`` (never repeats)
-    - Drops domain questions (Anime/Sports/Movies/…) unless matching character
-      categories still remain among active candidates
-    - Scores IG on a focused high-mass candidate set (dynamic after each answer)
-    - Prefers category-aligned questions only when that category's posterior mass
-      exceeds ``category_preference_threshold``
-    - Among near-tied top scores, samples for cross-game diversity
-    - Returns None when no unanswered relevant questions remain
+    - Stage A: broad identity only
+    - Stage B: dominant-domain questions after Stage A exit
+    - Stage C: profession / franchise / niche after stronger domain confidence
+    - Missing question/category mappings → Stage A broad-only (fail safe)
+    - Scores IG on the focused candidate set among allowed questions only
     """
     del consecutive_dont_know_cap  # reserved for future dont_know streak policy
     preference_threshold = (
         category_confidence_gate
         if category_preference_threshold is None
         else category_preference_threshold
+    )
+    a_exit = (
+        category_unlock_threshold
+        if stage_a_exit_threshold is None
+        else stage_a_exit_threshold
     )
 
     unused = [
@@ -329,42 +513,114 @@ def select_next_question(
     ]
 
     if not unused:
-        # Relax cold-start gate if every unused question is still gated
         unused = [qid for qid in all_question_ids if qid not in state.used_question_ids]
 
     if not unused:
         return None
 
-    # Narrow to the live candidate frontier for both relevance and IG.
     focus = focus_candidate_state(state, mass_threshold=candidate_mass_focus)
+
+    # Legacy callers (no hierarchy metadata) → pure information-gain selection.
+    if question_refs is None:
+        scored_legacy: list[tuple[float, int, UUID]] = [
+            (
+                information_gain(focus, qid),
+                total_sample_size_for_question(state, qid),
+                qid,
+            )
+            for qid in unused
+        ]
+        return _pick_from_near_best(
+            scored_legacy,
+            tie_threshold=tie_threshold,
+            diversity_margin=diversity_margin,
+            diversity_top_k=diversity_top_k,
+            rng=rng,
+            explore=explore,
+        )
+
     remaining_cats = remaining_character_categories(
         focus if character_categories else state,
         character_categories,
         min_mass=category_remain_mass,
     )
 
-    relevant = [
-        qid
-        for qid in unused
-        if is_question_relevant_to_candidates(qid, question_refs, remaining_cats)
-    ]
+    # Hierarchy engaged but category map missing → Stage A broad-only (fail safe).
+    if not character_categories:
+        broad_only = [
+            qid
+            for qid in unused
+            if question_hierarchy_stage(question_refs.get(qid)) == "A"
+        ]
+        if not broad_only:
+            return None
+        scored_safe: list[tuple[float, int, UUID]] = []
+        for qid in broad_only:
+            scored_safe.append(
+                (
+                    information_gain(focus, qid) + broad_question_bonus,
+                    total_sample_size_for_question(state, qid),
+                    qid,
+                )
+            )
+        return _pick_from_near_best(
+            scored_safe,
+            tie_threshold=tie_threshold,
+            diversity_margin=diversity_margin,
+            diversity_top_k=diversity_top_k,
+            rng=rng,
+            explore=explore,
+        )
+
+    stage, dominant = resolve_selection_stage(
+        focus,
+        character_categories,
+        stage_a_exit_threshold=a_exit,
+        stage_a_exit_margin=stage_a_exit_margin,
+        stage_c_enter_threshold=stage_c_enter_threshold,
+    )
+
+    relevant: list[UUID] = []
+    for qid in unused:
+        ref = question_refs.get(qid)
+        if ref is None:
+            continue
+        if not is_question_relevant_to_candidates(qid, question_refs, remaining_cats):
+            # Stage A questions are never domain-gated by remaining_cats
+            if question_hierarchy_stage(ref) != "A":
+                continue
+        if not is_question_allowed_for_stage(
+            ref, stage=stage, dominant_category=dominant
+        ):
+            continue
+        relevant.append(qid)
+
     if not relevant:
-        # Fall back to unused if gating would leave nothing (e.g. missing metadata)
-        relevant = unused
+        # Always fall back to Stage A broad questions — never open the floodgates.
+        relevant = [
+            qid
+            for qid in unused
+            if question_hierarchy_stage(question_refs.get(qid)) == "A"
+        ]
+    if not relevant:
+        return None
 
     preferred_cats = frozenset()
-    inferred = inferred_character_category(focus, character_categories)
-    if inferred is not None:
-        mass = category_probability_mass(focus, character_categories, inferred)
+    if dominant is not None:
+        mass = category_probability_mass(focus, character_categories, dominant)
         if mass > preference_threshold:
-            preferred_cats = preferred_question_categories(inferred)
+            preferred_cats = preferred_question_categories(dominant)
 
     scored: list[tuple[float, int, UUID]] = []
     for qid in relevant:
         ig = information_gain(focus, qid)
         score = ig
+        ref = question_refs.get(qid)
+        q_stage = question_hierarchy_stage(ref)
         if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):
             score += category_ig_bonus
+        if stage == "A" and q_stage == "A":
+            score += broad_question_bonus
         samples = total_sample_size_for_question(state, qid)
         scored.append((score, samples, qid))
 
