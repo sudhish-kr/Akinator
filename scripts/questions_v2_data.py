@@ -1,14 +1,17 @@
-"""Curated production Question Database v2 (~250 kid-friendly questions).
+"""Curated production Question Database v2 (~250 Akinator-style questions).
 
 Hierarchy levels:
   1 Identity · 2 Category · 3 Subcategory · 4 Specific · 5 Rare
 
+Phrasing follows Akinator-style UX: "Is your character…?" / "Does your character…?"
 Does not touch the Bayesian engine or learning code.
 """
 
 from __future__ import annotations
 
 from typing import Any
+
+from akinator_style_rewrites import to_akinator_style
 
 DATASET_ID = "v2"
 QUESTION_PHASE = 2
@@ -26,6 +29,31 @@ LEVEL_NAMES = {
     5: "Rare",
 }
 
+# Classic questions get a slight IG boost after rewrite.
+_CLASSIC_BOOST = {
+    "Is your character a real person?",
+    "Is your character made-up?",
+    "Is your character still alive?",
+    "Is your character a man?",
+    "Is your character a woman?",
+    "Is your character human?",
+    "Is your character famous?",
+    "Is your character an athlete?",
+    "Is your character from a movie?",
+    "Is your character from anime?",
+    "Is your character from a cartoon?",
+    "Is your character from a game?",
+    "Is your character from TV?",
+    "Is your character a superhero?",
+    "Is your character a scientist?",
+    "Is your character a musician?",
+    "Is your character a politician?",
+    "Does your character play cricket?",
+    "Does your character play football?",
+    "Is your character a ninja?",
+}
+
+# Source rows still use pre-rewrite text for stable editing; build() rewrites.
 # (text, category, hierarchy_level, initial_ig)
 _QUESTIONS: list[tuple[str, str, int, float]] = [
     # --- Level 1 · Identity ---
@@ -38,17 +66,17 @@ _QUESTIONS: list[tuple[str, str, int, float]] = [
     ("Are they a grown-up?", "Age", 1, 0.40),
     ("Are they human?", "Personality", 1, 0.45),
     ("Are they an animal?", "Personality", 1, 0.40),
-    ("Do they wear a costume?", "Physical appearance", 1, 0.38),
-    ("Do they wear a mask?", "Physical appearance", 1, 0.36),
-    ("Do they have long hair?", "Physical appearance", 1, 0.28),
-    ("Do they have short hair?", "Physical appearance", 1, 0.28),
-    ("Do they have dark hair?", "Physical appearance", 1, 0.28),
-    ("Do they have light hair?", "Physical appearance", 1, 0.28),
-    ("Do they wear glasses?", "Physical appearance", 1, 0.30),
-    ("Are they tall?", "Physical appearance", 1, 0.26),
-    ("Are they known by one name?", "Personality", 1, 0.30),
-    ("Are they famous worldwide?", "Personality", 1, 0.35),
-    ("Are they from India?", "Nationality", 1, 0.30),
+    ("Do they wear a costume?", "Physical appearance", 4, 0.38),
+    ("Do they wear a mask?", "Physical appearance", 4, 0.36),
+    ("Do they have long hair?", "Physical appearance", 5, 0.28),
+    ("Do they have short hair?", "Physical appearance", 5, 0.28),
+    ("Do they have dark hair?", "Physical appearance", 5, 0.28),
+    ("Do they have light hair?", "Physical appearance", 5, 0.28),
+    ("Do they wear glasses?", "Physical appearance", 5, 0.30),
+    ("Are they tall?", "Physical appearance", 5, 0.26),
+    ("Are they known by one name?", "Personality", 5, 0.30),
+    ("Are they famous worldwide?", "Personality", 1, 0.42),
+    ("Are they from India?", "Nationality", 1, 0.34),
     ("Are they from Japan?", "Nationality", 1, 0.32),
     ("Are they from the United States?", "Nationality", 1, 0.34),
     ("Are they from the United Kingdom?", "Nationality", 1, 0.32),
@@ -57,28 +85,28 @@ _QUESTIONS: list[tuple[str, str, int, float]] = [
     ("Are they from the Americas?", "Nationality", 1, 0.38),
     ("Are they from Africa?", "Nationality", 1, 0.32),
     ("Are they from Australia?", "Nationality", 1, 0.28),
-    ("Are they kind and helpful?", "Personality", 1, 0.28),
-    ("Are they mostly serious?", "Personality", 1, 0.26),
-    ("Are they mostly funny?", "Personality", 1, 0.28),
-    ("Are they brave?", "Personality", 1, 0.30),
-    ("Are they very smart?", "Personality", 1, 0.32),
-    ("Are they strong?", "Physical appearance", 1, 0.28),
-    ("Do they have a special outfit?", "Physical appearance", 1, 0.34),
-    ("Do they look young?", "Age", 1, 0.30),
-    ("Do they look old?", "Age", 1, 0.28),
-    ("Are they a hero?", "Fictional traits", 1, 0.40),
-    ("Are they a villain?", "Fictional traits", 1, 0.38),
-    ("Is this about magic?", "Fictional traits", 1, 0.40),
-    ("Is this sci-fi?", "Fictional traits", 1, 0.38),
-    ("Can they talk like a person?", "Personality", 1, 0.30),
-    ("Do they live in a city?", "Personality", 1, 0.24),
-    ("Do they live in nature?", "Personality", 1, 0.24),
-    ("Are they part of a big story?", "Personality", 1, 0.26),
+    ("Are they kind and helpful?", "Personality", 5, 0.28),
+    ("Are they mostly serious?", "Personality", 5, 0.26),
+    ("Are they mostly funny?", "Personality", 5, 0.28),
+    ("Are they brave?", "Personality", 5, 0.30),
+    ("Are they very smart?", "Personality", 4, 0.32),
+    ("Are they strong?", "Physical appearance", 5, 0.28),
+    ("Do they have a special outfit?", "Physical appearance", 4, 0.34),
+    ("Do they look young?", "Age", 5, 0.30),
+    ("Do they look old?", "Age", 5, 0.28),
+    ("Are they a hero?", "Fictional traits", 2, 0.40),
+    ("Are they a villain?", "Fictional traits", 2, 0.38),
+    ("Is this about magic?", "Fictional traits", 2, 0.40),
+    ("Is this sci-fi?", "Fictional traits", 2, 0.38),
+    ("Can they talk like a person?", "Personality", 5, 0.30),
+    ("Do they live in a city?", "Personality", 5, 0.24),
+    ("Do they live in nature?", "Personality", 5, 0.24),
+    ("Are they part of a big story?", "Personality", 5, 0.26),
     ("Do people still talk about them?", "Personality", 1, 0.34),
-    ("Were they famous long ago?", "Age", 1, 0.34),
-    ("Do they have a best friend?", "Personality", 1, 0.26),
-    ("Do people dress like them?", "Physical appearance", 1, 0.24),
-    ("Do they smile a lot?", "Personality", 1, 0.24),
+    ("Were they famous long ago?", "Age", 2, 0.34),
+    ("Do they have a best friend?", "Personality", 5, 0.26),
+    ("Do people dress like them?", "Physical appearance", 5, 0.24),
+    ("Do they smile a lot?", "Personality", 5, 0.24),
     # --- Origin (engine Stage 2; kept before domain categories) ---
     ("Are they from another country?", "Nationality", 2, 0.40),
     ("Are they from modern times?", "Time period", 2, 0.40),
@@ -200,12 +228,12 @@ _QUESTIONS: list[tuple[str, str, int, float]] = [
     ("Do they work in a lab?", "Science", 3, 0.32),
     ("Do they perform on a stage?", "Music", 3, 0.34),
     ("Do they appear in comics too?", "Movies", 3, 0.30),
-    # --- Level 4 · Specific ---
-    ("Are they famous for cricket?", "Sports", 4, 0.34),
-    ("Are they famous for football?", "Sports", 4, 0.36),
-    ("Are they famous for basketball?", "Sports", 4, 0.34),
-    ("Are they famous for tennis?", "Sports", 4, 0.30),
-    ("Are they famous for baseball?", "Sports", 4, 0.28),
+    # --- Level 4 · Specific (sport subtypes are Level 3) ---
+    ("Are they famous for cricket?", "Sports", 3, 0.42),
+    ("Are they famous for football?", "Sports", 3, 0.44),
+    ("Are they famous for basketball?", "Sports", 3, 0.40),
+    ("Are they famous for tennis?", "Sports", 3, 0.36),
+    ("Are they famous for baseball?", "Sports", 3, 0.34),
     ("Are they an Olympic winner?", "Awards", 4, 0.32),
     ("Are they a singer?", "Profession", 4, 0.36),
     ("Are they an actor?", "Profession", 4, 0.36),
@@ -300,24 +328,29 @@ def build_v2_questions() -> list[dict[str, Any]]:
     seen: set[str] = set()
     out: list[dict[str, Any]] = []
     for text, category, level, ig in _QUESTIONS:
-        key = text.casefold().strip()
+        rewritten = to_akinator_style(text)
+        key = rewritten.casefold().strip()
         if key in seen:
             continue
-        if _word_count(text) > MAX_WORDS:
-            raise ValueError(f"Question exceeds {MAX_WORDS} words: {text!r}")
+        if _word_count(rewritten) > MAX_WORDS:
+            raise ValueError(f"Question exceeds {MAX_WORDS} words: {rewritten!r} (from {text!r})")
         if level not in LEVEL_NAMES:
             raise ValueError(f"Invalid hierarchy level {level} for {text!r}")
         seen.add(key)
+        score = ig
+        if rewritten in _CLASSIC_BOOST:
+            score = min(0.65, score + 0.06)
         out.append(
             {
-                "text": text.strip(),
+                "text": rewritten.strip(),
                 "category": category,
                 "hierarchy_level": level,
                 "hierarchy_name": LEVEL_NAMES[level],
                 "dataset": DATASET_ID,
                 "is_active": True,
-                "avg_information_gain": round(max(0.12, min(0.65, ig)), 2),
+                "avg_information_gain": round(max(0.12, min(0.65, score)), 2),
                 "times_asked": 0,
+                "legacy_text": text.strip(),
             }
         )
 

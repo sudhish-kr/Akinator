@@ -22,6 +22,7 @@ from questions_v2_data import (  # noqa: E402
     QUESTION_PHASE as V2_QUESTION_PHASE,
     build_v2_questions,
 )
+from akinator_style_rewrites import to_akinator_style  # noqa: E402
 
 OUT = ROOT / "data" / "knowledge" / "seed_v1.json"
 QUESTIONS_V2_OUT = ROOT / "data" / "knowledge" / "questions_v2.json"
@@ -129,6 +130,18 @@ RULES: dict[str, dict[str, float]] = {
         "Is this about magic?": 0.4,
     },
 }
+
+
+def _remap_question_keys(rules: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+    remapped: dict[str, dict[str, float]] = {}
+    for category, mapping in rules.items():
+        remapped[category] = {
+            to_akinator_style(question): value for question, value in mapping.items()
+        }
+    return remapped
+
+
+RULES = _remap_question_keys(RULES)
 
 
 def _default_aliases(name: str) -> list[str]:
@@ -329,77 +342,80 @@ def build_seed() -> dict:
     overrides = [
         {
             "character": "Albert Einstein",
-            "question": "Is this a scientist?",
+            "question": to_akinator_style("Is this a scientist?"),
             "likelihood": 0.99,
             "sample_size": 100,
         },
         {
             "character": "Lionel Messi",
-            "question": "Is this a sports player?",
+            "question": to_akinator_style("Is this a sports player?"),
             "likelihood": 0.99,
             "sample_size": 100,
         },
         {
             "character": "Mario",
-            "question": "Is this from a video game?",
+            "question": to_akinator_style("Is this from a video game?"),
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Naruto Uzumaki",
-            "question": "Is this from anime?",
+            "question": to_akinator_style("Is this from anime?"),
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Darth Vader",
-            "question": "Is this a villain?",
+            "question": to_akinator_style("Is this a villain?"),
             "likelihood": 0.95,
             "sample_size": 80,
         },
         {
             "character": "SpongeBob SquarePants",
-            "question": "Is this from a cartoon?",
+            "question": to_akinator_style("Is this from a cartoon?"),
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Zeus",
-            "question": "Is this from an old legend?",
+            "question": to_akinator_style("Is this from an old legend?"),
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Elizabeth Bennet",
-            "question": "Is this a writer?",
+            "question": to_akinator_style("Is this a writer?"),
             "likelihood": 0.92,
             "sample_size": 80,
         },
         {
             "character": "Barack Obama",
-            "question": "Is this a political leader?",
+            "question": to_akinator_style("Is this a political leader?"),
             "likelihood": 0.98,
             "sample_size": 80,
         },
         {
             "character": "Beyoncé",
-            "question": "Is this a musician?",
+            "question": to_akinator_style("Is this a musician?"),
             "likelihood": 0.99,
             "sample_size": 80,
         },
         {
             "character": "Elon Musk",
-            "question": "Is this a business leader?",
+            "question": to_akinator_style("Is this a business leader?"),
             "likelihood": 0.98,
             "sample_size": 80,
         },
         {
             "character": "Walter White",
-            "question": "Is this from a TV show?",
+            "question": to_akinator_style("Is this from a TV show?"),
             "likelihood": 0.97,
             "sample_size": 80,
         },
     ]
+    for row in overrides:
+        if row["question"] not in question_texts:
+            raise RuntimeError(f"Override question missing from catalog: {row['question']}")
 
     rules = build_likelihood_rules(questions, explicit_rules=RULES)
     assert_mapping_quality(characters, questions, rules)

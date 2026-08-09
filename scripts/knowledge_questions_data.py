@@ -762,4 +762,6 @@ def build_question_catalog(min_count: int = 520) -> list[dict]:
 
 def legacy_question_texts() -> set[str]:
     """Return the legacy question texts required by likelihood RULES."""
-    return {text for text, _, _ in _LEGACY}
+    from akinator_style_rewrites import to_akinator_style
+
+    return {to_akinator_style(text) for text, _, _ in _LEGACY}

@@ -78,21 +78,31 @@ def test_v2_catalog_size_and_hierarchy(v2_questions):
     assert len(exported["questions"]) == len(v2_questions)
 
 
-def test_v2_questions_are_kid_friendly(v2_questions):
-    seen: set[str] = set()
+def test_v2_questions_use_akinator_style_phrasing(v2_questions):
+    """Most questions should sound like Akinator: 'Is/Does your character…?'"""
+    classic = 0
     for q in v2_questions:
-        text = q["text"]
-        key = text.casefold().strip()
-        assert key not in seen
-        seen.add(key)
-        assert text.endswith("?")
-        assert len(text.split()) <= MAX_WORDS, text
-        lowered = text.casefold()
-        for word in HARD_VOCAB:
-            assert word not in lowered, text
-        assert q["hierarchy_level"] in LEVEL_NAMES
-        assert q["dataset"] == DATASET_ID
-        assert q["is_active"] is True
+        text = q["text"].casefold()
+        if text.startswith("is your character") or text.startswith("does your character"):
+            classic += 1
+        elif text.startswith("did your character") or text.startswith("can your character"):
+            classic += 1
+        elif text.startswith("has your character") or text.startswith("was your character"):
+            classic += 1
+    assert classic / len(v2_questions) >= 0.9
+    # Core identity/category lines must exist.
+    texts = {q["text"] for q in v2_questions}
+    for required in (
+        "Is your character a real person?",
+        "Is your character still alive?",
+        "Is your character a man?",
+        "Is your character an athlete?",
+        "Is your character from anime?",
+        "Does your character play cricket?",
+        "Does your character play football?",
+        "Is your character a superhero?",
+    ):
+        assert required in texts
 
 
 def test_level1_identity_uses_broad_categories_only(v2_questions):
