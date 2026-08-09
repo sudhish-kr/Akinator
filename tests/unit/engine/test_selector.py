@@ -111,6 +111,8 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
     state = create_initial_state([scientist, athlete], likelihoods)
     # Scientists category mass 0.72 > preference / unlock threshold
     state.probabilities = {scientist: 0.72, athlete: 0.28}
+    # Past the early identity lock so category preference can apply.
+    state.questions_asked = 3
 
     refs = {
         q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="Science"),

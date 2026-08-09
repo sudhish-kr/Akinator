@@ -116,8 +116,8 @@ DEFAULT_STAGE_A_EXIT_MARGIN = 0.10
 # Enter Stage 2 (Origin) after identity; Stage 3 (Category) after origin mass.
 DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD = 0.42
 DEFAULT_STAGE_ORIGIN_EXIT_MARGIN = 0.08
-# Enter Stage 4 (Subcategory) once domain dominance is stronger.
-DEFAULT_STAGE_C_ENTER_THRESHOLD = 0.55
+# Enter Stage 4 (Subcategory) only with strong domain dominance.
+DEFAULT_STAGE_C_ENTER_THRESHOLD = 0.62
 
 # Backward-compatible aliases used by older call sites / tests.
 DEFAULT_CATEGORY_CONFIDENCE_GATE = DEFAULT_STAGE_A_EXIT_THRESHOLD
@@ -143,6 +143,83 @@ STAGE_1_IDENTITY_KEYWORDS: frozenset[str] = frozenset(
         "famous worldwide",
         "people still talk",
         "are they famous",
+        # Short probes used in tests / curated decks
+        "alive?",
+        "male?",
+        "female?",
+        "human?",
+        "famous?",
+        "real?",
+    }
+)
+
+# Major category questions (Level 2) — broad domain only, not subtypes.
+MAJOR_CATEGORY_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "sports player",
+        "sportsperson",
+        "an athlete",
+        "from sports",
+        "from a movie",
+        "from a tv show",
+        "from anime",
+        "from a cartoon",
+        "from a video game",
+        "a musician",
+        "political leader",
+        "a scientist",
+        "business leader",
+        "from mythology",
+        "from a book",
+        "a superhero",
+    }
+)
+
+# Sport subtypes (Level 3) — never treat these as the major Sports category.
+SPORT_SUBTYPE_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "cricket",
+        "football",
+        "soccer",
+        "basketball",
+        "tennis",
+        "baseball",
+        "hockey",
+        "golf",
+        "boxing",
+        "skating",
+        "fencing",
+        "martial arts",
+        "swimming",
+        "running",
+        "gymnastics",
+        "racing",
+        "skiing",
+        "rugby",
+        "volleyball",
+        "wrestling",
+        "archery",
+        "surfing",
+        "cycling",
+        "olympics",
+        "olympic",
+    }
+)
+
+# Ultra-specific sports details (Level 4) — after a subtype is established.
+SPORT_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "batsman",
+        "batting",
+        "bowler",
+        "goalkeeper",
+        "forward",
+        "striker",
+        "midfielder",
+        "play for india",
+        "play for argentina",
+        "for india",
+        "for argentina",
     }
 )
 
@@ -220,7 +297,9 @@ STAGE_C_QUESTION_CATEGORIES: frozenset[str] = frozenset(
 
 # Keywords that push an otherwise domain question into Stage 4 (subcategory).
 STAGE_C_KEYWORDS: frozenset[str] = frozenset(
-    {
+    set(SPORT_SUBTYPE_KEYWORDS)
+    | set(SPORT_SPECIFIC_KEYWORDS)
+    | {
         "chef",
         "architect",
         "lawyer",
@@ -228,17 +307,6 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "teacher",
         "pilot",
         "police",
-        "cricket",
-        "football",
-        "soccer",
-        "basketball",
-        "tennis",
-        "baseball",
-        "hockey",
-        "golf",
-        "olympics",
-        "batsman",
-        "goalkeeper",
         "marvel",
         "dc comic",
         "nobel",
@@ -252,7 +320,6 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "samurai",
         "jedi",
         "wizard",
-        "superhero",
         "pirate",
         "magic",
         "k-pop",
@@ -275,13 +342,15 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "franchise",
         "sword",
         "fight crime",
+        "famous for",
     }
 )
 
 # Hard niche / franchise / occupation — never ask early (Stage 1–3).
-# May exist in DB; only Stage 4 + relevance may unlock them.
 FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
-    {
+    set(SPORT_SUBTYPE_KEYWORDS)
+    | set(SPORT_SPECIFIC_KEYWORDS)
+    | {
         "chef",
         "architect",
         "dj",
@@ -305,13 +374,12 @@ FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
         "jedi",
         "k-pop",
         "franchise",
-        "batsman",
-        "goalkeeper",
         "ninja",
         "samurai",
         "wizard",
         "pirate",
         "sword",
+        "famous for",
     }
 )
 
@@ -368,13 +436,8 @@ NICHE_TOPIC_REQUIRED_CATEGORIES: dict[str, frozenset[str]] = {
     "filler": frozenset({"Anime"}),
     "love triangle": frozenset({"Anime", "Movies", "TV Shows", "Literature"}),
     "catchphrase": frozenset({"Anime", "Movies", "TV Shows", "Cartoons", "Gaming"}),
-    "cricket": frozenset({"Sports"}),
-    "football": frozenset({"Sports"}),
-    "soccer": frozenset({"Sports"}),
-    "tennis": frozenset({"Sports"}),
-    "batsman": frozenset({"Sports"}),
-    "goalkeeper": frozenset({"Sports"}),
-    "superhero": frozenset({"Movies", "TV Shows", "Cartoons", "Gaming", "Anime"}),
+    **{sport: frozenset({"Sports"}) for sport in SPORT_SUBTYPE_KEYWORDS},
+    **{detail: frozenset({"Sports"}) for detail in SPORT_SPECIFIC_KEYWORDS},
     "sword": frozenset({"Anime", "Movies", "Gaming", "Mythology", "Literature"}),
 }
 

@@ -43,8 +43,11 @@ from app.engine.constants import (
     FICTIONAL_CHARACTER_CATEGORIES,
     FORBIDDEN_EARLY_KEYWORDS,
     LOW_PRIORITY_AGE_KEYWORDS,
+    MAJOR_CATEGORY_KEYWORDS,
     NICHE_TOPIC_REQUIRED_CATEGORIES,
     PROFESSION_SPECIFIC_KEYWORDS,
+    SPORT_SPECIFIC_KEYWORDS,
+    SPORT_SUBTYPE_KEYWORDS,
     STAGE_1_IDENTITY_KEYWORDS,
     STAGE_2_ORIGIN_CATEGORIES,
     STAGE_2_ORIGIN_KEYWORDS,
@@ -93,11 +96,121 @@ def is_hard_gated_niche(question_ref: QuestionRef | None) -> bool:
     if question_ref is None:
         return False
     text = (question_ref.text or "").casefold()
+    if is_major_category_question(question_ref):
+        return False
     if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS):
+        return True
+    if is_sport_subtype_question(question_ref) or is_sport_specific_question(question_ref):
         return True
     if is_low_priority_age_question(question_ref):
         return True
     return bool(niche_topic_keys(question_ref))
+
+
+def is_major_category_question(question_ref: QuestionRef | None) -> bool:
+    """Level-2 broad domain questions (athlete / anime / scientist / …)."""
+    if question_ref is None:
+        return False
+    if is_sport_subtype_question(question_ref) or is_sport_specific_question(question_ref):
+        return False
+    if is_low_priority_age_question(question_ref):
+        return False
+    text = (question_ref.text or "").casefold()
+    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS) and "famous for" not in text:
+        if not _text_matches_any(text, MAJOR_CATEGORY_KEYWORDS):
+            return False
+    if _text_matches_any(text, MAJOR_CATEGORY_KEYWORDS):
+        return True
+    # Short broad domain probes (legacy tests use "Athlete?" / "Scientist?").
+    if text.rstrip("?") in {"athlete", "scientist", "musician", "politician"}:
+        return True
+    return False
+
+
+def is_sport_subtype_question(question_ref: QuestionRef | None) -> bool:
+    """Level-3 sport questions (cricket / boxing / skating / …)."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    if "famous for" in text and (question_ref.category or "") == "Sports":
+        return True
+    return _text_matches_any(text, SPORT_SUBTYPE_KEYWORDS)
+
+
+def is_sport_specific_question(question_ref: QuestionRef | None) -> bool:
+    """Level-4 ultra-specific sports details (batsman / play for India / …)."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, SPORT_SPECIFIC_KEYWORDS)
+
+
+def has_asked_major_sports_category(
+    used_question_ids: set[UUID] | frozenset[UUID],
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> bool:
+    if not question_refs:
+        return False
+    for qid in used_question_ids:
+        ref = question_refs.get(qid)
+        if ref is None:
+            continue
+        text = (ref.text or "").casefold()
+        if is_sport_subtype_question(ref) or is_sport_specific_question(ref):
+            continue
+        if "sports player" in text or "athlete" in text or "sportsperson" in text:
+            return True
+        if ref.category == "Sports" and is_major_category_question(ref):
+            return True
+    return False
+
+
+def last_asked_ref(
+    used_question_ids: set[UUID] | frozenset[UUID],
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> QuestionRef | None:
+    if not question_refs or not used_question_ids:
+        return None
+    for qid in reversed(list(used_question_ids)):
+        ref = question_refs.get(qid)
+        if ref is not None:
+            return ref
+    return None
+
+
+def flow_level(question_ref: QuestionRef | None) -> int:
+    """
+    Player-facing hierarchy level:
+      1 identity/origin → 2 major category → 3 subcategory → 4 specific
+    """
+    if question_ref is None:
+        return 1
+    if is_sport_specific_question(question_ref):
+        return 4
+    if is_sport_subtype_question(question_ref):
+        return 3
+    stage = _normalize_stage(question_hierarchy_stage(question_ref))
+    if is_hard_gated_niche(question_ref) or stage == "4":
+        return 3
+    if is_major_category_question(question_ref) or stage == "3":
+        return 2
+    return 1
+
+
+def respects_one_level_step(
+    question_ref: QuestionRef | None,
+    *,
+    previous_ref: QuestionRef | None,
+    resolve_stage: SelectionStage,
+) -> bool:
+    """Never descend more than one player-facing hierarchy level at a time."""
+    del resolve_stage  # resolve stage gates eligibility separately
+    if question_ref is None:
+        return False
+    if previous_ref is None:
+        # First pick is constrained by stage allow-list alone.
+        return True
+    return flow_level(question_ref) <= flow_level(previous_ref) + 1
 
 
 def niche_topic_is_relevant(
@@ -425,27 +538,31 @@ def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage
     category = question_ref.category
     text = (question_ref.text or "").casefold()
 
-    # Hard niche / forbidden topics are always Stage 4 (never early identity).
-    # Critical: bare "made-up" must not classify "made-up guild" as Stage 1.
+    # Sport subtypes / specifics and other hard niches are always Stage 4.
+    if is_sport_subtype_question(question_ref) or is_sport_specific_question(question_ref):
+        return "4"
     if is_hard_gated_niche(question_ref):
         return "4"
     if _text_matches_any(text, STAGE_C_KEYWORDS) or _text_matches_any(
         text, PROFESSION_SPECIFIC_KEYWORDS
     ):
-        return "4"
+        # Professions like chef; actor/singer stay Stage 4 unless major-category phrasing.
+        if not is_major_category_question(question_ref):
+            return "4"
     if _text_matches_any(text, STAGE_1_IDENTITY_KEYWORDS):
         return "1"
     if category in STAGE_2_ORIGIN_CATEGORIES or _text_matches_any(
         text, STAGE_2_ORIGIN_KEYWORDS
     ):
         return "2"
+    if is_major_category_question(question_ref):
+        return "3"
 
     if category in STAGE_C_QUESTION_CATEGORIES:
         return "4"
     if category in STAGE_B_QUESTION_CATEGORIES:
         return "3"
     if category in STAGE_A_QUESTION_CATEGORIES:
-        # Non-identity Stage-A metadata (e.g. hair color) waits for later stages.
         return "4"
     return "4"
 
@@ -460,13 +577,13 @@ def resolve_selection_stage(
     stage_origin_exit_margin: float = DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
     questions_asked: int = 0,
+    question_refs: dict[UUID, QuestionRef] | None = None,
 ) -> tuple[SelectionStage, str | None]:
     """
     Determine natural questioning stage from category posterior mass.
 
-    Missing category mappings → Stage 1 only (fail safe).
-    After enough broad turns, soften margins so the game does not stall on
-    near-tied categories (still never opens niche Stage-4 early).
+    Stage 4 (subcategory) requires strong domain dominance — never open sport
+    subtypes just because a few identity questions were asked.
     """
     if not character_categories:
         return "1", None
@@ -478,26 +595,36 @@ def resolve_selection_stage(
     margin = top - second
     asked = max(0, int(questions_asked))
 
-    # Soft progression: once identity has had a fair turn, advance even on ties.
+    # Soft progression: advance to origin/category after broad turns, but do NOT
+    # unlock Stage-4 subtypes without clear domain dominance.
     if asked >= 5 and top >= 0.28:
-        if top >= stage_c_enter_threshold and margin >= (stage_a_exit_margin * 0.5):
+        if (
+            top >= stage_c_enter_threshold
+            and margin >= stage_a_exit_margin
+            and (
+                dominant != "Sports"
+                or has_asked_major_sports_category(state.used_question_ids, question_refs)
+            )
+        ):
             return "4", dominant
         if margin >= 0.04 or asked >= 6:
             return "3", dominant
         return "2", dominant
 
     if asked >= 3 and top >= 0.28 and margin < stage_a_exit_margin:
-        # Still unclear domain — allow origin / basic domain probing.
         return "2", dominant
 
     if top < stage_a_exit_threshold or margin < stage_a_exit_margin:
         return "1", dominant
 
-    # Stage 2 Origin until the dominant category is clearer.
     if top < stage_origin_exit_threshold or margin < stage_origin_exit_margin:
         return "2", dominant
 
-    if top >= stage_c_enter_threshold:
+    if top >= stage_c_enter_threshold and margin >= stage_a_exit_margin:
+        if dominant == "Sports" and not has_asked_major_sports_category(
+            state.used_question_ids, question_refs
+        ):
+            return "3", dominant
         return "4", dominant
     return "3", dominant
 
@@ -815,6 +942,24 @@ def select_next_question(
         stage_origin_exit_margin=stage_origin_exit_margin,
         stage_c_enter_threshold=stage_c_enter_threshold,
         questions_asked=state.questions_asked,
+        question_refs=question_refs,
+    )
+
+    # First turns stay on identity when broad questions remain — even if the
+    # cast is sports-heavy and category mass would otherwise unlock Stage 3.
+    if state.questions_asked < 2:
+        identity_available = any(
+            question_hierarchy_stage(question_refs.get(qid)) == "1"
+            and not is_hard_gated_niche(question_refs.get(qid))
+            for qid in unused
+        )
+        if identity_available:
+            stage = "1"
+
+    previous_ref = last_asked_ref(state.used_question_ids, question_refs)
+    prev_was_sport_subtype = is_sport_subtype_question(previous_ref)
+    sports_major_asked = has_asked_major_sports_category(
+        state.used_question_ids, question_refs
     )
 
     def _collect_relevant(active_stage: SelectionStage) -> list[UUID]:
@@ -839,6 +984,32 @@ def select_next_question(
                     unlock_threshold=category_unlock_threshold,
                 ):
                     continue
+            # Sport subtypes require major athlete/sports question first.
+            if is_sport_subtype_question(ref):
+                if _normalize_stage(active_stage) != "4":
+                    continue
+                if dominant != "Sports":
+                    continue
+                if not sports_major_asked:
+                    continue
+                # Never chain skating → boxing → fencing.
+                if prev_was_sport_subtype:
+                    continue
+            if is_sport_specific_question(ref):
+                if _normalize_stage(active_stage) != "4":
+                    continue
+                if dominant != "Sports":
+                    continue
+                # Specific only after at least one subtype was asked.
+                if not any(
+                    is_sport_subtype_question(question_refs.get(u))
+                    for u in state.used_question_ids
+                ):
+                    continue
+            if not respects_one_level_step(
+                ref, previous_ref=previous_ref, resolve_stage=active_stage
+            ):
+                continue
             picked.append(qid)
         return picked
 
@@ -873,13 +1044,6 @@ def select_next_question(
         if mass > preference_threshold:
             preferred_cats = preferred_question_categories(dominant)
 
-    previous_ref: QuestionRef | None = None
-    if state.used_question_ids:
-        for qid in reversed(list(state.used_question_ids)):
-            previous_ref = question_refs.get(qid)
-            if previous_ref is not None:
-                break
-
     ig_by_qid = {qid: information_gain(focus, qid) for qid in relevant}
     non_low_igs = [
         ig_by_qid[qid]
@@ -913,6 +1077,13 @@ def select_next_question(
             score += broad_question_bonus
         if stage in {"3", "4"} and q_stage == "3":
             score += category_ig_bonus * 0.5
+        # Prefer major category over sport subtypes when both are eligible.
+        if is_major_category_question(ref):
+            score += category_ig_bonus * 0.35
+        if is_sport_subtype_question(ref):
+            score -= DEFAULT_SPECIFICITY_PENALTY * 0.5
+        if is_sport_specific_question(ref):
+            score -= DEFAULT_SPECIFICITY_PENALTY
         score += early_question_priority_bonus(ref)
         score -= specificity_penalty(ref, stage)
         score -= near_duplicate_penalty(ref, previous_ref)
