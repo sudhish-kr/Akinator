@@ -30,6 +30,22 @@ APP_INFO.labels(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Apply pending schema migrations before serving traffic.
+    from app.db.migrate import run_pending_migrations
+
+    run_pending_migrations()
+
+    # Warm the playable catalog once so the first /game/start is not a multi-second stall.
+    try:
+        from app.db.repositories.game_repository import GameRepository
+        from app.services.playable_catalog import get_playable_catalog
+
+        async with async_session_factory() as db:
+            await get_playable_catalog(GameRepository(db))
+    except Exception:
+        # Empty DB / first boot — catalog loads lazily on first game start.
+        pass
+
     # Session cleanup runs on Celery beat (abandon_stale_sessions).
     # Keep a lightweight in-process fallback only when workers run eager/local.
     cleanup_task = None

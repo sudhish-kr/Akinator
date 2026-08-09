@@ -5,7 +5,6 @@ from app.config import settings
 from app.db.models import GameSessionStatus
 from app.db.repositories.game_repository import GameRepository
 from app.engine.explain import AnswerObservation, build_guess_explanation
-from app.engine.models import LikelihoodEntry, QuestionRef
 from app.engine.selector import (
     create_initial_state,
     decide_after_answer,
@@ -14,6 +13,7 @@ from app.engine.selector import (
 )
 from app.services.session_manager import ConfidenceThresholds, GameSessionManager
 from app.services.session_store import LiveSession, SessionStore, StoredAnswer, session_store
+from app.services.playable_catalog import get_playable_catalog
 from app.monitoring.instrumentation import track_ai_inference
 
 
@@ -37,52 +37,27 @@ class GameService:
             min_samples=settings.new_question_min_samples,
         )
 
-    async def _load_playable_data(self) -> tuple[list, list, dict, list[UUID]]:
-        characters = await self.repo.get_active_characters()
-        questions = await self.repo.get_active_questions()
-
-        if not characters:
-            raise GameServiceError("No active characters available", 503)
-        if not questions:
-            raise GameServiceError("No active questions available", 503)
-
-        character_ids = [c.id for c in characters]
-        question_ids = [q.id for q in questions]
-
-        rows = await self.repo.get_likelihoods(character_ids, question_ids)
-        likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] = {}
-        for row in rows:
-            likelihoods[(row.character_id, row.question_id)] = LikelihoodEntry(
-                likelihood=row.likelihood,
-                sample_size=row.sample_size,
-            )
-
-        return characters, questions, likelihoods, question_ids
+    async def _catalog(self):
+        try:
+            return await get_playable_catalog(self.repo)
+        except ValueError as exc:
+            raise GameServiceError(str(exc), 503) from exc
 
     async def start_game(self, user_id: UUID | None = None) -> dict:
-        characters, questions, likelihoods, question_ids = await self._load_playable_data()
+        catalog = await self._catalog()
         db_session = await self.repo.create_session(user_id=user_id)
-
-        question_refs = {
-            q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
-        }
-        character_names = {c.id: c.name for c in characters}
-        character_categories = {c.id: c.category for c in characters}
-        character_popularity = {
-            c.id: int(getattr(c, "popularity_score", 0) or 0) for c in characters
-        }
 
         try:
             with track_ai_inference("start_game"):
                 live = self.sessions.start(
                     session_id=db_session.id,
-                    character_ids=[c.id for c in characters],
-                    likelihoods=likelihoods,
-                    question_ids=question_ids,
-                    question_refs=question_refs,
-                    character_names=character_names,
-                    character_categories=character_categories,
-                    character_popularity=character_popularity,
+                    character_ids=list(catalog.character_ids),
+                    likelihoods=catalog.likelihoods,
+                    question_ids=list(catalog.question_ids),
+                    question_refs=dict(catalog.question_refs),
+                    character_names=dict(catalog.character_names),
+                    character_categories=dict(catalog.character_categories),
+                    character_popularity=dict(catalog.character_popularity),
                 )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
@@ -90,7 +65,7 @@ class GameService:
         self.store.save(live)
         await self.repo.commit()
 
-        first_q = question_refs[live.pending_question_id]
+        first_q = catalog.question_refs[live.pending_question_id]
         top_confidence = max(live.engine.probabilities.values(), default=0.0)
         return {
             "session_id": str(db_session.id),
@@ -372,8 +347,12 @@ class GameService:
         return {"status": "submitted_for_review", "character_id": str(character.id)}
 
     async def _get_live_session(self, session_id: UUID) -> LiveSession:
+        # Warm catalog first so store.get can re-attach shared likelihoods.
+        catalog = await self._catalog()
         live = self.store.get(session_id)
         if live:
+            if not live.engine.likelihoods:
+                live.engine.likelihoods = catalog.likelihoods
             return live
         live = await self._rehydrate(session_id)
         if not live:
@@ -385,15 +364,12 @@ class GameService:
         if not db_session or db_session.status != GameSessionStatus.IN_PROGRESS:
             return None
 
-        characters, questions, likelihoods, question_ids = await self._load_playable_data()
-        engine = create_initial_state([c.id for c in characters], likelihoods)
-        question_refs = {
-            q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
-        }
-        character_categories = {c.id: c.category for c in characters}
-        character_popularity = {
-            c.id: int(getattr(c, "popularity_score", 0) or 0) for c in characters
-        }
+        catalog = await self._catalog()
+        engine = create_initial_state(list(catalog.character_ids), catalog.likelihoods)
+        question_refs = dict(catalog.question_refs)
+        character_categories = dict(catalog.character_categories)
+        character_popularity = dict(catalog.character_popularity)
+        question_ids = list(catalog.question_ids)
 
         # Re-exclude characters the user already rejected in this session
         rejected = await self.repo.get_rejected_character_ids(session_id)
@@ -434,7 +410,7 @@ class GameService:
             session_id=session_id,
             engine=engine,
             question_refs=question_refs,
-            character_names={c.id: c.name for c in characters},
+            character_names=dict(catalog.character_names),
             character_categories=character_categories,
             character_popularity=character_popularity,
             all_question_ids=question_ids,

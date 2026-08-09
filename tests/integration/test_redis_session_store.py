@@ -12,7 +12,9 @@ from app.cache.redis_cache import RedisCache
 from app.cache.session_codec import decode_live_session, encode_live_session
 from app.engine.models import LikelihoodEntry, QuestionRef
 from app.engine.selector import create_initial_state
+from app.services import playable_catalog as playable_catalog_mod
 from app.services.live_session import LiveSession, StoredAnswer
+from app.services.playable_catalog import PlayableCatalog
 from app.services.session_store import SessionStore
 
 
@@ -36,12 +38,36 @@ def _live_session() -> LiveSession:
             q2: QuestionRef(id=q2, text="Athlete?", category="sports"),
         },
         character_names={c1: "Einstein", c2: "Messi"},
+        character_categories={c1: "Scientists", c2: "Sports"},
         all_question_ids=[q1, q2],
         pending_question_id=q2,
         last_answered_question_id=q1,
         awaiting_guess=False,
         answers=[StoredAnswer(question_id=q1, answer="yes")],
     )
+
+
+def _warm_catalog(live: LiveSession) -> None:
+    """Likelihoods are process-cached, not Redis-cached."""
+    playable_catalog_mod._catalog = PlayableCatalog(
+        character_ids=list(live.engine.character_ids),
+        question_ids=list(live.all_question_ids),
+        likelihoods=dict(live.engine.likelihoods),
+        question_refs=dict(live.question_refs),
+        character_names=dict(live.character_names),
+        character_categories=dict(live.character_categories),
+        character_popularity=dict(live.character_popularity),
+        character_count=len(live.engine.character_ids),
+        question_count=len(live.all_question_ids),
+        likelihood_count=len(live.engine.likelihoods),
+    )
+
+
+@pytest.fixture(autouse=True)
+def _clear_catalog():
+    playable_catalog_mod._catalog = None
+    yield
+    playable_catalog_mod._catalog = None
 
 
 @pytest.fixture
@@ -73,6 +99,7 @@ def test_codec_roundtrip_preserves_engine_state():
 def test_session_store_save_get_delete(redis_cache):
     store = SessionStore(cache=redis_cache, ttl_seconds=60)
     live = _live_session()
+    _warm_catalog(live)
     before_probs = dict(live.engine.probabilities)
     store.save(live)
 
@@ -88,10 +115,11 @@ def test_session_store_save_get_delete(redis_cache):
     assert store.get(live.session_id) is None
 
 
-def test_compact_save_preserves_likelihoods_across_updates(redis_cache):
-    """Per-turn saves omit likelihood blobs but sibling key keeps Bayes working."""
+def test_compact_save_reattaches_likelihoods_from_catalog(redis_cache):
+    """Per-turn saves omit likelihood blobs; catalog reattaches on get."""
     store = SessionStore(cache=redis_cache, ttl_seconds=60)
     live = _live_session()
+    _warm_catalog(live)
     store.save(live)
     loaded = store.get(live.session_id)
     assert loaded is not None
@@ -165,10 +193,12 @@ def test_session_manager_api_unchanged_with_redis_store(redis_cache):
         character_names={c1: "Einstein", c2: "Messi"},
     )
     store = SessionStore(cache=redis_cache, ttl_seconds=60)
+    _warm_catalog(live)
     store.save(live)
     restored = store.get(live.session_id)
     assert restored is not None
     assert restored.pending_question_id == live.pending_question_id
+    assert restored.engine.likelihoods
     turn = mgr.submit_answer(restored, restored.pending_question_id, "yes")
     assert turn.status in {"asking", "ready_to_guess"}
     store.save(restored)

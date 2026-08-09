@@ -419,6 +419,9 @@ class KnowledgeSeedService:
 
         counts = await self.repo.bulk_upsert_character_answers(rows)
         await self.repo.db.commit()
+        from app.services.playable_catalog import invalidate_playable_catalog
+
+        invalidate_playable_catalog()
         return {
             "active_characters": len(characters),
             "active_questions": len(questions),
