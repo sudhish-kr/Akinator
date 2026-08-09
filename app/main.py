@@ -35,16 +35,9 @@ async def lifespan(app: FastAPI):
 
     run_pending_migrations()
 
-    # Warm the playable catalog once so the first /game/start is not a multi-second stall.
-    try:
-        from app.db.repositories.game_repository import GameRepository
-        from app.services.playable_catalog import get_playable_catalog
-
-        async with async_session_factory() as db:
-            await get_playable_catalog(GameRepository(db))
-    except Exception:
-        # Empty DB / first boot — catalog loads lazily on first game start.
-        pass
+    # Warm playable catalog in the background — never block "Application startup
+    # complete" on loading ~1M likelihood rows from SQLite.
+    warm_task = asyncio.create_task(_warm_playable_catalog())
 
     # Session cleanup runs on Celery beat (abandon_stale_sessions).
     # Keep a lightweight in-process fallback only when workers run eager/local.
@@ -54,12 +47,29 @@ async def lifespan(app: FastAPI):
 
         cleanup_task = asyncio.create_task(run_session_cleanup_loop())
     yield
+    warm_task.cancel()
+    try:
+        await warm_task
+    except asyncio.CancelledError:
+        pass
     if cleanup_task is not None:
         cleanup_task.cancel()
         try:
             await cleanup_task
         except asyncio.CancelledError:
             pass
+
+
+async def _warm_playable_catalog() -> None:
+    try:
+        from app.db.repositories.game_repository import GameRepository
+        from app.services.playable_catalog import get_playable_catalog
+
+        async with async_session_factory() as db:
+            await get_playable_catalog(GameRepository(db))
+    except Exception:
+        # Empty DB / first boot — catalog loads lazily on first game start.
+        pass
 
 
 app = FastAPI(
