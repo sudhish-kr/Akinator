@@ -73,6 +73,7 @@ def test_codec_roundtrip_preserves_engine_state():
 def test_session_store_save_get_delete(redis_cache):
     store = SessionStore(cache=redis_cache, ttl_seconds=60)
     live = _live_session()
+    before_probs = dict(live.engine.probabilities)
     store.save(live)
 
     loaded = store.get(live.session_id)
@@ -80,9 +81,26 @@ def test_session_store_save_get_delete(redis_cache):
     assert loaded.session_id == live.session_id
     assert loaded.pending_question_id == live.pending_question_id
     assert loaded.engine.questions_asked == live.engine.questions_asked
+    assert len(loaded.engine.likelihoods) == 4
+    assert loaded.engine.probabilities == pytest.approx(before_probs)
 
     store.delete(live.session_id)
     assert store.get(live.session_id) is None
+
+
+def test_compact_save_preserves_likelihoods_across_updates(redis_cache):
+    """Per-turn saves omit likelihood blobs but sibling key keeps Bayes working."""
+    store = SessionStore(cache=redis_cache, ttl_seconds=60)
+    live = _live_session()
+    store.save(live)
+    loaded = store.get(live.session_id)
+    assert loaded is not None
+    loaded.engine.questions_asked = 2
+    store.save(loaded)
+    again = store.get(live.session_id)
+    assert again is not None
+    assert len(again.engine.likelihoods) == 4
+    assert again.engine.questions_asked == 2
 
 
 def test_multiple_backend_instances_share_sessions(redis_client):

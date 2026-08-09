@@ -22,6 +22,7 @@ CHARACTER_POPULARITY: dict[str, int] = {
     "harry potter": 98,
     "spider-man": 97,
     "tony stark": 96,
+    "iron man": 96,
     "batman": 97,
     "naruto uzumaki": 96,
     "goku": 95,

@@ -68,6 +68,9 @@ class GameService:
         }
         character_names = {c.id: c.name for c in characters}
         character_categories = {c.id: c.category for c in characters}
+        character_popularity = {
+            c.id: int(getattr(c, "popularity_score", 0) or 0) for c in characters
+        }
 
         try:
             with track_ai_inference("start_game"):
@@ -79,6 +82,7 @@ class GameService:
                     question_refs=question_refs,
                     character_names=character_names,
                     character_categories=character_categories,
+                    character_popularity=character_popularity,
                 )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
@@ -87,10 +91,12 @@ class GameService:
         await self.repo.commit()
 
         first_q = question_refs[live.pending_question_id]
+        top_confidence = max(live.engine.probabilities.values(), default=0.0)
         return {
             "session_id": str(db_session.id),
             "question": {"id": str(first_q.id), "text": first_q.text},
             "questions_asked": 0,
+            "top_confidence": round(top_confidence, 4),
         }
 
     def _state_payload(self, live: LiveSession) -> dict:
@@ -385,6 +391,9 @@ class GameService:
             q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
         }
         character_categories = {c.id: c.category for c in characters}
+        character_popularity = {
+            c.id: int(getattr(c, "popularity_score", 0) or 0) for c in characters
+        }
 
         # Re-exclude characters the user already rejected in this session
         rejected = await self.repo.get_rejected_character_ids(session_id)
@@ -427,6 +436,7 @@ class GameService:
             question_refs=question_refs,
             character_names={c.id: c.name for c in characters},
             character_categories=character_categories,
+            character_popularity=character_popularity,
             all_question_ids=question_ids,
             pending_question_id=None if must_guess else next_q_id,
             last_answered_question_id=last_qid,

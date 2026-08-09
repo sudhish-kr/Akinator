@@ -27,10 +27,25 @@ from app.engine.models import ConfidenceResult, GameEngineState
 
 def confidence_score(state: GameEngineState) -> float:
     """Top character posterior probability, clamped to [0.0, 1.0]."""
-    if not state.probabilities:
+    probs = [p for p in state.probabilities.values() if p > 0]
+    if not probs:
         return 0.0
-    top = max(state.probabilities.values())
+    top = max(probs)
     return max(0.0, min(1.0, float(top)))
+
+
+def normalize_probabilities(probabilities: dict[UUID, float]) -> dict[UUID, float]:
+    """Safely renormalize posterior mass to sum to 1.0 (no-op if empty)."""
+    if not probabilities:
+        return {}
+    total = sum(max(0.0, float(p)) for p in probabilities.values())
+    if total <= 0:
+        n = len(probabilities)
+        if n == 0:
+            return {}
+        uniform = 1.0 / n
+        return {cid: uniform for cid in probabilities}
+    return {cid: max(0.0, float(p)) / total for cid, p in probabilities.items()}
 
 
 def evaluate_confidence(

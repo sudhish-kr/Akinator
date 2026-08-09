@@ -12,6 +12,7 @@ class StartGameResponse(BaseModel):
     session_id: str
     question: QuestionOut
     questions_asked: int = 0
+    top_confidence: float = 0.0
 
 
 class AnswerRequest(BaseModel):

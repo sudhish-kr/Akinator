@@ -28,6 +28,7 @@ class LiveSession:
     character_names: dict[UUID, str]
     all_question_ids: list[UUID]
     character_categories: dict[UUID, str] = field(default_factory=dict)
+    character_popularity: dict[UUID, int] = field(default_factory=dict)
     pending_question_id: UUID | None = None
     last_answered_question_id: UUID | None = None
     awaiting_guess: bool = False

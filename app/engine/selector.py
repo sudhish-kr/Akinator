@@ -165,13 +165,46 @@ def has_asked_major_sports_category(
     return False
 
 
-def last_asked_ref(
+def has_asked_major_for_dominant(
+    dominant_category: str | None,
     used_question_ids: set[UUID] | frozenset[UUID],
     question_refs: dict[UUID, QuestionRef] | None,
+) -> bool:
+    """True once a Level-2 major question for the dominant domain was asked."""
+    if not dominant_category or not question_refs:
+        return False
+    if dominant_category == "Sports":
+        return has_asked_major_sports_category(used_question_ids, question_refs)
+    for qid in used_question_ids:
+        ref = question_refs.get(qid)
+        if ref is None or not is_major_category_question(ref):
+            continue
+        if is_sport_subtype_question(ref) or is_sport_specific_question(ref):
+            continue
+        if _domain_matches_dominant(ref.category, dominant_category):
+            return True
+        text = (ref.text or "").casefold()
+        if dominant_category == "Anime" and "anime" in text:
+            return True
+        if dominant_category == "Movies" and (
+            "movie" in text or "superhero" in text or "actor" in text
+        ):
+            return True
+    return False
+
+
+def last_asked_ref(
+    used_question_ids: set[UUID] | frozenset[UUID] | list[UUID],
+    question_refs: dict[UUID, QuestionRef] | None,
+    *,
+    asked_order: list[UUID] | None = None,
 ) -> QuestionRef | None:
-    if not question_refs or not used_question_ids:
+    if not question_refs:
         return None
-    for qid in reversed(list(used_question_ids)):
+    order = list(asked_order) if asked_order else list(used_question_ids)
+    if not order:
+        return None
+    for qid in reversed(order):
         ref = question_refs.get(qid)
         if ref is not None:
             return ref
@@ -197,20 +230,39 @@ def flow_level(question_ref: QuestionRef | None) -> int:
     return 1
 
 
+def deepest_flow_reached(
+    used_question_ids: set[UUID] | frozenset[UUID] | None,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> int:
+    """Highest player-facing hierarchy level already visited this game."""
+    if not used_question_ids or not question_refs:
+        return 1
+    deepest = 1
+    for qid in used_question_ids:
+        ref = question_refs.get(qid)
+        if ref is not None:
+            deepest = max(deepest, flow_level(ref))
+    return deepest
+
+
 def respects_one_level_step(
     question_ref: QuestionRef | None,
     *,
     previous_ref: QuestionRef | None,
     resolve_stage: SelectionStage,
+    used_question_ids: set[UUID] | frozenset[UUID] | None = None,
+    question_refs: dict[UUID, QuestionRef] | None = None,
 ) -> bool:
-    """Never descend more than one player-facing hierarchy level at a time."""
+    """Never descend more than one hierarchy level beyond the deepest reached."""
     del resolve_stage  # resolve stage gates eligibility separately
     if question_ref is None:
         return False
-    if previous_ref is None:
-        # First pick is constrained by stage allow-list alone.
+    if previous_ref is None and not used_question_ids:
         return True
-    return flow_level(question_ref) <= flow_level(previous_ref) + 1
+    ceiling = deepest_flow_reached(used_question_ids, question_refs)
+    if previous_ref is not None:
+        ceiling = max(ceiling, flow_level(previous_ref))
+    return flow_level(question_ref) <= ceiling + 1
 
 
 def niche_topic_is_relevant(
@@ -436,8 +488,9 @@ def focus_candidate_state(
         character_ids=list(renormalized.keys()),
         probabilities=renormalized,
         likelihoods=state.likelihoods,
-        used_question_ids=set(state.used_question_ids),
-        questions_asked=state.questions_asked,
+            used_question_ids=set(state.used_question_ids),
+            asked_question_order=list(state.asked_question_order),
+            questions_asked=state.questions_asked,
         consecutive_dont_know=state.consecutive_dont_know,
         pre_elimination_top=state.pre_elimination_top,
     )
@@ -533,9 +586,9 @@ def top_category_masses(
 
 def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage:
     """Classify a question into natural Stage 1–4 (Identity → Subcategory)."""
-    if question_ref is None or not question_ref.category:
+    if question_ref is None:
         return "4"
-    category = question_ref.category
+    category = question_ref.category or ""
     text = (question_ref.text or "").casefold()
 
     # Sport subtypes / specifics and other hard niches are always Stage 4.
@@ -563,7 +616,15 @@ def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage
     if category in STAGE_B_QUESTION_CATEGORIES:
         return "3"
     if category in STAGE_A_QUESTION_CATEGORIES:
-        return "4"
+        # Broad Age/Gender/Personality without keyword match still counts as early.
+        return "1" if category in {"Age", "Gender", "Personality"} else "4"
+    # Text-only fallback for decks missing category metadata.
+    if not category and text:
+        if any(
+            token in text
+            for token in ("alive", "real", "male", "female", "woman", "man", "human", "famous")
+        ):
+            return "1"
     return "4"
 
 
@@ -596,8 +657,12 @@ def resolve_selection_stage(
     asked = max(0, int(questions_asked))
 
     # Soft progression: advance to origin/category after broad turns, but do NOT
-    # unlock Stage-4 subtypes without clear domain dominance.
+    # unlock Stage-4 subtypes without a major-domain question (or strong mass).
     if asked >= 5 and top >= 0.28:
+        if has_asked_major_for_dominant(
+            dominant, state.used_question_ids, question_refs
+        ) and top >= stage_a_exit_threshold:
+            return "4", dominant
         if (
             top >= stage_c_enter_threshold
             and margin >= stage_a_exit_margin
@@ -626,6 +691,18 @@ def resolve_selection_stage(
         ):
             return "3", dominant
         return "4", dominant
+
+    # After the major-domain question is answered, unlock subcategory questions
+    # so cricket/football (etc.) can separate peers before one character hits 62%.
+    if (
+        has_asked_major_for_dominant(
+            dominant, state.used_question_ids, question_refs
+        )
+        and top >= stage_a_exit_threshold
+        and asked >= 2
+    ):
+        return "4", dominant
+
     return "3", dominant
 
 
@@ -956,7 +1033,11 @@ def select_next_question(
         if identity_available:
             stage = "1"
 
-    previous_ref = last_asked_ref(state.used_question_ids, question_refs)
+    previous_ref = last_asked_ref(
+        state.used_question_ids,
+        question_refs,
+        asked_order=state.asked_question_order,
+    )
     prev_was_sport_subtype = is_sport_subtype_question(previous_ref)
     sports_major_asked = has_asked_major_sports_category(
         state.used_question_ids, question_refs
@@ -1007,7 +1088,11 @@ def select_next_question(
                 ):
                     continue
             if not respects_one_level_step(
-                ref, previous_ref=previous_ref, resolve_stage=active_stage
+                ref,
+                previous_ref=previous_ref,
+                resolve_stage=active_stage,
+                used_question_ids=state.used_question_ids,
+                question_refs=question_refs,
             ):
                 continue
             picked.append(qid)
@@ -1081,9 +1166,20 @@ def select_next_question(
         if is_major_category_question(ref):
             score += category_ig_bonus * 0.35
         if is_sport_subtype_question(ref):
-            score -= DEFAULT_SPECIFICITY_PENALTY * 0.5
+            if (
+                _normalize_stage(stage) == "4"
+                and dominant == "Sports"
+                and sports_major_asked
+            ):
+                # Once athlete is known, prefer cricket/football over more identity.
+                score += category_ig_bonus * 0.45
+            else:
+                score -= DEFAULT_SPECIFICITY_PENALTY * 0.5
         if is_sport_specific_question(ref):
             score -= DEFAULT_SPECIFICITY_PENALTY
+        if is_major_category_question(ref) and ref.category == "Movies":
+            if "superhero" in (ref.text or "").casefold():
+                score += category_ig_bonus * 0.25
         score += early_question_priority_bonus(ref)
         score -= specificity_penalty(ref, stage)
         score -= near_duplicate_penalty(ref, previous_ref)
@@ -1138,6 +1234,8 @@ def process_answer(
     state.pre_elimination_top = pre_top
 
     state.used_question_ids.add(question_id)
+    if question_id not in state.asked_question_order:
+        state.asked_question_order.append(question_id)
     state.questions_asked += 1
 
     if answer == Answer.DONT_KNOW:

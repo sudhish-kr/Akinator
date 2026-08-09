@@ -16,8 +16,8 @@ CHARACTERS = {
     "Lionel Messi": {"alive": 0.95, "scientist": 0.02},
 }
 QUESTIONS = {
-    "alive": "Is this person alive today?",
-    "scientist": "Is this person a scientist?",
+    "alive": ("Is this person alive today?", "Age"),
+    "scientist": ("Is this person a scientist?", "Science"),
 }
 
 
@@ -31,12 +31,18 @@ async def client():
 
     async with factory() as db:
         q_ids = {}
-        for key, text in QUESTIONS.items():
-            q = Question(id=uuid.uuid4(), text=text, is_active=True)
+        for key, (text, category) in QUESTIONS.items():
+            q = Question(id=uuid.uuid4(), text=text, category=category, is_active=True)
             db.add(q)
             q_ids[key] = q.id
         for name, likelihoods in CHARACTERS.items():
-            c = Character(id=uuid.uuid4(), name=name, category="real_person", is_active=True)
+            c = Character(
+                id=uuid.uuid4(),
+                name=name,
+                category="Scientists" if name == "Albert Einstein" else "Sports",
+                is_active=True,
+                popularity_score=90,
+            )
             db.add(c)
             for key, value in likelihoods.items():
                 db.add(
@@ -68,17 +74,21 @@ async def test_post_game_start(client: AsyncClient):
     data = resp.json()
     assert "session_id" in data
     assert "id" in data["question"] and "text" in data["question"]
+    assert "top_confidence" in data
+    assert data["top_confidence"] > 0
 
 
 @pytest.mark.asyncio
 async def test_post_answer_and_get_state(client: AsyncClient):
     start = (await client.post("/game/start")).json()
     session_id = start["session_id"]
+    start_conf = start["top_confidence"]
 
     state = await client.get(f"/game/state/{session_id}")
     assert state.status_code == 200
     assert state.json()["status"] == "asking"
     assert state.json()["next_question"]["id"] == start["question"]["id"]
+    assert state.json()["top_confidence"] > 0
 
     answer = await client.post(
         "/game/answer",
@@ -89,8 +99,12 @@ async def test_post_answer_and_get_state(client: AsyncClient):
         },
     )
     assert answer.status_code == 200
-    assert answer.json()["status"] in {"asking", "ready_to_guess"}
-
+    body = answer.json()
+    assert body["status"] in {"asking", "ready_to_guess"}
+    assert "top_confidence" in body
+    assert body["top_confidence"] != pytest.approx(start_conf, abs=1e-9) or body[
+        "status"
+    ] == "ready_to_guess"
 
 @pytest.mark.asyncio
 async def test_get_guess_and_post_learn(client: AsyncClient):

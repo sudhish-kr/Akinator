@@ -64,9 +64,11 @@ class GameSessionManager:
         question_refs: dict[UUID, QuestionRef],
         character_names: dict[UUID, str],
         character_categories: dict[UUID, str] | None = None,
+        character_popularity: dict[UUID, int] | None = None,
     ) -> LiveSession:
         """Start a new session and select the first question."""
         categories = dict(character_categories or {})
+        popularity = dict(character_popularity or {})
         engine = create_initial_state(character_ids, likelihoods)
         first_q = select_next_question(
             engine,
@@ -85,6 +87,7 @@ class GameSessionManager:
             character_names=character_names,
             all_question_ids=list(question_ids),
             character_categories=categories,
+            character_popularity=popularity,
             pending_question_id=first_q,
             answers=[],
         )
@@ -162,10 +165,17 @@ class GameSessionManager:
 
     @staticmethod
     def best_guess_id(live: LiveSession) -> UUID | None:
-        """Return the character id with highest posterior probability."""
+        """Highest posterior; popularity breaks ties when evidence is similar."""
         if not live.engine.probabilities:
             return None
-        return max(live.engine.probabilities, key=live.engine.probabilities.get)
+        pop = live.character_popularity or {}
+        return max(
+            live.engine.probabilities,
+            key=lambda cid: (
+                live.engine.probabilities[cid],
+                pop.get(cid, 0),
+            ),
+        )
 
     @staticmethod
     def best_guess(live: LiveSession) -> tuple[UUID, float] | None:

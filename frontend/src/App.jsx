@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "./api.js";
+import { nextConfidence } from "./confidence.js";
 import { LanguageSwitch, useI18n } from "./i18n/index.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import GamePage from "./pages/GamePage.jsx";
@@ -42,7 +43,7 @@ export default function App() {
     setSessionId(session);
     setQuestion(data.question || data.next_question);
     setQuestionNumber((data.questions_asked ?? 0) + 1);
-    setConfidence(data.top_confidence ?? 0);
+    setConfidence(nextConfidence(0, data.top_confidence));
     setGuess(null);
     setScreen("game");
   };
@@ -50,6 +51,7 @@ export default function App() {
   const showGuess = async (sid) => {
     const g = await api.getGuess(sid);
     setGuess(g);
+    setConfidence(nextConfidence(0, g.confidence));
     setScreen("guess");
   };
 
@@ -73,7 +75,7 @@ export default function App() {
       setError(null);
       try {
         const data = await api.submitAnswer(sessionId, question.id, value);
-        setConfidence(data.top_confidence ?? 0);
+        setConfidence((prev) => nextConfidence(prev, data.top_confidence));
         if (data.status === "ready_to_guess") {
           await showGuess(sessionId);
         } else {
@@ -83,7 +85,7 @@ export default function App() {
       } catch {
         try {
           const state = await api.getState(sessionId);
-          setConfidence(state.top_confidence ?? 0);
+          setConfidence((prev) => nextConfidence(prev, state.top_confidence));
           setQuestionNumber(state.questions_asked + 1);
           if (state.status === "ready_to_guess") {
             await showGuess(sessionId);

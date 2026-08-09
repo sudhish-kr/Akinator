@@ -43,6 +43,7 @@ class GameEngineState:
     probabilities: dict[UUID, float]
     likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry]
     used_question_ids: set[UUID] = field(default_factory=set)
+    asked_question_order: list[UUID] = field(default_factory=list)
     questions_asked: int = 0
     consecutive_dont_know: int = 0
     pre_elimination_top: UUID | None = None

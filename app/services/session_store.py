@@ -6,7 +6,12 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from app.cache.backend import CacheBackend
-from app.cache.session_codec import decode_live_session, encode_live_session
+from app.cache.session_codec import (
+    decode_likelihoods,
+    decode_live_session,
+    encode_likelihoods,
+    encode_live_session,
+)
 from app.services.live_session import LiveSession, StoredAnswer
 
 # Re-export for existing call sites (GameService, tests)
@@ -19,6 +24,9 @@ class SessionStore:
     Default backend is Redis so multiple API instances share live sessions.
     Values are JSON-encoded for cross-process portability; Redis TTL provides
     automatic session expiration.
+
+    Likelihood matrices are stored under a sibling key so per-answer saves stay
+    small (probabilities + metadata) while Bayes still sees the full table.
     """
 
     def __init__(
@@ -48,13 +56,24 @@ class SessionStore:
     def _key(session_id: UUID) -> str:
         return f"session:{session_id}"
 
+    @staticmethod
+    def _likelihood_key(session_id: UUID) -> str:
+        return f"session:{session_id}:likelihoods"
+
     def save(self, session: LiveSession) -> None:
         session.last_activity_at = datetime.now(timezone.utc)
+        # Compact payload — likelihoods live on a sibling key.
         self._cache.set(
             self._key(session.session_id),
-            encode_live_session(session),
+            encode_live_session(session, include_likelihoods=False),
             self._ttl_seconds,
         )
+        if session.engine.likelihoods:
+            self._cache.set(
+                self._likelihood_key(session.session_id),
+                encode_likelihoods(session.engine.likelihoods),
+                self._ttl_seconds,
+            )
 
     def get(self, session_id: UUID) -> LiveSession | None:
         payload = self._cache.get(self._key(session_id))
@@ -62,10 +81,16 @@ class SessionStore:
             return None
         if isinstance(payload, LiveSession):
             return payload
-        return decode_live_session(payload)
+        live = decode_live_session(payload)
+        if not live.engine.likelihoods:
+            rows = self._cache.get(self._likelihood_key(session_id))
+            if rows is not None:
+                live.engine.likelihoods = decode_likelihoods(rows)
+        return live
 
     def delete(self, session_id: UUID) -> None:
         self._cache.delete(self._key(session_id))
+        self._cache.delete(self._likelihood_key(session_id))
 
     def purge_expired(self) -> int:
         return self._cache.purge_expired()

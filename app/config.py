@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     confidence_high: float = 0.85
     confidence_separation: float = 0.6
     confidence_margin: float = 0.4
-    max_questions: int = 25
+    max_questions: int = 20
     learning_rate: float = 0.07
     consecutive_dont_know_cap: int = 5
     ig_tie_threshold: float = 0.001

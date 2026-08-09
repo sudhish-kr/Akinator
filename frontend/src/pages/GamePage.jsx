@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { formatConfidencePercent } from "../confidence.js";
 import { useI18n } from "../i18n/index.jsx";
 import {
   createRecognizer,
@@ -135,7 +136,7 @@ export default function GamePage({ question, questionNumber, confidence, busy, o
   };
 
   if (!question) return null;
-  const pct = Math.round((confidence || 0) * 100);
+  const pct = formatConfidencePercent(confidence);
 
   return (
     <section className="page game">
