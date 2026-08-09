@@ -29,8 +29,8 @@ def _start(mgr: GameSessionManager):
         (C2, Q2): LikelihoodEntry(0.1, 50),
     }
     refs = {
-        Q1: QuestionRef(id=Q1, text="Scientist?"),
-        Q2: QuestionRef(id=Q2, text="Alive?"),
+        Q1: QuestionRef(id=Q1, text="Is this a real person?", category="Personality"),
+        Q2: QuestionRef(id=Q2, text="Is this a made-up character?", category="Fictional traits"),
     }
     return mgr.start(
         session_id=uuid4(),
@@ -39,6 +39,7 @@ def _start(mgr: GameSessionManager):
         question_ids=[Q1, Q2],
         question_refs=refs,
         character_names={C1: "Einstein", C2: "Messi"},
+        character_categories={C1: "Scientists", C2: "Sports"},
     )
 
 
@@ -97,3 +98,28 @@ def test_ends_when_confidence_threshold_reached():
     assert turn.status == "ready_to_guess"
     assert turn.best_guess_id is not None
     assert turn.top_confidence >= 0.5
+
+
+def test_confidence_changes_after_answers_yes_vs_no():
+    """Regression: mapped likelihoods must move confidence (not stay frozen)."""
+    mgr = _manager()
+    live_yes = _start(mgr)
+    qid = Q1
+    live_yes.pending_question_id = qid
+    conf0 = max(live_yes.engine.probabilities.values())
+    p1_before = live_yes.engine.probabilities[C1]
+    turn_yes = mgr.submit_answer(live_yes, qid, "yes")
+    conf_yes = turn_yes.top_confidence
+    p1_yes = live_yes.engine.probabilities[C1]
+
+    live_no = _start(mgr)
+    live_no.pending_question_id = qid
+    turn_no = mgr.submit_answer(live_no, qid, "no")
+    conf_no = turn_no.top_confidence
+    p1_no = live_no.engine.probabilities[C1]
+
+    assert conf_yes != pytest.approx(conf0, abs=1e-9)
+    assert conf_no != pytest.approx(conf0, abs=1e-9)
+    assert p1_yes > p1_before
+    assert p1_no < p1_before
+    assert p1_yes != pytest.approx(p1_no, abs=1e-6)

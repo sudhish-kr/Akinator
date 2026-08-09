@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -287,6 +287,59 @@ class GameRepository:
         self.db.add(record)
         await self.db.flush()
         return record
+
+    async def bulk_upsert_character_answers(
+        self,
+        rows: list[tuple[UUID, UUID, float, int]],
+        *,
+        chunk_size: int = 2000,
+    ) -> dict[str, int]:
+        """Upsert many (character_id, question_id, likelihood, sample_size) rows.
+
+        Uses SQLite ON CONFLICT for speed when syncing seed likelihoods into an
+        existing database. Returns created/updated/written counts.
+        """
+        if not rows:
+            return {"created": 0, "updated": 0, "written": 0}
+
+        existing_result = await self.db.execute(
+            select(CharacterAnswer.character_id, CharacterAnswer.question_id)
+        )
+        existing = {(cid, qid) for cid, qid in existing_result.all()}
+
+        created = 0
+        updated = 0
+        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+        for start in range(0, len(rows), chunk_size):
+            chunk = rows[start : start + chunk_size]
+            values = []
+            for character_id, question_id, likelihood, sample_size in chunk:
+                if (character_id, question_id) in existing:
+                    updated += 1
+                else:
+                    created += 1
+                    existing.add((character_id, question_id))
+                values.append(
+                    {
+                        "id": uuid4(),
+                        "character_id": character_id,
+                        "question_id": question_id,
+                        "likelihood": likelihood,
+                        "sample_size": sample_size,
+                    }
+                )
+            stmt = sqlite_insert(CharacterAnswer).values(values)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["character_id", "question_id"],
+                set_={
+                    "likelihood": stmt.excluded.likelihood,
+                    "sample_size": stmt.excluded.sample_size,
+                },
+            )
+            await self.db.execute(stmt)
+        await self.db.flush()
+        return {"created": created, "updated": updated, "written": created + updated}
 
     async def update_question_avg_ig(self, question_id: UUID, actual_gain: float) -> None:
         question = await self.db.get(Question, question_id)

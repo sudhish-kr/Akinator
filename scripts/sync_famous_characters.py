@@ -124,6 +124,9 @@ async def sync_database() -> dict[str, int]:
                     created += 1
                 else:
                     character = by_name[key]
+                    if character.category != category:
+                        character.category = category
+                        scored += 1  # counted under category/score maintenance
                     if getattr(character, "popularity_score", 0) != score:
                         character.popularity_score = score
                         scored += 1

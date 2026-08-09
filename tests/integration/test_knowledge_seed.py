@@ -378,3 +378,59 @@ async def test_dry_run_does_not_write(db: AsyncSession):
     assert result["characters"] == 2
     chars = (await db.execute(select(Character))).scalars().all()
     assert chars == []
+
+
+@pytest.mark.asyncio
+async def test_sync_active_likelihoods_upserts_and_aligns_categories(db: AsyncSession):
+    """Existing DB can refresh likelihoods without re-importing characters/questions."""
+    messi = Character(name="Lionel Messi", category="real_person", is_active=True)
+    ada = Character(name="Ada Lovelace", category="Scientists", is_active=True)
+    db.add_all([messi, ada])
+    await db.flush()
+    q_sci = Question(
+        text="Is this a scientist?",
+        category="Science",
+        is_active=True,
+        avg_information_gain=0.55,
+    )
+    q_sport = Question(
+        text="Is this a sports player?",
+        category="Sports",
+        is_active=True,
+        avg_information_gain=0.52,
+    )
+    db.add_all([q_sci, q_sport])
+    await db.commit()
+
+    service = KnowledgeSeedService(GameRepository(db))
+    result = await service.sync_active_likelihoods(_mini_seed(), align_categories=True)
+
+    assert result["dry_run"] == 0
+    assert result["categories_aligned"] == 1
+    assert result["written"] >= 2
+    assert result["created"] >= 2
+
+    await db.refresh(messi)
+    assert messi.category == "Sports"
+
+    answers = (await db.execute(select(CharacterAnswer))).scalars().all()
+    assert len(answers) >= 2
+    messi_sport = next(
+        a
+        for a in answers
+        if a.character_id == messi.id and a.question_id == q_sport.id
+    )
+    assert messi_sport.likelihood == pytest.approx(0.97)
+
+    ada_sci = next(
+        a for a in answers if a.character_id == ada.id and a.question_id == q_sci.id
+    )
+    assert ada_sci.likelihood == pytest.approx(0.99)  # override wins
+    assert result["overrides_applied"] >= 1
+
+    # Second sync updates rather than duplicating
+    again = await service.sync_active_likelihoods(_mini_seed(), align_categories=True)
+    assert again["updated"] >= again["created"]
+    assert again["written"] == result["written"]
+    answers2 = (await db.execute(select(CharacterAnswer))).scalars().all()
+    assert len(answers2) == len(answers)

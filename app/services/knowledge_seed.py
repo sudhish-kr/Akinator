@@ -295,3 +295,137 @@ class KnowledgeSeedService:
             "likelihoods": len(written_pairs),
             "dry_run": 0,
         }
+
+    async def sync_active_likelihoods(
+        self,
+        data: dict[str, Any],
+        *,
+        align_categories: bool = True,
+        dry_run: bool = False,
+    ) -> dict[str, int]:
+        """Upsert seed likelihoods for active DB characters × active questions.
+
+        Uses existing ``likelihood_rules`` / ``likelihood_overrides`` from the
+        knowledge seed. Does not create/delete characters or questions, and does
+        not recreate the database. Optionally realigns character categories to
+        match the seed so category rules apply to production icons.
+        """
+        from sqlalchemy import select
+
+        from app.db.models import Character, Question
+
+        validate_seed_payload(data)
+
+        characters = list(
+            (
+                await self.repo.db.execute(
+                    select(Character).where(Character.is_active.is_(True))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        questions = list(
+            (
+                await self.repo.db.execute(
+                    select(Question).where(Question.is_active.is_(True))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if not characters:
+            raise KnowledgeSeedError("No active characters in database")
+        if not questions:
+            raise KnowledgeSeedError("No active questions in database")
+
+        seed_category_by_name = {
+            _norm(item["name"]): item["category"].strip()
+            for item in data["characters"]
+        }
+        categories_aligned = 0
+        effective_category: dict[Any, str] = {}
+        for character in characters:
+            want = (
+                seed_category_by_name.get(_norm(character.name))
+                if align_categories
+                else None
+            )
+            if want and character.category != want:
+                categories_aligned += 1
+                if not dry_run:
+                    character.category = want
+                effective_category[character.id] = want
+            else:
+                effective_category[character.id] = character.category
+
+        if categories_aligned and not dry_run:
+            await self.repo.db.flush()
+
+        q_by_text = {_norm(q.text): q for q in questions}
+        active_q_norms = set(q_by_text)
+        default_sample = int(data.get("default_sample_size", 10))
+
+        rules_index: dict[str, dict[str, tuple[float, int]]] = {}
+        for rule in data.get("likelihood_rules") or []:
+            q_norm = _norm(rule["question"])
+            if q_norm not in active_q_norms:
+                continue
+            cat = _norm(rule["category"])
+            sample = int(rule.get("sample_size", default_sample))
+            rules_index.setdefault(cat, {})[q_norm] = (
+                float(rule["likelihood"]),
+                sample,
+            )
+
+        # character_id -> question_id -> (likelihood, sample_size)
+        pair_values: dict[tuple[Any, Any], tuple[float, int]] = {}
+        for character in characters:
+            cat_key = _norm(effective_category[character.id])
+            for q_norm, (lik, sample) in rules_index.get(cat_key, {}).items():
+                question = q_by_text[q_norm]
+                pair_values[(character.id, question.id)] = (lik, sample)
+
+        overrides_applied = 0
+        char_by_name = {_norm(c.name): c for c in characters}
+        for ov in data.get("likelihood_overrides") or []:
+            character = char_by_name.get(_norm(ov["character"]))
+            question = q_by_text.get(_norm(ov["question"]))
+            if character is None or question is None:
+                continue
+            sample = int(ov.get("sample_size", default_sample))
+            pair_values[(character.id, question.id)] = (
+                float(ov["likelihood"]),
+                sample,
+            )
+            overrides_applied += 1
+
+        rows = [
+            (cid, qid, lik, sample)
+            for (cid, qid), (lik, sample) in pair_values.items()
+        ]
+
+        if dry_run:
+            return {
+                "active_characters": len(characters),
+                "active_questions": len(questions),
+                "categories_aligned": categories_aligned,
+                "overrides_applied": overrides_applied,
+                "created": 0,
+                "updated": 0,
+                "written": len(rows),
+                "dry_run": 1,
+            }
+
+        counts = await self.repo.bulk_upsert_character_answers(rows)
+        await self.repo.db.commit()
+        return {
+            "active_characters": len(characters),
+            "active_questions": len(questions),
+            "categories_aligned": categories_aligned,
+            "overrides_applied": overrides_applied,
+            "created": counts["created"],
+            "updated": counts["updated"],
+            "written": counts["written"],
+            "dry_run": 0,
+        }
