@@ -44,6 +44,72 @@ DEFAULT_CATEGORY_IG_BONUS = 0.12
 DEFAULT_BROAD_QUESTION_BONUS = 0.15
 DEFAULT_CATEGORY_REMAIN_MASS = 1e-6
 
+# Early-game ranking: prefer natural identity / origin / domain questions.
+# Low-value age questions stay locked for the first N turns (about 6–8).
+DEFAULT_EARLY_PRIORITY_LOCK_QUESTIONS = 7
+# After category detection, low-age questions need meaningful IG to surface.
+DEFAULT_LOW_PRIORITY_AGE_MIN_IG = 0.12
+# Low-age IG must be within this margin of the best non-low alternative.
+DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN = 0.08
+
+# Ordered early priorities (highest first). First matching group wins.
+EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
+    (("real person", "made-up character", "fictional character"), 0.40),
+    (("are they male", "girl or woman", "a man", "a woman"), 0.34),
+    (("still alive", "alive today", "are they alive"), 0.30),
+    (("are they human", "an animal"), 0.26),
+    (("famous worldwide", "people still talk", "are they famous"), 0.22),
+    (("from india",), 0.20),
+    (
+        (
+            "another country",
+            "from your country",
+            "from asia",
+            "from europe",
+            "from the americas",
+            "from africa",
+            "from australia",
+            "from japan",
+            "from the united states",
+            "from the united kingdom",
+        ),
+        0.18,
+    ),
+    (
+        (
+            "sports player",
+            "sportsperson",
+            "from a movie",
+            "from a tv show",
+            "a musician",
+            "political leader",
+            "a scientist",
+            "business leader",
+            "from anime",
+            "from a video game",
+            "from sports",
+        ),
+        0.14,
+    ),
+)
+
+# Fine-grained age identity — unnatural early; keep in DB but demote hard.
+LOW_PRIORITY_AGE_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "baby",
+        "toddler",
+        "teenager",
+        "elderly",
+        "kid or teen",
+        "a child",
+        "are they a child",
+        "are they children",
+        "grown-up",
+        "look old",
+        "look young",
+    }
+)
+
 # Exit Stage 1 (Identity) once a character category is clearly dominant.
 DEFAULT_STAGE_A_EXIT_THRESHOLD = 0.35
 DEFAULT_STAGE_A_EXIT_MARGIN = 0.10
@@ -58,24 +124,25 @@ DEFAULT_CATEGORY_CONFIDENCE_GATE = DEFAULT_STAGE_A_EXIT_THRESHOLD
 DEFAULT_CATEGORY_PREFERENCE_THRESHOLD = DEFAULT_STAGE_A_EXIT_THRESHOLD
 DEFAULT_CATEGORY_UNLOCK_THRESHOLD = DEFAULT_STAGE_A_EXIT_THRESHOLD
 
-# Stage 1 — Identity only (real/fictional, gender, age, human, famous).
+# Stage 1 — Identity only (real/fictional, gender, alive, human, famous).
+# Keep phrases specific: bare "made-up" must NOT match "made-up guild".
 STAGE_1_IDENTITY_KEYWORDS: frozenset[str] = frozenset(
     {
         "real person",
-        "made-up",
-        "fictional",
+        "made-up character",
+        "fictional character",
         "still alive",
         "alive today",
+        "are they alive",
         "are they male",
         "girl or woman",
-        "kid or teen",
-        "grown-up",
+        "a man",
+        "a woman",
         "are they human",
         "an animal",
         "famous worldwide",
         "people still talk",
-        "are they a hero",
-        "are they a villain",
+        "are they famous",
     }
 )
 
@@ -170,6 +237,8 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "hockey",
         "golf",
         "olympics",
+        "batsman",
+        "goalkeeper",
         "marvel",
         "dc comic",
         "nobel",
@@ -195,13 +264,22 @@ STAGE_C_KEYWORDS: frozenset[str] = frozenset(
         "princess",
         "vampire",
         "ice powers",
+        "fire powers",
+        "lightning powers",
+        "super speed",
         "filler",
         "love triangle",
         "dj",
+        "guild",
+        "catchphrase",
+        "franchise",
+        "sword",
+        "fight crime",
     }
 )
 
-# Forbidden until Stage 4 — never ask these early.
+# Hard niche / franchise / occupation — never ask early (Stage 1–3).
+# May exist in DB; only Stage 4 + relevance may unlock them.
 FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
     {
         "chef",
@@ -209,15 +287,31 @@ FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
         "dj",
         "queen",
         "princess",
+        "baby",
+        "toddler",
+        "teenager",
+        "elderly",
         "vampire",
         "ice powers",
+        "fire powers",
+        "lightning powers",
         "filler",
         "love triangle",
+        "made-up guild",
+        "guild",
+        "catchphrase",
         "marvel",
         "dc comic",
         "jedi",
         "k-pop",
         "franchise",
+        "batsman",
+        "goalkeeper",
+        "ninja",
+        "samurai",
+        "wizard",
+        "pirate",
+        "sword",
     }
 )
 
@@ -259,6 +353,31 @@ FICTIONAL_CHARACTER_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
+# Niche Stage-4 topics that require a matching dominant fictional/domain category.
+NICHE_TOPIC_REQUIRED_CATEGORIES: dict[str, frozenset[str]] = {
+    "guild": frozenset({"Anime", "Gaming"}),
+    "ninja": frozenset({"Anime"}),
+    "samurai": frozenset({"Anime"}),
+    "ice powers": frozenset({"Anime", "Movies", "Cartoons", "Gaming", "Mythology"}),
+    "fire powers": frozenset({"Anime", "Movies", "Cartoons", "Gaming", "Mythology"}),
+    "lightning powers": frozenset({"Anime", "Movies", "Cartoons", "Gaming", "Mythology"}),
+    "vampire": frozenset({"Movies", "TV Shows", "Literature", "Mythology"}),
+    "jedi": frozenset({"Movies", "Gaming"}),
+    "marvel": frozenset({"Movies", "TV Shows", "Gaming"}),
+    "dc comic": frozenset({"Movies", "TV Shows", "Gaming"}),
+    "filler": frozenset({"Anime"}),
+    "love triangle": frozenset({"Anime", "Movies", "TV Shows", "Literature"}),
+    "catchphrase": frozenset({"Anime", "Movies", "TV Shows", "Cartoons", "Gaming"}),
+    "cricket": frozenset({"Sports"}),
+    "football": frozenset({"Sports"}),
+    "soccer": frozenset({"Sports"}),
+    "tennis": frozenset({"Sports"}),
+    "batsman": frozenset({"Sports"}),
+    "goalkeeper": frozenset({"Sports"}),
+    "superhero": frozenset({"Movies", "TV Shows", "Cartoons", "Gaming", "Anime"}),
+    "sword": frozenset({"Anime", "Movies", "Gaming", "Mythology", "Literature"}),
+}
+
 # Question.category → character categories that must remain / dominate for domain Qs.
 DOMAIN_QUESTION_CATEGORY_REQUIREMENTS: dict[str, frozenset[str]] = {
     "Anime": frozenset({"Anime"}),
@@ -295,3 +414,7 @@ CHARACTER_CATEGORY_QUESTION_PREFERENCES: dict[str, frozenset[str]] = {
     "Mythology": frozenset({"Mythology", "Fictional traits", "Relationships", "History"}),
     "Literature": frozenset({"Literature", "Fictional traits", "Personality", "Time period"}),
 }
+
+# Penalty applied when a Stage-4 / niche question is scored (keeps flow natural).
+DEFAULT_SPECIFICITY_PENALTY = 0.18
+DEFAULT_NEAR_DUPLICATE_PENALTY = 0.25

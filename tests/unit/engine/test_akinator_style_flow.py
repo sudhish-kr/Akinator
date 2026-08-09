@@ -1,0 +1,439 @@
+"""Regression: natural Akinator-style question progression and hard gates."""
+
+from __future__ import annotations
+
+import random
+from uuid import UUID, uuid4
+
+from app.engine.models import LikelihoodEntry, QuestionRef
+from app.engine.selector import (
+    create_initial_state,
+    is_hard_gated_niche,
+    is_question_allowed_for_stage,
+    process_answer,
+    question_hierarchy_stage,
+    select_next_question,
+)
+from app.training.oracle import oracle_answer
+
+KOHLI = UUID("00000000-0000-0000-0000-000000000901")
+MESSI = UUID("00000000-0000-0000-0000-000000000902")
+SRK = UUID("00000000-0000-0000-0000-000000000903")
+NARUTO = UUID("00000000-0000-0000-0000-000000000904")
+BATMAN = UUID("00000000-0000-0000-0000-000000000905")
+EINSTEIN = UUID("00000000-0000-0000-0000-000000000906")
+
+Q_REAL = UUID("00000000-0000-0000-0000-000000000a01")
+Q_MADE_UP = UUID("00000000-0000-0000-0000-000000000a02")
+Q_MALE = UUID("00000000-0000-0000-0000-000000000a03")
+Q_ALIVE = UUID("00000000-0000-0000-0000-000000000a04")
+Q_FAMOUS = UUID("00000000-0000-0000-0000-000000000a05")
+Q_HUMAN = UUID("00000000-0000-0000-0000-000000000a06")
+Q_INDIA = UUID("00000000-0000-0000-0000-000000000a07")
+Q_OTHER_COUNTRY = UUID("00000000-0000-0000-0000-000000000a08")
+Q_SPORTS = UUID("00000000-0000-0000-0000-000000000a09")
+Q_MOVIES = UUID("00000000-0000-0000-0000-000000000a0a")
+Q_ANIME = UUID("00000000-0000-0000-0000-000000000a0b")
+Q_CRICKET = UUID("00000000-0000-0000-0000-000000000a0c")
+Q_FOOTBALL = UUID("00000000-0000-0000-0000-000000000a0d")
+Q_CHEF = UUID("00000000-0000-0000-0000-000000000a0e")
+Q_BABY = UUID("00000000-0000-0000-0000-000000000a0f")
+Q_TODDLER = UUID("00000000-0000-0000-0000-000000000a10")
+Q_TEEN = UUID("00000000-0000-0000-0000-000000000a11")
+Q_GUILD = UUID("00000000-0000-0000-0000-000000000a12")
+Q_NINJA = UUID("00000000-0000-0000-0000-000000000a13")
+Q_SUPERHERO = UUID("00000000-0000-0000-0000-000000000a14")
+Q_ICE = UUID("00000000-0000-0000-0000-000000000a15")
+
+CHARS = [KOHLI, MESSI, SRK, NARUTO, BATMAN, EINSTEIN]
+QUESTIONS = [
+    Q_REAL,
+    Q_MADE_UP,
+    Q_MALE,
+    Q_ALIVE,
+    Q_FAMOUS,
+    Q_HUMAN,
+    Q_INDIA,
+    Q_OTHER_COUNTRY,
+    Q_SPORTS,
+    Q_MOVIES,
+    Q_ANIME,
+    Q_CRICKET,
+    Q_FOOTBALL,
+    Q_CHEF,
+    Q_BABY,
+    Q_TODDLER,
+    Q_TEEN,
+    Q_GUILD,
+    Q_NINJA,
+    Q_SUPERHERO,
+    Q_ICE,
+]
+
+REFS = {
+    Q_REAL: QuestionRef(id=Q_REAL, text="Is this a real person?", category="Personality"),
+    Q_MADE_UP: QuestionRef(
+        id=Q_MADE_UP, text="Is this a made-up character?", category="Fictional traits"
+    ),
+    Q_MALE: QuestionRef(id=Q_MALE, text="Are they male?", category="Gender"),
+    Q_ALIVE: QuestionRef(id=Q_ALIVE, text="Is this person still alive?", category="Age"),
+    Q_FAMOUS: QuestionRef(
+        id=Q_FAMOUS, text="Are they famous worldwide?", category="Personality"
+    ),
+    Q_HUMAN: QuestionRef(id=Q_HUMAN, text="Are they human?", category="Personality"),
+    Q_INDIA: QuestionRef(id=Q_INDIA, text="Are they from India?", category="Nationality"),
+    Q_OTHER_COUNTRY: QuestionRef(
+        id=Q_OTHER_COUNTRY, text="Are they from another country?", category="Nationality"
+    ),
+    Q_SPORTS: QuestionRef(id=Q_SPORTS, text="Is this a sports player?", category="Sports"),
+    Q_MOVIES: QuestionRef(id=Q_MOVIES, text="Is this from a movie?", category="Movies"),
+    Q_ANIME: QuestionRef(id=Q_ANIME, text="Is this from anime?", category="Anime"),
+    Q_CRICKET: QuestionRef(
+        id=Q_CRICKET, text="Are they famous for cricket?", category="Sports"
+    ),
+    Q_FOOTBALL: QuestionRef(
+        id=Q_FOOTBALL, text="Are they famous for football?", category="Sports"
+    ),
+    Q_CHEF: QuestionRef(id=Q_CHEF, text="Are they a chef?", category="Profession"),
+    Q_BABY: QuestionRef(id=Q_BABY, text="Are they a baby or toddler?", category="Age"),
+    Q_TODDLER: QuestionRef(id=Q_TODDLER, text="Are they a toddler?", category="Age"),
+    Q_TEEN: QuestionRef(id=Q_TEEN, text="Are they a teenager?", category="Age"),
+    Q_GUILD: QuestionRef(
+        id=Q_GUILD, text="Are they in a made-up guild?", category="Anime"
+    ),
+    Q_NINJA: QuestionRef(id=Q_NINJA, text="Are they a ninja or samurai?", category="Anime"),
+    Q_SUPERHERO: QuestionRef(
+        id=Q_SUPERHERO, text="Are they a superhero?", category="Movies"
+    ),
+    Q_ICE: QuestionRef(id=Q_ICE, text="Do they have ice powers?", category="Anime"),
+}
+
+CATEGORIES = {
+    KOHLI: "Sports",
+    MESSI: "Sports",
+    SRK: "Movies",
+    NARUTO: "Anime",
+    BATMAN: "Movies",
+    EINSTEIN: "Scientists",
+}
+
+PROFILE = {
+    KOHLI: {
+        Q_REAL: 0.95,
+        Q_MADE_UP: 0.05,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.9,
+        Q_FAMOUS: 0.95,
+        Q_HUMAN: 0.95,
+        Q_INDIA: 0.95,
+        Q_OTHER_COUNTRY: 0.1,
+        Q_SPORTS: 0.97,
+        Q_MOVIES: 0.1,
+        Q_ANIME: 0.02,
+        Q_CRICKET: 0.96,
+        Q_FOOTBALL: 0.15,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.02,
+        Q_TODDLER: 0.02,
+        Q_TEEN: 0.05,
+        Q_GUILD: 0.02,
+        Q_NINJA: 0.02,
+        Q_SUPERHERO: 0.05,
+        Q_ICE: 0.02,
+    },
+    MESSI: {
+        Q_REAL: 0.95,
+        Q_MADE_UP: 0.05,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.9,
+        Q_FAMOUS: 0.95,
+        Q_HUMAN: 0.95,
+        Q_INDIA: 0.05,
+        Q_OTHER_COUNTRY: 0.9,
+        Q_SPORTS: 0.97,
+        Q_MOVIES: 0.1,
+        Q_ANIME: 0.02,
+        Q_CRICKET: 0.1,
+        Q_FOOTBALL: 0.96,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.02,
+        Q_TODDLER: 0.02,
+        Q_TEEN: 0.05,
+        Q_GUILD: 0.02,
+        Q_NINJA: 0.02,
+        Q_SUPERHERO: 0.05,
+        Q_ICE: 0.02,
+    },
+    SRK: {
+        Q_REAL: 0.95,
+        Q_MADE_UP: 0.05,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.9,
+        Q_FAMOUS: 0.95,
+        Q_HUMAN: 0.95,
+        Q_INDIA: 0.95,
+        Q_OTHER_COUNTRY: 0.1,
+        Q_SPORTS: 0.05,
+        Q_MOVIES: 0.96,
+        Q_ANIME: 0.02,
+        Q_CRICKET: 0.05,
+        Q_FOOTBALL: 0.05,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.02,
+        Q_TODDLER: 0.02,
+        Q_TEEN: 0.05,
+        Q_GUILD: 0.02,
+        Q_NINJA: 0.02,
+        Q_SUPERHERO: 0.1,
+        Q_ICE: 0.02,
+    },
+    NARUTO: {
+        Q_REAL: 0.05,
+        Q_MADE_UP: 0.95,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.55,
+        Q_FAMOUS: 0.9,
+        Q_HUMAN: 0.9,
+        Q_INDIA: 0.05,
+        Q_OTHER_COUNTRY: 0.2,
+        Q_SPORTS: 0.05,
+        Q_MOVIES: 0.2,
+        Q_ANIME: 0.97,
+        Q_CRICKET: 0.05,
+        Q_FOOTBALL: 0.05,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.05,
+        Q_TODDLER: 0.05,
+        Q_TEEN: 0.55,
+        Q_GUILD: 0.4,
+        Q_NINJA: 0.95,
+        Q_SUPERHERO: 0.2,
+        Q_ICE: 0.3,
+    },
+    BATMAN: {
+        Q_REAL: 0.1,
+        Q_MADE_UP: 0.9,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.55,
+        Q_FAMOUS: 0.95,
+        Q_HUMAN: 0.95,
+        Q_INDIA: 0.05,
+        Q_OTHER_COUNTRY: 0.4,
+        Q_SPORTS: 0.1,
+        Q_MOVIES: 0.96,
+        Q_ANIME: 0.05,
+        Q_CRICKET: 0.05,
+        Q_FOOTBALL: 0.05,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.02,
+        Q_TODDLER: 0.02,
+        Q_TEEN: 0.05,
+        Q_GUILD: 0.05,
+        Q_NINJA: 0.05,
+        Q_SUPERHERO: 0.95,
+        Q_ICE: 0.05,
+    },
+    EINSTEIN: {
+        Q_REAL: 0.95,
+        Q_MADE_UP: 0.05,
+        Q_MALE: 0.95,
+        Q_ALIVE: 0.05,
+        Q_FAMOUS: 0.95,
+        Q_HUMAN: 0.95,
+        Q_INDIA: 0.1,
+        Q_OTHER_COUNTRY: 0.85,
+        Q_SPORTS: 0.05,
+        Q_MOVIES: 0.1,
+        Q_ANIME: 0.02,
+        Q_CRICKET: 0.05,
+        Q_FOOTBALL: 0.05,
+        Q_CHEF: 0.05,
+        Q_BABY: 0.02,
+        Q_TODDLER: 0.02,
+        Q_TEEN: 0.05,
+        Q_GUILD: 0.02,
+        Q_NINJA: 0.02,
+        Q_SUPERHERO: 0.05,
+        Q_ICE: 0.02,
+    },
+}
+
+
+def _likelihoods():
+    return {
+        (cid, qid): LikelihoodEntry(v, 50)
+        for cid, answers in PROFILE.items()
+        for qid, v in answers.items()
+    }
+
+
+def _play(true_id: UUID, *, max_questions: int = 10, seed: int = 7) -> list[UUID]:
+    rng = random.Random(seed)
+    likelihoods = _likelihoods()
+    state = create_initial_state(CHARS, likelihoods)
+    asked: list[UUID] = []
+    for _ in range(max_questions):
+        qid = select_next_question(
+            state,
+            QUESTIONS,
+            min_samples=1,
+            question_refs=REFS,
+            character_categories=CATEGORIES,
+            explore=False,
+            rng=rng,
+        )
+        if qid is None:
+            break
+        assert qid not in asked
+        answer = oracle_answer(likelihoods, true_id, qid, rng, noise=0.0)
+        state, _ = process_answer(state, qid, answer)
+        asked.append(qid)
+    return asked
+
+
+def test_made_up_guild_is_not_stage_1_identity():
+    """Bare 'made-up' must not promote guild questions into Phase 1."""
+    assert question_hierarchy_stage(REFS[Q_GUILD]) == "4"
+    assert is_hard_gated_niche(REFS[Q_GUILD]) is True
+    assert is_question_allowed_for_stage(REFS[Q_GUILD], stage="1", dominant_category=None) is False
+    assert is_question_allowed_for_stage(REFS[Q_MADE_UP], stage="1", dominant_category=None) is True
+
+
+def test_early_questions_are_broad():
+    state = create_initial_state(CHARS, _likelihoods())
+    # First question at a uniform start must be Phase-1 identity.
+    qid = select_next_question(
+        state,
+        QUESTIONS,
+        min_samples=1,
+        question_refs=REFS,
+        character_categories=CATEGORIES,
+        explore=False,
+    )
+    assert qid is not None
+    assert question_hierarchy_stage(REFS[qid]) == "1"
+    assert qid not in {Q_GUILD, Q_CHEF, Q_BABY, Q_CRICKET, Q_ANIME, Q_ICE, Q_SPORTS}
+    # After a few vague answers, still no niche topics.
+    for _ in range(3):
+        qid = select_next_question(
+            state,
+            QUESTIONS,
+            min_samples=1,
+            question_refs=REFS,
+            character_categories=CATEGORIES,
+            explore=False,
+        )
+        assert qid is not None
+        assert qid not in {Q_GUILD, Q_CHEF, Q_BABY, Q_CRICKET, Q_ICE, Q_NINJA}
+        state, _ = process_answer(state, qid, "dont_know")
+
+
+def test_baby_toddler_teen_cannot_appear_early():
+    asked = _play(KOHLI, max_questions=6)
+    assert not set(asked) & {Q_BABY, Q_TODDLER, Q_TEEN}
+
+
+def test_profession_cannot_appear_before_category_detection():
+    asked = _play(KOHLI, max_questions=5)
+    assert Q_CHEF not in asked
+
+
+def test_anime_cannot_appear_on_real_person_path():
+    asked = _play(KOHLI, max_questions=8)
+    # Real sports path should not pivot into anime / guild / ninja.
+    assert Q_ANIME not in asked or asked.index(Q_SPORTS) < asked.index(Q_ANIME)
+    assert Q_GUILD not in asked
+    assert Q_NINJA not in asked
+    assert Q_ICE not in asked
+
+
+def test_sports_specific_cannot_appear_before_sports_detection():
+    asked = _play(KOHLI, max_questions=10)
+    if Q_CRICKET in asked:
+        assert Q_SPORTS in asked
+        assert asked.index(Q_SPORTS) < asked.index(Q_CRICKET)
+
+
+def test_fictional_universe_gated_before_fictional_category():
+    state = create_initial_state(CHARS, _likelihoods())
+    # Before any answers, guild / ice powers must be rejected.
+    qid = select_next_question(
+        state,
+        QUESTIONS,
+        min_samples=1,
+        question_refs=REFS,
+        character_categories=CATEGORIES,
+        explore=False,
+    )
+    assert qid not in {Q_GUILD, Q_ICE, Q_NINJA}
+
+
+def test_made_up_guild_cannot_appear_in_early_gameplay():
+    for true_id in (KOHLI, MESSI, NARUTO, BATMAN):
+        asked = _play(true_id, max_questions=5)
+        assert Q_GUILD not in asked
+
+
+def test_questions_not_repeated_in_session():
+    asked = _play(MESSI, max_questions=12)
+    assert len(asked) == len(set(asked))
+
+
+def test_virat_kohli_natural_sports_cricket_path():
+    asked = _play(KOHLI, max_questions=10)
+    texts = [REFS[q].text for q in asked]
+    assert any("real person" in t or "male" in t or "alive" in t or "famous" in t for t in texts[:4])
+    assert Q_SPORTS in asked
+    if Q_CRICKET in asked:
+        assert asked.index(Q_SPORTS) < asked.index(Q_CRICKET)
+    assert Q_GUILD not in asked
+    assert Q_ANIME not in asked or asked.index(Q_SPORTS) < asked.index(Q_ANIME)
+
+
+def test_messi_natural_sports_football_path():
+    asked = _play(MESSI, max_questions=10)
+    assert Q_SPORTS in asked
+    if Q_FOOTBALL in asked:
+        assert asked.index(Q_SPORTS) < asked.index(Q_FOOTBALL)
+    assert Q_GUILD not in asked
+    assert Q_NINJA not in asked
+
+
+def test_naruto_anime_path_after_fictional_detection():
+    asked = _play(NARUTO, max_questions=10)
+    assert Q_MADE_UP in asked or Q_REAL in asked
+    assert Q_ANIME in asked
+    # Anime-specific niche only after anime category question (or late).
+    if Q_NINJA in asked:
+        assert asked.index(Q_ANIME) < asked.index(Q_NINJA)
+    if Q_GUILD in asked:
+        assert asked.index(Q_ANIME) < asked.index(Q_GUILD)
+    # Early block of guild
+    assert Q_GUILD not in asked[:4]
+
+
+def test_batman_superhero_path_after_fictional_detection():
+    asked = _play(BATMAN, max_questions=10)
+    assert Q_MADE_UP in asked or Q_REAL in asked
+    assert Q_MOVIES in asked or Q_SUPERHERO in asked
+    assert Q_GUILD not in asked
+    assert Q_NINJA not in asked
+    if Q_SUPERHERO in asked and Q_MOVIES in asked:
+        # Either order is ok once fictional is established; both after identity.
+        first_identity = min(
+            i for i, q in enumerate(asked) if q in {Q_REAL, Q_MADE_UP, Q_MALE, Q_FAMOUS}
+        )
+        assert asked.index(Q_SUPERHERO) > first_identity
+
+
+def test_hard_gate_helpers_cover_forbidden_topics():
+    for text in (
+        "Are they a chef?",
+        "Are they a baby?",
+        "Are they in a made-up guild?",
+        "Do they have ice powers?",
+        "Are they a teenager?",
+    ):
+        ref = QuestionRef(id=uuid4(), text=text, category="Anime")
+        assert is_hard_gated_niche(ref)
+        assert question_hierarchy_stage(ref) == "4"

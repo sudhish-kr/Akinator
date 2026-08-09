@@ -26,16 +26,24 @@ from app.engine.constants import (
     DEFAULT_CONSECUTIVE_DONT_KNOW_CAP,
     DEFAULT_DIVERSITY_MARGIN,
     DEFAULT_DIVERSITY_TOP_K,
+    DEFAULT_EARLY_PRIORITY_LOCK_QUESTIONS,
     DEFAULT_IG_TIE_THRESHOLD,
+    DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN,
+    DEFAULT_LOW_PRIORITY_AGE_MIN_IG,
+    DEFAULT_NEAR_DUPLICATE_PENALTY,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    DEFAULT_SPECIFICITY_PENALTY,
     DEFAULT_STAGE_A_EXIT_MARGIN,
     DEFAULT_STAGE_A_EXIT_THRESHOLD,
     DEFAULT_STAGE_C_ENTER_THRESHOLD,
     DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
     DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
+    EARLY_PRIORITY_KEYWORD_GROUPS,
     FICTIONAL_CHARACTER_CATEGORIES,
     FORBIDDEN_EARLY_KEYWORDS,
+    LOW_PRIORITY_AGE_KEYWORDS,
+    NICHE_TOPIC_REQUIRED_CATEGORIES,
     PROFESSION_SPECIFIC_KEYWORDS,
     STAGE_1_IDENTITY_KEYWORDS,
     STAGE_2_ORIGIN_CATEGORIES,
@@ -68,8 +76,151 @@ def _normalize_stage(stage: SelectionStage) -> SelectionStage:
     return stage
 
 
-def _text_matches_any(text: str, keywords: frozenset[str]) -> bool:
+def _text_matches_any(text: str, keywords: frozenset[str] | set[str]) -> bool:
     return any(kw in text for kw in keywords)
+
+
+def niche_topic_keys(question_ref: QuestionRef | None) -> frozenset[str]:
+    """Return niche topic keys present in the question text."""
+    if question_ref is None:
+        return frozenset()
+    text = (question_ref.text or "").casefold()
+    return frozenset(key for key in NICHE_TOPIC_REQUIRED_CATEGORIES if key in text)
+
+
+def is_hard_gated_niche(question_ref: QuestionRef | None) -> bool:
+    """True for franchise / occupation / niche topics that must wait for Stage 4."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS):
+        return True
+    if is_low_priority_age_question(question_ref):
+        return True
+    return bool(niche_topic_keys(question_ref))
+
+
+def niche_topic_is_relevant(
+    question_ref: QuestionRef | None,
+    dominant_category: str | None,
+) -> bool:
+    """Niche Stage-4 topics require a matching dominant character category."""
+    keys = niche_topic_keys(question_ref)
+    if not keys:
+        # Forbidden-early without explicit niche map: allow only with a dominant cat.
+        return dominant_category is not None
+    if dominant_category is None:
+        return False
+    for key in keys:
+        allowed = NICHE_TOPIC_REQUIRED_CATEGORIES.get(key)
+        if allowed is not None and dominant_category not in allowed:
+            return False
+    return True
+
+
+def is_low_priority_age_question(question_ref: QuestionRef | None) -> bool:
+    """True for baby/toddler/teen/elderly-style age questions."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, LOW_PRIORITY_AGE_KEYWORDS)
+
+
+def early_question_priority_bonus(question_ref: QuestionRef | None) -> float:
+    """Weighted bonus for natural early-game questions (highest match wins)."""
+    if question_ref is None:
+        return 0.0
+    if is_hard_gated_niche(question_ref):
+        return 0.0
+    text = (question_ref.text or "").casefold()
+    for patterns, bonus in EARLY_PRIORITY_KEYWORD_GROUPS:
+        if any(pat in text for pat in patterns):
+            return float(bonus)
+    return 0.0
+
+
+def specificity_penalty(question_ref: QuestionRef | None, stage: SelectionStage) -> float:
+    """Penalize overly specific questions relative to the current phase."""
+    stage_n = _normalize_stage(stage)
+    q_stage = _normalize_stage(question_hierarchy_stage(question_ref))
+    if is_hard_gated_niche(question_ref):
+        return DEFAULT_SPECIFICITY_PENALTY * (1.5 if stage_n != "4" else 1.0)
+    if q_stage == "4" and stage_n in {"1", "2", "3"}:
+        return DEFAULT_SPECIFICITY_PENALTY
+    if q_stage == "3" and stage_n in {"1", "2"}:
+        return DEFAULT_SPECIFICITY_PENALTY * 0.5
+    return 0.0
+
+
+def near_duplicate_penalty(
+    question_ref: QuestionRef | None,
+    previous_ref: QuestionRef | None,
+) -> float:
+    """Penalize questions that largely repeat the previous question's topic."""
+    if question_ref is None or previous_ref is None:
+        return 0.0
+    cur = (question_ref.text or "").casefold()
+    prev = (previous_ref.text or "").casefold()
+    if not cur or not prev:
+        return 0.0
+    # Shared content words longer than 3 chars (ignore boilerplate).
+    stop = {
+        "this",
+        "that",
+        "they",
+        "them",
+        "their",
+        "from",
+        "with",
+        "have",
+        "does",
+        "are",
+        "is",
+        "the",
+        "a",
+        "an",
+        "or",
+        "and",
+        "for",
+        "person",
+        "character",
+        "your",
+    }
+    cur_words = {w for w in cur.replace("?", " ").split() if len(w) > 3 and w not in stop}
+    prev_words = {w for w in prev.replace("?", " ").split() if len(w) > 3 and w not in stop}
+    if not cur_words or not prev_words:
+        return 0.0
+    overlap = cur_words & prev_words
+    if len(overlap) >= 2 or (len(overlap) == 1 and overlap & cur_words and len(cur_words) <= 3):
+        return DEFAULT_NEAR_DUPLICATE_PENALTY
+    return 0.0
+
+
+def should_defer_low_priority_age(
+    *,
+    questions_asked: int,
+    stage: SelectionStage,
+    ig: float,
+    best_non_low_ig: float | None,
+    lock_questions: int = DEFAULT_EARLY_PRIORITY_LOCK_QUESTIONS,
+    min_ig: float = DEFAULT_LOW_PRIORITY_AGE_MIN_IG,
+    ig_margin: float = DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN,
+) -> bool:
+    """
+    Defer niche age questions until after the first broad turns and category
+    detection, and only keep them when IG is meaningfully competitive.
+    """
+    stage_n = _normalize_stage(stage)
+    if questions_asked < lock_questions:
+        return True
+    if stage_n in {"1", "2", "3"}:
+        return True
+    if ig < min_ig:
+        return True
+    if best_non_low_ig is not None and ig + ig_margin < best_non_low_ig:
+        return True
+    return False
+
 
 
 def expected_entropy_after_question(
@@ -274,28 +425,24 @@ def question_hierarchy_stage(question_ref: QuestionRef | None) -> SelectionStage
     category = question_ref.category
     text = (question_ref.text or "").casefold()
 
-    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS):
+    # Hard niche / forbidden topics are always Stage 4 (never early identity).
+    # Critical: bare "made-up" must not classify "made-up guild" as Stage 1.
+    if is_hard_gated_niche(question_ref):
+        return "4"
+    if _text_matches_any(text, STAGE_C_KEYWORDS) or _text_matches_any(
+        text, PROFESSION_SPECIFIC_KEYWORDS
+    ):
         return "4"
     if _text_matches_any(text, STAGE_1_IDENTITY_KEYWORDS):
         return "1"
-    if _text_matches_any(text, STAGE_2_ORIGIN_KEYWORDS) or (
-        category in STAGE_2_ORIGIN_CATEGORIES
-        and not _text_matches_any(text, STAGE_C_KEYWORDS)
-        and not _text_matches_any(text, PROFESSION_SPECIFIC_KEYWORDS)
+    if category in STAGE_2_ORIGIN_CATEGORIES or _text_matches_any(
+        text, STAGE_2_ORIGIN_KEYWORDS
     ):
-        # Pure origin / nationality / era — Stage 2
-        if category in STAGE_2_ORIGIN_CATEGORIES or _text_matches_any(
-            text, STAGE_2_ORIGIN_KEYWORDS
-        ):
-            return "2"
+        return "2"
 
     if category in STAGE_C_QUESTION_CATEGORIES:
         return "4"
     if category in STAGE_B_QUESTION_CATEGORIES:
-        if _text_matches_any(text, STAGE_C_KEYWORDS) or _text_matches_any(
-            text, PROFESSION_SPECIFIC_KEYWORDS
-        ):
-            return "4"
         return "3"
     if category in STAGE_A_QUESTION_CATEGORIES:
         # Non-identity Stage-A metadata (e.g. hair color) waits for later stages.
@@ -312,21 +459,42 @@ def resolve_selection_stage(
     stage_origin_exit_threshold: float = DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
     stage_origin_exit_margin: float = DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     stage_c_enter_threshold: float = DEFAULT_STAGE_C_ENTER_THRESHOLD,
+    questions_asked: int = 0,
 ) -> tuple[SelectionStage, str | None]:
     """
     Determine natural questioning stage from category posterior mass.
 
     Missing category mappings → Stage 1 only (fail safe).
+    After enough broad turns, soften margins so the game does not stall on
+    near-tied categories (still never opens niche Stage-4 early).
     """
     if not character_categories:
         return "1", None
 
     dominant, top, second = top_category_masses(state, character_categories)
-    if dominant is None or top < stage_a_exit_threshold or (top - second) < stage_a_exit_margin:
+    if dominant is None:
+        return "1", None
+
+    margin = top - second
+    asked = max(0, int(questions_asked))
+
+    # Soft progression: once identity has had a fair turn, advance even on ties.
+    if asked >= 5 and top >= 0.28:
+        if top >= stage_c_enter_threshold and margin >= (stage_a_exit_margin * 0.5):
+            return "4", dominant
+        if margin >= 0.04 or asked >= 6:
+            return "3", dominant
+        return "2", dominant
+
+    if asked >= 3 and top >= 0.28 and margin < stage_a_exit_margin:
+        # Still unclear domain — allow origin / basic domain probing.
+        return "2", dominant
+
+    if top < stage_a_exit_threshold or margin < stage_a_exit_margin:
         return "1", dominant
 
     # Stage 2 Origin until the dominant category is clearer.
-    if top < stage_origin_exit_threshold or (top - second) < stage_origin_exit_margin:
+    if top < stage_origin_exit_threshold or margin < stage_origin_exit_margin:
         return "2", dominant
 
     if top >= stage_c_enter_threshold:
@@ -348,6 +516,10 @@ def is_question_relevant_to_candidates(
     ref = question_refs.get(question_id)
     if ref is None or not ref.category:
         return False
+    for key in niche_topic_keys(ref):
+        allowed = NICHE_TOPIC_REQUIRED_CATEGORIES.get(key)
+        if allowed is not None and not (allowed & remaining_categories):
+            return False
     required = DOMAIN_QUESTION_CATEGORY_REQUIREMENTS.get(ref.category)
     if required is None:
         return True
@@ -411,14 +583,18 @@ def is_question_allowed_for_stage(
     stage: SelectionStage,
     dominant_category: str | None,
 ) -> bool:
-    """Natural gameplay allow-list for Stage 1 / 2 / 3 / 4."""
+    """Natural Akinator-style allow-list for Stage 1 / 2 / 3 / 4."""
     stage = _normalize_stage(stage)
     q_stage = _normalize_stage(question_hierarchy_stage(question_ref))
     category = question_ref.category if question_ref else None
     text = (question_ref.text or "").casefold() if question_ref else ""
+    hard_niche = is_hard_gated_niche(question_ref)
 
-    if _text_matches_any(text, FORBIDDEN_EARLY_KEYWORDS) and stage != "4":
-        return False
+    # Hard niche / forbidden: Stage 4 only, and only when the topic is relevant.
+    if hard_niche:
+        if stage != "4":
+            return False
+        return niche_topic_is_relevant(question_ref, dominant_category)
 
     if stage == "1":
         return q_stage == "1"
@@ -445,7 +621,7 @@ def is_question_allowed_for_stage(
         return True
     if category == "Anime":
         return _anime_requires_fictional_dominant(dominant_category)
-    if category in {"Sports", "Movies"}:
+    if category in STAGE_B_QUESTION_CATEGORIES:
         return _domain_matches_dominant(category, dominant_category)
     return _domain_matches_dominant(category, dominant_category)
 
@@ -521,21 +697,22 @@ def select_next_question(
     stage_origin_exit_margin: float = DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     category_ig_bonus: float = DEFAULT_CATEGORY_IG_BONUS,
     broad_question_bonus: float = DEFAULT_BROAD_QUESTION_BONUS,
+    early_priority_lock_questions: int = DEFAULT_EARLY_PRIORITY_LOCK_QUESTIONS,
+    low_priority_age_min_ig: float = DEFAULT_LOW_PRIORITY_AGE_MIN_IG,
+    low_priority_age_ig_margin: float = DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN,
     candidate_mass_focus: float = DEFAULT_CANDIDATE_MASS_FOCUS,
     category_remain_mass: float = DEFAULT_CATEGORY_REMAIN_MASS,
     diversity_top_k: int = DEFAULT_DIVERSITY_TOP_K,
     diversity_margin: float = DEFAULT_DIVERSITY_MARGIN,
     rng: random.Random | None = None,
-    explore: bool = True,
+    explore: bool = False,
 ) -> UUID | None:
     """
     Select the next question using natural Stage 1 → 2 → 3 → 4 gating.
 
-    - Stage 1: identity only
-    - Stage 2: origin (place / era)
-    - Stage 3: category / domain after enough confidence
-    - Stage 4: subcategory / specific
-    - Missing mappings → Stage 1 identity-only (fail safe)
+    Ranking is deterministic by default (explore=False): score by information
+    gain + natural-flow bonuses − specificity / near-duplicate penalties.
+    Niche questions stay hard-gated until Stage 4 and category relevance.
     """
     del consecutive_dont_know_cap  # reserved for future dont_know streak policy
     preference_threshold = (
@@ -595,14 +772,27 @@ def select_next_question(
             qid
             for qid in unused
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
+            and not is_hard_gated_niche(question_refs.get(qid))
+            and not is_low_priority_age_question(question_refs.get(qid))
         ]
+        if not broad_only:
+            broad_only = [
+                qid
+                for qid in unused
+                if question_hierarchy_stage(question_refs.get(qid)) == "1"
+                and not is_hard_gated_niche(question_refs.get(qid))
+            ]
         if not broad_only:
             return None
         scored_safe: list[tuple[float, int, UUID]] = []
         for qid in broad_only:
+            ref = question_refs.get(qid)
             scored_safe.append(
                 (
-                    information_gain(focus, qid) + broad_question_bonus,
+                    information_gain(focus, qid)
+                    + broad_question_bonus
+                    + early_question_priority_bonus(ref)
+                    - specificity_penalty(ref, "1"),
                     total_sample_size_for_question(state, qid),
                     qid,
                 )
@@ -613,7 +803,7 @@ def select_next_question(
             diversity_margin=diversity_margin,
             diversity_top_k=diversity_top_k,
             rng=rng,
-            explore=explore,
+            explore=False,
         )
 
     stage, dominant = resolve_selection_stage(
@@ -624,29 +814,55 @@ def select_next_question(
         stage_origin_exit_threshold=stage_origin_exit_threshold,
         stage_origin_exit_margin=stage_origin_exit_margin,
         stage_c_enter_threshold=stage_c_enter_threshold,
+        questions_asked=state.questions_asked,
     )
 
-    relevant: list[UUID] = []
-    for qid in unused:
-        ref = question_refs.get(qid)
-        if ref is None:
-            continue
-        if not is_question_relevant_to_candidates(qid, question_refs, remaining_cats):
-            # Stage 1–2 questions are never domain-gated by remaining_cats
-            if question_hierarchy_stage(ref) not in {"1", "2"}:
+    def _collect_relevant(active_stage: SelectionStage) -> list[UUID]:
+        picked: list[UUID] = []
+        for qid in unused:
+            ref = question_refs.get(qid)
+            if ref is None:
                 continue
-        if not is_question_allowed_for_stage(
-            ref, stage=stage, dominant_category=dominant
-        ):
-            continue
-        relevant.append(qid)
+            if not is_question_relevant_to_candidates(qid, question_refs, remaining_cats):
+                if question_hierarchy_stage(ref) not in {"1", "2"}:
+                    continue
+            if not is_question_allowed_for_stage(
+                ref, stage=active_stage, dominant_category=dominant
+            ):
+                continue
+            q_stage = question_hierarchy_stage(ref)
+            if q_stage == "3" and ref.category in DOMAIN_QUESTION_CATEGORY_REQUIREMENTS:
+                if not is_domain_category_unlocked(
+                    ref.category,
+                    focus,
+                    character_categories,
+                    unlock_threshold=category_unlock_threshold,
+                ):
+                    continue
+            picked.append(qid)
+        return picked
 
+    relevant = _collect_relevant(stage)
     if not relevant:
-        # Always fall back to Stage 1 identity — never open the floodgates.
+        for promo in ("2", "3", "4"):
+            if _normalize_stage(stage) == promo:
+                continue
+            if promo == "2" and state.questions_asked < 2:
+                continue
+            if promo == "3" and state.questions_asked < 3:
+                continue
+            if promo == "4" and state.questions_asked < 6:
+                continue
+            relevant = _collect_relevant(promo)
+            if relevant:
+                stage = promo
+                break
+    if not relevant:
         relevant = [
             qid
             for qid in unused
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
+            and not is_hard_gated_niche(question_refs.get(qid))
         ]
     if not relevant:
         return None
@@ -657,18 +873,66 @@ def select_next_question(
         if mass > preference_threshold:
             preferred_cats = preferred_question_categories(dominant)
 
+    previous_ref: QuestionRef | None = None
+    if state.used_question_ids:
+        for qid in reversed(list(state.used_question_ids)):
+            previous_ref = question_refs.get(qid)
+            if previous_ref is not None:
+                break
+
+    ig_by_qid = {qid: information_gain(focus, qid) for qid in relevant}
+    non_low_igs = [
+        ig_by_qid[qid]
+        for qid in relevant
+        if not is_low_priority_age_question(question_refs.get(qid))
+        and not is_hard_gated_niche(question_refs.get(qid))
+    ]
+    best_non_low_ig = max(non_low_igs) if non_low_igs else None
+
     scored: list[tuple[float, int, UUID]] = []
     for qid in relevant:
-        ig = information_gain(focus, qid)
-        score = ig
         ref = question_refs.get(qid)
+        ig = ig_by_qid[qid]
+        if is_low_priority_age_question(ref) and should_defer_low_priority_age(
+            questions_asked=state.questions_asked,
+            stage=stage,
+            ig=ig,
+            best_non_low_ig=best_non_low_ig,
+            lock_questions=early_priority_lock_questions,
+            min_ig=low_priority_age_min_ig,
+            ig_margin=low_priority_age_ig_margin,
+        ):
+            continue
+        if is_hard_gated_niche(ref) and _normalize_stage(stage) != "4":
+            continue
+        score = ig
         q_stage = question_hierarchy_stage(ref)
         if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):
             score += category_ig_bonus
         if stage in {"1", "2"} and q_stage in {"1", "2"}:
             score += broad_question_bonus
+        if stage in {"3", "4"} and q_stage == "3":
+            score += category_ig_bonus * 0.5
+        score += early_question_priority_bonus(ref)
+        score -= specificity_penalty(ref, stage)
+        score -= near_duplicate_penalty(ref, previous_ref)
         samples = total_sample_size_for_question(state, qid)
         scored.append((score, samples, qid))
+
+    if not scored:
+        for qid in relevant:
+            ref = question_refs.get(qid)
+            if is_low_priority_age_question(ref) or is_hard_gated_niche(ref):
+                continue
+            scored.append(
+                (
+                    ig_by_qid[qid] + early_question_priority_bonus(ref),
+                    total_sample_size_for_question(state, qid),
+                    qid,
+                )
+            )
+    if not scored:
+        return None
 
     return _pick_from_near_best(
         scored,
@@ -676,7 +940,7 @@ def select_next_question(
         diversity_margin=diversity_margin,
         diversity_top_k=diversity_top_k,
         rng=rng,
-        explore=explore,
+        explore=explore if _normalize_stage(stage) == "4" else False,
     )
 
 
