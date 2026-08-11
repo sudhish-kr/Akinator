@@ -200,12 +200,12 @@ class GameService:
         distinguishing_question_id: UUID | None = None,
         distinguishing_answer: str | None = None,
     ) -> dict:
-        """Apply post-game learning, persist final stats, and close the session."""
+        """Apply post-game learning, persist guess stats, and close the session."""
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
         if db_session.status != GameSessionStatus.IN_PROGRESS:
-            raise GameServiceError("Session already completed", 409)
+            raise GameServiceError("Session is already closed", 409)
 
         now = datetime.now(timezone.utc)
         guessed_id = db_session.guessed_character_id
