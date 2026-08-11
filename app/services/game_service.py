@@ -207,6 +207,9 @@ class GameService:
         if db_session.status != GameSessionStatus.IN_PROGRESS:
             raise GameServiceError("Session already completed", 409)
 
+        now = datetime.now(timezone.utc)
+        guessed_id = db_session.guessed_character_id
+
         if wrong_guess:
             updates = await self.learning.learn_from_wrong_guess(
                 session_id,
@@ -216,8 +219,6 @@ class GameService:
             )
             db_session.status = GameSessionStatus.GUESSED_INCORRECT
             db_session.actual_character_id = character_id
-            db_session.ended_at = datetime.now(timezone.utc)
-            guessed_id = db_session.guessed_character_id
             if guessed_id:
                 char = await self.repo.get_character(guessed_id)
                 if char:
@@ -226,11 +227,15 @@ class GameService:
             updates = await self.learning.learn_from_session(session_id, character_id)
             db_session.status = GameSessionStatus.GUESSED_CORRECT
             db_session.actual_character_id = character_id
-            db_session.ended_at = datetime.now(timezone.utc)
-            char = await self.repo.get_character(character_id)
+            if not db_session.guessed_character_id:
+                db_session.guessed_character_id = character_id
+            target_id = db_session.guessed_character_id or character_id
+            char = await self.repo.get_character(target_id)
             if char:
                 char.times_guessed_correctly += 1
 
+        db_session.ended_at = now
+        db_session.last_activity_at = now
         await self.repo.commit()
         self.store.delete(session_id)
         return {"status": "learned", "updates": updates}

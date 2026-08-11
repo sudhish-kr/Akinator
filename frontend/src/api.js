@@ -1,7 +1,9 @@
+import { apiUrl } from "./config.js";
+
 async function request(method, path, body) {
   const options = { method, headers: { "Content-Type": "application/json" } };
   if (body !== undefined) options.body = JSON.stringify(body);
-  const res = await fetch(path, options);
+  const res = await fetch(apiUrl(path), options);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     const message =

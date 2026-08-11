@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,10 +12,14 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://mindguess:mindguess@localhost:5432/mindguess"
 
-    jwt_secret: str
+    # Required via JWT_SECRET — no default; startup fails if missing/empty
+    jwt_secret: str = Field(min_length=1)
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
     jwt_refresh_expire_days: int = 7
+
+    # Comma-separated browser origins allowed to call the API (CORS)
+    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
 
     # Engine thresholds (TDD v1.1)
     elimination_floor: float = 0.0005
@@ -28,6 +33,10 @@ class Settings(BaseSettings):
     ig_tie_threshold: float = 0.001
     session_abandon_minutes: int = 30
     new_question_min_samples: int = 5
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 settings = Settings()
