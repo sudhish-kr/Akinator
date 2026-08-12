@@ -30,13 +30,8 @@ APP_INFO.labels(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Apply pending schema migrations before serving traffic.
-    from app.db.migrate import run_pending_migrations
-
-    run_pending_migrations()
-
-    # Warm playable catalog in the background — never block "Application startup
-    # complete" on loading ~1M likelihood rows from SQLite.
+    # Never block "Application startup complete" on SQLite locks / large DDL.
+    migrate_task = asyncio.create_task(asyncio.to_thread(_run_migrations_safe))
     warm_task = asyncio.create_task(_warm_playable_catalog())
 
     # Session cleanup runs on Celery beat (abandon_stale_sessions).
@@ -47,17 +42,24 @@ async def lifespan(app: FastAPI):
 
         cleanup_task = asyncio.create_task(run_session_cleanup_loop())
     yield
-    warm_task.cancel()
-    try:
-        await warm_task
-    except asyncio.CancelledError:
-        pass
-    if cleanup_task is not None:
-        cleanup_task.cancel()
+    for task in (migrate_task, warm_task, cleanup_task):
+        if task is None:
+            continue
+        task.cancel()
         try:
-            await cleanup_task
+            await task
         except asyncio.CancelledError:
             pass
+
+
+def _run_migrations_safe() -> None:
+    try:
+        from app.db.migrate import run_pending_migrations
+
+        run_pending_migrations()
+    except Exception:
+        # Local SQLite lock / already-migrated races — app can still serve.
+        pass
 
 
 async def _warm_playable_catalog() -> None:

@@ -20,6 +20,7 @@ from app.engine.constants import (
     DEFAULT_CONFIDENCE_MARGIN,
     DEFAULT_CONFIDENCE_SEPARATION,
     DEFAULT_MAX_QUESTIONS,
+    DEFAULT_MIN_GUESS_CONFIDENCE,
 )
 from app.engine.elimination import top_two
 from app.engine.models import ConfidenceResult, GameEngineState
@@ -172,13 +173,15 @@ def resolve_turn(
     confidence_separation: float = DEFAULT_CONFIDENCE_SEPARATION,
     confidence_margin: float = DEFAULT_CONFIDENCE_MARGIN,
     max_questions: int = DEFAULT_MAX_QUESTIONS,
+    min_guess_confidence: float = DEFAULT_MIN_GUESS_CONFIDENCE,
 ) -> ConfidenceResult:
     """
     Session-manager turn resolution after an answer.
 
     - High confidence / stop rules → guess
     - Low confidence + a next question → keep asking
-    - Low confidence + no next question → best available guess
+    - No next question + enough confidence (or budget spent) → best available guess
+    - No next question + tiny confidence + budget left → keep asking (do not guess at 1%)
     """
     result = evaluate_confidence(
         state,
@@ -189,6 +192,19 @@ def resolve_turn(
     )
     if result.should_guess:
         return result
-    if next_question_id is None:
+    if next_question_id is not None:
+        return result
+
+    budget_spent = state.questions_asked >= max_questions
+    if budget_spent or result.confidence >= min_guess_confidence:
         return best_available_guess(state)
-    return result
+
+    # Selector went dry while still very unsure — refuse a random 1% guess.
+    return ConfidenceResult(
+        should_guess=False,
+        confidence=result.confidence,
+        margin=result.margin,
+        top_character_id=result.top_character_id,
+        second_character_id=result.second_character_id,
+        reason="awaiting_questions",
+    )

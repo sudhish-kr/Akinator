@@ -145,7 +145,7 @@ _BASE: dict[str, dict[str, float]] = {
         "Physical appearance": 0.55,
         "Gender": 0.5,
         "Age": 0.55,
-        "Nationality": 0.82,  # often East Asian settings; refined by keywords
+        "Nationality": 0.5,  # geography refined per question text (Japan≠India)
         "Profession": 0.3,
         "Personality": 0.55,
         "Relationships": 0.55,
@@ -465,14 +465,64 @@ def refine_prior(
         if needle in text:
             p = high if character_category == match_cat else min(p, low)
 
-    # Geography hints
-    if "japan" in text or "asia" in text:
+    # Geography — must be question-specific (Anime≠India just because Nationality).
+    if "from india" in text:
+        if character_category == "Anime":
+            p = 0.08
+        elif character_category in {"Sports", "Politicians", "Musicians", "Business Leaders", "Movies"}:
+            p = 0.35  # category-neutral; character overrides raise Indians
+        else:
+            p = min(p, 0.25)
+    elif "from japan" in text:
+        if character_category == "Anime":
+            p = 0.88
+        elif character_category in REAL_WORLD:
+            p = min(p, 0.2)
+        else:
+            p = min(p, 0.3)
+    elif "japan" in text or ("asia" in text and "india" not in text):
         if character_category == "Anime":
             p = max(p, 0.85)
         elif character_category in REAL_WORLD:
             p = min(max(p, 0.25), 0.55)
     if "europe" in text and character_category in {"Historical Figures", "Literature"}:
         p = max(p, 0.55)
+    if "united states" in text or "from the usa" in text or "from america" in text:
+        if character_category in {"Sports", "Movies", "Business Leaders", "Musicians"}:
+            p = min(max(p, 0.3), 0.45)
+        elif character_category == "Anime":
+            p = min(p, 0.12)
+
+    # Sport subtypes — category Sports is NOT enough; defaults stay low so
+    # cricket≠football. Character overrides raise the matching athletes.
+    sport_needles = (
+        "cricket",
+        "football",
+        "soccer",
+        "basketball",
+        "tennis",
+        "baseball",
+        "hockey",
+        "golf",
+        "boxing",
+        "skating",
+        "wrestling",
+        "swimming",
+        "athletics",
+        "formula",
+        "racing",
+    )
+    if any(n in text for n in sport_needles) and "sports player" not in text and "athlete" not in text:
+        if character_category == "Sports":
+            p = 0.18
+        else:
+            p = min(p, 0.08)
+
+    # Gender — category defaults are uninformative; keep near-neutral here.
+    if "girl or woman" in text or "a woman" in text or "are they female" in text:
+        p = 0.48
+    if "are they male" in text or "a man?" in text or "character a man" in text:
+        p = 0.52
 
     # Era
     if "known today" in text or "21st century" in text:

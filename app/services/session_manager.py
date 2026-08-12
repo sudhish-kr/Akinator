@@ -69,7 +69,11 @@ class GameSessionManager:
         """Start a new session and select the first question."""
         categories = dict(character_categories or {})
         popularity = dict(character_popularity or {})
-        engine = create_initial_state(character_ids, likelihoods)
+        engine = create_initial_state(
+            character_ids,
+            likelihoods,
+            popularity=popularity,
+        )
         first_q = select_next_question(
             engine,
             question_ids,

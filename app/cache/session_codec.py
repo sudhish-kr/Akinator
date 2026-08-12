@@ -61,6 +61,7 @@ def encode_live_session(
             ),
             "used_question_ids": [str(qid) for qid in engine.used_question_ids],
             "asked_question_order": [str(qid) for qid in engine.asked_question_order],
+            "answer_log": {str(qid): str(ans) for qid, ans in engine.answer_log.items()},
             "questions_asked": int(engine.questions_asked),
             "consecutive_dont_know": int(engine.consecutive_dont_know),
             "pre_elimination_top": (
@@ -104,6 +105,13 @@ def decode_live_session(payload: dict[str, Any]) -> LiveSession:
     eng = payload["engine"]
     likelihoods = decode_likelihoods(eng.get("likelihoods"))
     pre_top = eng.get("pre_elimination_top")
+    answer_log_raw = eng.get("answer_log") or {}
+    answer_log = {_uuid(qid): str(ans) for qid, ans in answer_log_raw.items()}
+    # Rebuild from answers if an older session payload omitted answer_log.
+    if not answer_log:
+        for row in payload.get("answers") or []:
+            answer_log[_uuid(row["question_id"])] = str(row["answer"])
+
     engine = GameEngineState(
         character_ids=[_uuid(cid) for cid in eng["character_ids"]],
         probabilities={_uuid(cid): float(p) for cid, p in eng["probabilities"].items()},
@@ -114,6 +122,7 @@ def decode_live_session(payload: dict[str, Any]) -> LiveSession:
                 eng.get("asked_question_order") or eng.get("used_question_ids") or []
             )
         ],
+        answer_log=answer_log,
         questions_asked=int(eng.get("questions_asked") or 0),
         consecutive_dont_know=int(eng.get("consecutive_dont_know") or 0),
         pre_elimination_top=_uuid(pre_top) if pre_top else None,

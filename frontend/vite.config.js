@@ -78,5 +78,14 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    proxy: {
+      "/game": "http://127.0.0.1:8000",
+      "/characters": "http://127.0.0.1:8000",
+      "/health": "http://127.0.0.1:8000",
+      "/media": "http://127.0.0.1:8000",
+      "/admin": "http://127.0.0.1:8000",
+      "/auth": "http://127.0.0.1:8000",
+    },
   },
 });
+

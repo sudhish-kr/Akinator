@@ -11,7 +11,7 @@ import math
 import random
 from uuid import UUID
 
-from app.engine.bayesian import bayesian_update, initialize_uniform_priors
+from app.engine.bayesian import bayesian_update, initialize_priors, initialize_uniform_priors
 from app.engine.cold_start import get_likelihood, is_question_eligible, likelihood_match
 from app.engine.confidence import evaluate_confidence
 from app.engine.constants import (
@@ -39,11 +39,13 @@ from app.engine.constants import (
     DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
     DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
+    ALIVE_STATUS_KEYWORDS,
     EARLY_PRIORITY_KEYWORD_GROUPS,
     FICTIONAL_CHARACTER_CATEGORIES,
     FORBIDDEN_EARLY_KEYWORDS,
     LOW_PRIORITY_AGE_KEYWORDS,
     MAJOR_CATEGORY_KEYWORDS,
+    NATIONALITY_PLACE_KEYWORDS,
     NICHE_TOPIC_REQUIRED_CATEGORIES,
     PROFESSION_SPECIFIC_KEYWORDS,
     SPORT_SPECIFIC_KEYWORDS,
@@ -289,6 +291,57 @@ def is_low_priority_age_question(question_ref: QuestionRef | None) -> bool:
         return False
     text = (question_ref.text or "").casefold()
     return _text_matches_any(text, LOW_PRIORITY_AGE_KEYWORDS)
+
+
+def is_alive_status_question(question_ref: QuestionRef | None) -> bool:
+    """True for alive / dead status questions."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, ALIVE_STATUS_KEYWORDS)
+
+
+def is_origin_question(question_ref: QuestionRef | None) -> bool:
+    """True for nationality / era origin questions (Stage 2)."""
+    return question_hierarchy_stage(question_ref) == "2"
+
+
+def is_nationality_place_question(question_ref: QuestionRef | None) -> bool:
+    """True for country / region place questions (India, Japan, Europe, …)."""
+    if question_ref is None:
+        return False
+    category = (question_ref.category or "").strip()
+    if category == "Nationality":
+        return True
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, NATIONALITY_PLACE_KEYWORDS)
+
+
+def _has_asked_matching(
+    used_question_ids: set[UUID] | frozenset[UUID],
+    question_refs: dict[UUID, QuestionRef] | None,
+    predicate,
+) -> bool:
+    if not question_refs:
+        return False
+    return any(predicate(question_refs.get(qid)) for qid in used_question_ids)
+
+
+def _india_affirmed(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> bool:
+    """True when the player said yes/probably to an India place question."""
+    if not question_refs:
+        return False
+    for qid, ans in state.answer_log.items():
+        if ans not in {"yes", "probably_yes"}:
+            continue
+        ref = question_refs.get(qid)
+        text = (ref.text or "").casefold() if ref else ""
+        if "from india" in text:
+            return True
+    return False
 
 
 def early_question_priority_bonus(question_ref: QuestionRef | None) -> float:
@@ -1033,6 +1086,65 @@ def select_next_question(
         if identity_available:
             stage = "1"
 
+    # Akinator-like opening gate: alive/dead → country → athlete/domain.
+    # At most ONE country/place question per game (never India then Japan…).
+    opening_pool: list[UUID] | None = None
+    asked_alive = _has_asked_matching(
+        state.used_question_ids, question_refs, is_alive_status_question
+    )
+    asked_nationality = _has_asked_matching(
+        state.used_question_ids, question_refs, is_nationality_place_question
+    )
+    asked_major = _has_asked_matching(
+        state.used_question_ids, question_refs, is_major_category_question
+    )
+    unused_alive = [
+        qid
+        for qid in unused
+        if is_alive_status_question(question_refs.get(qid))
+        and not is_hard_gated_niche(question_refs.get(qid))
+    ]
+    unused_nationality = [
+        qid
+        for qid in unused
+        if is_nationality_place_question(question_refs.get(qid))
+        and not is_hard_gated_niche(question_refs.get(qid))
+    ]
+    unused_major = [
+        qid
+        for qid in unused
+        if is_major_category_question(question_refs.get(qid))
+        and not is_hard_gated_niche(question_refs.get(qid))
+    ]
+    if unused_alive and not asked_alive:
+        stage = "1"
+        opening_pool = unused_alive
+    elif unused_nationality and not asked_nationality:
+        stage = "2"
+        opening_pool = unused_nationality
+    elif unused_major and asked_nationality and not asked_major:
+        # After the one country question, jump to domain.
+        # India=yes → prefer athlete/sports (Kohli path); else any major.
+        stage = "3"
+        opening_pool = unused_major
+        if _india_affirmed(state, question_refs):
+            sports_majors = []
+            for qid in unused_major:
+                ref = question_refs.get(qid)
+                if ref is None:
+                    continue
+                text = (ref.text or "").casefold()
+                if (
+                    (ref.category or "") == "Sports"
+                    or "athlete" in text
+                    or "sports player" in text
+                ):
+                    sports_majors.append(qid)
+            if sports_majors:
+                opening_pool = sports_majors
+    elif unused_major and asked_nationality and _normalize_stage(stage) in {"1", "2"}:
+        stage = "3"
+
     previous_ref = last_asked_ref(
         state.used_question_ids,
         question_refs,
@@ -1056,6 +1168,9 @@ def select_next_question(
                 ref, stage=active_stage, dominant_category=dominant
             ):
                 continue
+            # Never chain country questions: India yes → Japan/Australia/… is banned.
+            if is_nationality_place_question(ref) and asked_nationality:
+                continue
             q_stage = question_hierarchy_stage(ref)
             if q_stage == "3" and ref.category in DOMAIN_QUESTION_CATEGORY_REQUIREMENTS:
                 if not is_domain_category_unlocked(
@@ -1065,7 +1180,14 @@ def select_next_question(
                     unlock_threshold=category_unlock_threshold,
                 ):
                     continue
-            # Sport subtypes require major athlete/sports question first.
+            # Hard niche / rare roles (knight, wizard, …) only late in the game.
+            if is_hard_gated_niche(ref):
+                if _normalize_stage(active_stage) != "4":
+                    continue
+                if state.questions_asked < 8:
+                    continue
+                if dominant is None:
+                    continue
             if is_sport_subtype_question(ref):
                 if _normalize_stage(active_stage) != "4":
                     continue
@@ -1098,16 +1220,24 @@ def select_next_question(
             picked.append(qid)
         return picked
 
-    relevant = _collect_relevant(stage)
+    if opening_pool is not None:
+        relevant = list(opening_pool)
+    else:
+        relevant = _collect_relevant(stage)
     if not relevant:
         for promo in ("2", "3", "4"):
             if _normalize_stage(stage) == promo:
+                continue
+            # Do not skip past alive / country milestones via promo.
+            if unused_alive and not asked_alive:
+                break
+            if unused_nationality and not asked_nationality and promo in {"3", "4"}:
                 continue
             if promo == "2" and state.questions_asked < 2:
                 continue
             if promo == "3" and state.questions_asked < 3:
                 continue
-            if promo == "4" and state.questions_asked < 6:
+            if promo == "4" and state.questions_asked < 10:
                 continue
             relevant = _collect_relevant(promo)
             if relevant:
@@ -1119,6 +1249,9 @@ def select_next_question(
             for qid in unused
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
             and not is_hard_gated_niche(question_refs.get(qid))
+            and not (
+                is_nationality_place_question(question_refs.get(qid)) and asked_nationality
+            )
         ]
     if not relevant:
         return None
@@ -1199,7 +1332,29 @@ def select_next_question(
                 )
             )
     if not scored:
-        return None
+        # Emergency fallback: never return None while useful broad questions remain.
+        # Empty strict pools were causing 1%-confidence forced guesses.
+        emergency: list[tuple[float, int, UUID]] = []
+        for qid in unused:
+            ref = question_refs.get(qid)
+            if ref is None:
+                continue
+            if is_nationality_place_question(ref) and asked_nationality:
+                continue
+            if is_hard_gated_niche(ref) and state.questions_asked < 8:
+                continue
+            if is_low_priority_age_question(ref) and state.questions_asked < 8:
+                continue
+            emergency.append(
+                (
+                    information_gain(focus, qid) + early_question_priority_bonus(ref),
+                    total_sample_size_for_question(state, qid),
+                    qid,
+                )
+            )
+        if not emergency:
+            return None
+        scored = emergency
 
     return _pick_from_near_best(
         scored,
@@ -1236,6 +1391,7 @@ def process_answer(
     state.used_question_ids.add(question_id)
     if question_id not in state.asked_question_order:
         state.asked_question_order.append(question_id)
+    state.answer_log[question_id] = answer.value
     state.questions_asked += 1
 
     if answer == Answer.DONT_KNOW:
@@ -1249,10 +1405,12 @@ def process_answer(
 def create_initial_state(
     character_ids: list[UUID],
     likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] | None = None,
+    *,
+    popularity: dict[UUID, int] | None = None,
 ) -> GameEngineState:
     return GameEngineState(
         character_ids=list(character_ids),
-        probabilities=initialize_uniform_priors(character_ids),
+        probabilities=initialize_priors(character_ids, popularity),
         likelihoods=likelihoods or {},
     )
 

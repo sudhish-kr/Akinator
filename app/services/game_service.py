@@ -365,7 +365,11 @@ class GameService:
             return None
 
         catalog = await self._catalog()
-        engine = create_initial_state(list(catalog.character_ids), catalog.likelihoods)
+        engine = create_initial_state(
+            list(catalog.character_ids),
+            catalog.likelihoods,
+            popularity=dict(catalog.character_popularity),
+        )
         question_refs = dict(catalog.question_refs)
         character_categories = dict(catalog.character_categories)
         character_popularity = dict(catalog.character_popularity)

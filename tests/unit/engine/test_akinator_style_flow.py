@@ -44,6 +44,15 @@ Q_GUILD = UUID("00000000-0000-0000-0000-000000000a12")
 Q_NINJA = UUID("00000000-0000-0000-0000-000000000a13")
 Q_SUPERHERO = UUID("00000000-0000-0000-0000-000000000a14")
 Q_ICE = UUID("00000000-0000-0000-0000-000000000a15")
+Q_JAPAN = UUID("00000000-0000-0000-0000-000000000a16")
+Q_AUSTRALIA = UUID("00000000-0000-0000-0000-000000000a17")
+Q_EUROPE = UUID("00000000-0000-0000-0000-000000000a18")
+Q_AMERICAS = UUID("00000000-0000-0000-0000-000000000a19")
+Q_USA = UUID("00000000-0000-0000-0000-000000000a1a")
+
+COUNTRY_QS = frozenset(
+    {Q_INDIA, Q_OTHER_COUNTRY, Q_JAPAN, Q_AUSTRALIA, Q_EUROPE, Q_AMERICAS, Q_USA}
+)
 
 CHARS = [KOHLI, MESSI, SRK, NARUTO, BATMAN, EINSTEIN]
 QUESTIONS = [
@@ -55,6 +64,11 @@ QUESTIONS = [
     Q_HUMAN,
     Q_INDIA,
     Q_OTHER_COUNTRY,
+    Q_JAPAN,
+    Q_AUSTRALIA,
+    Q_EUROPE,
+    Q_AMERICAS,
+    Q_USA,
     Q_SPORTS,
     Q_MOVIES,
     Q_ANIME,
@@ -84,6 +98,17 @@ REFS = {
     Q_INDIA: QuestionRef(id=Q_INDIA, text="Are they from India?", category="Nationality"),
     Q_OTHER_COUNTRY: QuestionRef(
         id=Q_OTHER_COUNTRY, text="Are they from another country?", category="Nationality"
+    ),
+    Q_JAPAN: QuestionRef(id=Q_JAPAN, text="Are they from Japan?", category="Nationality"),
+    Q_AUSTRALIA: QuestionRef(
+        id=Q_AUSTRALIA, text="Are they from Australia?", category="Nationality"
+    ),
+    Q_EUROPE: QuestionRef(id=Q_EUROPE, text="Are they from Europe?", category="Nationality"),
+    Q_AMERICAS: QuestionRef(
+        id=Q_AMERICAS, text="Are they from the Americas?", category="Nationality"
+    ),
+    Q_USA: QuestionRef(
+        id=Q_USA, text="Are they from the United States?", category="Nationality"
     ),
     Q_SPORTS: QuestionRef(id=Q_SPORTS, text="Is this a sports player?", category="Sports"),
     Q_MOVIES: QuestionRef(id=Q_MOVIES, text="Is this from a movie?", category="Movies"),
@@ -260,11 +285,25 @@ PROFILE = {
 
 
 def _likelihoods():
-    return {
-        (cid, qid): LikelihoodEntry(v, 50)
-        for cid, answers in PROFILE.items()
-        for qid, v in answers.items()
+    country_defaults = {
+        Q_JAPAN: 0.05,
+        Q_AUSTRALIA: 0.05,
+        Q_EUROPE: 0.1,
+        Q_AMERICAS: 0.1,
+        Q_USA: 0.1,
     }
+    country_overrides = {
+        NARUTO: {Q_JAPAN: 0.92, Q_OTHER_COUNTRY: 0.2},
+        MESSI: {Q_AMERICAS: 0.9, Q_OTHER_COUNTRY: 0.9},
+        EINSTEIN: {Q_EUROPE: 0.9, Q_OTHER_COUNTRY: 0.85},
+        BATMAN: {Q_USA: 0.85, Q_AMERICAS: 0.85},
+    }
+    out: dict[tuple[UUID, UUID], LikelihoodEntry] = {}
+    for cid, answers in PROFILE.items():
+        merged = {**country_defaults, **answers, **country_overrides.get(cid, {})}
+        for qid, v in merged.items():
+            out[(cid, qid)] = LikelihoodEntry(v, 50)
+    return out
 
 
 def _play(true_id: UUID, *, max_questions: int = 10, seed: int = 7) -> list[UUID]:
@@ -326,6 +365,60 @@ def test_early_questions_are_broad():
         assert qid is not None
         assert qid not in {Q_GUILD, Q_CHEF, Q_BABY, Q_CRICKET, Q_ICE, Q_NINJA}
         state, _ = process_answer(state, qid, "dont_know")
+
+
+def test_opening_flow_alive_then_country_then_domain():
+    """Kids path: alive/dead → India/country → athlete (prefer sports)."""
+    asked = _play(KOHLI, max_questions=4, seed=11)
+    assert asked[0] == Q_ALIVE
+    assert asked[1] in COUNTRY_QS
+    assert asked[2] == Q_SPORTS
+    assert Q_CRICKET not in asked[:4]
+    assert Q_CHEF not in asked[:4]
+    assert len([q for q in asked if q in COUNTRY_QS]) == 1
+
+
+def test_never_asks_second_country_after_india_yes():
+    """Regression: India yes must not be followed by Japan/Australia/Europe spam."""
+    rng = random.Random(3)
+    likelihoods = _likelihoods()
+    state = create_initial_state(CHARS, likelihoods)
+    asked: list[UUID] = []
+    for _ in range(10):
+        qid = select_next_question(
+            state,
+            QUESTIONS,
+            min_samples=1,
+            question_refs=REFS,
+            character_categories=CATEGORIES,
+            explore=False,
+            rng=rng,
+        )
+        if qid is None:
+            break
+        if qid == Q_ALIVE:
+            answer = "yes"
+        elif qid == Q_INDIA:
+            answer = "yes"
+        elif qid in COUNTRY_QS:
+            answer = "no"
+        else:
+            answer = oracle_answer(likelihoods, KOHLI, qid, rng, noise=0.0)
+        state, _ = process_answer(state, qid, answer)
+        asked.append(qid)
+
+    country_asked = [q for q in asked if q in COUNTRY_QS]
+    assert country_asked, "expected one country question"
+    assert country_asked[0] == Q_INDIA
+    assert country_asked == [Q_INDIA], [REFS[q].text for q in country_asked]
+    assert Q_JAPAN not in asked
+    assert Q_AUSTRALIA not in asked
+    assert Q_EUROPE not in asked
+    assert Q_AMERICAS not in asked
+    assert Q_USA not in asked
+    assert Q_OTHER_COUNTRY not in asked
+    # After India, flow should move to domain — not more geography.
+    assert any(q in {Q_SPORTS, Q_MOVIES, Q_ANIME} for q in asked)
 
 
 def test_baby_toddler_teen_cannot_appear_early():

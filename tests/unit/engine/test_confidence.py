@@ -81,6 +81,33 @@ class TestResolveTurn:
         assert result.top_character_id == C1
         assert result.confidence == pytest.approx(0.55)
 
+    def test_tiny_confidence_without_next_question_does_not_guess(self):
+        """Regression: never flash a 1% Amancio-style guess mid-game."""
+        state = _state({C1: 0.01, C2: 0.01, C3: 0.98}, questions_asked=5)
+        # Renormalize-like tiny top (many candidates case)
+        state = _state({C1: 0.012, C2: 0.011, C3: 0.010}, questions_asked=5)
+        result = resolve_turn(
+            state,
+            next_question_id=None,
+            confidence_high=0.85,
+            max_questions=20,
+            min_guess_confidence=0.35,
+        )
+        assert result.should_guess is False
+        assert result.reason == "awaiting_questions"
+
+    def test_tiny_confidence_guesses_only_when_budget_spent(self):
+        state = _state({C1: 0.02, C2: 0.01}, questions_asked=20)
+        result = resolve_turn(
+            state,
+            next_question_id=None,
+            confidence_high=0.85,
+            max_questions=20,
+            min_guess_confidence=0.35,
+        )
+        assert result.should_guess is True
+        assert result.reason in {"no_questions_remain", "question_budget"}
+
     def test_low_confidence_with_next_question_keeps_asking(self):
         state = _state({C1: 0.5, C2: 0.5})
         qid = uuid4()

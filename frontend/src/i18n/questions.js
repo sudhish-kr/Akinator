@@ -1,10 +1,26 @@
 /** Configurable per-language question text (keyed by canonical English text from the API).
  *  Add or edit entries here — no backend changes required.
+ *
+ *  Also softens hard adult words for kids until the DB rename is applied.
  */
+const KID_FRIENDLY_EN = {
+  "Are they a knight?": "Does your character wear metal armor?",
+  "Is your character a knight?": "Does your character wear metal armor?",
+  "Are they a wizard?": "Does your character cast magic spells?",
+  "Is your character a wizard?": "Does your character cast magic spells?",
+  "Are they a detective?": "Does your character solve mysteries?",
+  "Is your character a detective?": "Does your character solve mysteries?",
+  "Are they a robot or cyborg?": "Is your character part robot?",
+  "Is your character a robot or cyborg?": "Is your character part robot?",
+  "Are they an Olympic winner?": "Did your character win sports gold?",
+  "Is your character an Olympic winner?": "Did your character win sports gold?",
+  "Are they a ninja or samurai?": "Is your character a ninja?",
+  "Did they win a Nobel science prize?": "Did your character win a science prize?",
+};
+
 export const QUESTION_TRANSLATIONS = {
   en: {
-    // English uses the API/source text by default; optional overrides:
-    // "Is this person a scientist?": "Is this person a scientist?",
+    ...KID_FRIENDLY_EN,
   },
   hi: {
     "Is this person a scientist?": "क्या यह व्यक्ति वैज्ञानिक हैं?",
@@ -15,6 +31,8 @@ export const QUESTION_TRANSLATIONS = {
       "क्या यह व्यक्ति तकनीक या व्यापार के लिए जाने जाते हैं?",
     "Did this person live before 1900?": "क्या यह व्यक्ति 1900 से पहले जीवित थे?",
     "Is this person a composer?": "क्या यह व्यक्ति संगीतकार हैं?",
+    "Are they a knight?": "क्या आपका किरदार धातु का कवच पहनता है?",
+    "Does your character wear metal armor?": "क्या आपका किरदार धातु का कवच पहनता है?",
   },
 };
 
@@ -25,5 +43,8 @@ export const QUESTION_TRANSLATIONS = {
 export function translateQuestion(lang, sourceText) {
   if (!sourceText) return "";
   const table = QUESTION_TRANSLATIONS[lang] || {};
-  return table[sourceText] || sourceText;
+  if (table[sourceText]) return table[sourceText];
+  // English kid-friendly softens even when lang table has no entry.
+  if (KID_FRIENDLY_EN[sourceText]) return KID_FRIENDLY_EN[sourceText];
+  return sourceText;
 }

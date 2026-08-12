@@ -30,6 +30,8 @@ DEFAULT_ELIMINATION_MAGNITUDE = 1000.0
 DEFAULT_CONFIDENCE_HIGH = 0.85
 DEFAULT_CONFIDENCE_SEPARATION = 0.6
 DEFAULT_CONFIDENCE_MARGIN = 0.4
+# Never force a "best available" guess below this unless the question budget is spent.
+DEFAULT_MIN_GUESS_CONFIDENCE = 0.35
 DEFAULT_MAX_QUESTIONS = 20
 DEFAULT_IG_TIE_THRESHOLD = 0.001
 DEFAULT_CONSECUTIVE_DONT_KNOW_CAP = 5
@@ -53,13 +55,11 @@ DEFAULT_LOW_PRIORITY_AGE_MIN_IG = 0.12
 DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN = 0.08
 
 # Ordered early priorities (highest first). First matching group wins.
+# Akinator-like opening: alive/dead → India/country → athlete/domain.
 EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
+    (("still alive", "alive today", "are they alive", "character still alive"), 0.48),
     (("real person", "made-up character", "made-up?", "fictional character"), 0.40),
-    (("are they male", "girl or woman", "a man", "a woman", "character a man", "character a woman"), 0.34),
-    (("still alive", "alive today", "are they alive", "character still alive"), 0.30),
-    (("are they human", "character human", "an animal"), 0.26),
-    (("famous worldwide", "people still talk", "are they famous", "character famous"), 0.22),
-    (("from india",), 0.20),
+    (("from india",), 0.38),
     (
         (
             "another country",
@@ -76,8 +76,11 @@ EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
             "from the united kingdom",
             "from the uk",
         ),
-        0.18,
+        0.34,
     ),
+    (("are they male", "girl or woman", "a man", "a woman", "character a man", "character a woman"), 0.28),
+    (("are they human", "character human", "an animal"), 0.24),
+    (("famous worldwide", "people still talk", "are they famous", "character famous"), 0.20),
     (
         (
             "sports player",
@@ -100,6 +103,18 @@ EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
         ),
         0.14,
     ),
+)
+
+# Alive / dead status — must lead the opening when still unused.
+ALIVE_STATUS_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "still alive",
+        "alive today",
+        "are they alive",
+        "character still alive",
+        "is your character still alive?",
+        "alive?",
+    }
 )
 
 # Fine-grained age identity — unnatural early; keep in DB but demote hard.
@@ -251,18 +266,29 @@ SPORT_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
 )
 
 # Stage 2 — Origin (place / era), before domain category.
-STAGE_2_ORIGIN_KEYWORDS: frozenset[str] = frozenset(
+# Place / nationality questions are mutually exclusive: ask at most one per game.
+NATIONALITY_PLACE_KEYWORDS: frozenset[str] = frozenset(
     {
         "from india",
         "from japan",
         "from asia",
         "from europe",
         "from the americas",
+        "from america",
         "from africa",
         "from australia",
         "from the united states",
+        "from the usa",
         "from the united kingdom",
+        "from the uk",
         "another country",
+        "from your country",
+    }
+)
+
+STAGE_2_ORIGIN_KEYWORDS: frozenset[str] = frozenset(
+    set(NATIONALITY_PLACE_KEYWORDS)
+    | {
         "known today",
         "modern times",
         "from long ago",
@@ -282,6 +308,7 @@ STAGE_2_ORIGIN_CATEGORIES: frozenset[str] = frozenset(
 )
 
 # Stage A / 1 categories (metadata bucket; Stage 1 still keyword-gated).
+# Nationality is Stage 2 (origin), not identity.
 STAGE_A_QUESTION_CATEGORIES: frozenset[str] = frozenset(
     {
         "Personality",
@@ -289,7 +316,6 @@ STAGE_A_QUESTION_CATEGORIES: frozenset[str] = frozenset(
         "Age",
         "Fictional traits",
         "Physical appearance",
-        "Nationality",
     }
 )
 
@@ -405,6 +431,10 @@ FORBIDDEN_EARLY_KEYWORDS: frozenset[str] = frozenset(
         "samurai",
         "wizard",
         "pirate",
+        "knight",
+        "cyborg",
+        "detective",
+        "olympic",
         "sword",
         "famous for",
     }
