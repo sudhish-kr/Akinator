@@ -117,7 +117,7 @@ def test_prefers_category_specific_questions_once_confidence_exceeds_20_percent(
     refs = {
         q_scientist: QuestionRef(id=q_scientist, text="Scientist?", category="Science"),
         q_athlete: QuestionRef(id=q_athlete, text="Athlete?", category="Sports"),
-        q_meta: QuestionRef(id=q_meta, text="Alive?", category="Age"),
+        q_meta: QuestionRef(id=q_meta, text="Famous?", category="Personality"),
     }
     categories = {scientist: "Scientists", athlete: "Sports"}
 

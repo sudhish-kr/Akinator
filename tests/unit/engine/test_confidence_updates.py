@@ -107,12 +107,13 @@ def test_icon_confidence_moves_with_aligned_answers(target, question_id, yes_rai
     live.pending_question_id = question_id
     before = live.engine.probabilities[target]
     turn = mgr.submit_answer(live, question_id, "yes")
-    after = live.engine.probabilities[target]
-    assert after != pytest.approx(before, abs=1e-9)
+    after = live.engine.probabilities.get(target)
     if yes_raises:
+        assert after is not None
         assert after > before
     else:
-        assert after < before
+        # Strong YES may hard-eliminate clear contradictions.
+        assert after is None or after < before
     assert turn.top_confidence != pytest.approx(1 / len(ICONS), abs=1e-6)
 
 
@@ -129,5 +130,6 @@ def test_confidence_can_increase_and_decrease_for_same_character():
     live_down.pending_question_id = Q_ANIME
     p1 = live_down.engine.probabilities[MESSI]
     down = mgr.submit_answer(live_down, Q_ANIME, "yes")
-    assert live_down.engine.probabilities[MESSI] < p1
+    after = live_down.engine.probabilities.get(MESSI)
+    assert after is None or after < p1
     assert down.top_confidence != pytest.approx(up.top_confidence, abs=1e-6)
