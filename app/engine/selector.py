@@ -14,6 +14,7 @@ from uuid import UUID
 from app.engine.bayesian import bayesian_update, initialize_priors, initialize_uniform_priors
 from app.engine.cold_start import get_likelihood, is_question_eligible, likelihood_match
 from app.engine.confidence import evaluate_confidence
+from app.engine.constraints import apply_answer_constraints
 from app.engine.constants import (
     ALL_ANSWERS,
     CHARACTER_CATEGORY_QUESTION_PREFERENCES,
@@ -1382,6 +1383,11 @@ def process_answer(
     entropy_before = entropy({cid: state.probabilities[cid] for cid in active})
 
     new_probs = bayesian_update(state, question_id, answer)
+    # Strong YES/NO with reliable L(C,Q) must drop clear contradictions
+    # (e.g. India=YES removes Messi). Unknown L stays eligible.
+    new_probs = apply_answer_constraints(
+        new_probs, state.likelihoods, question_id, answer
+    )
     state.probabilities = new_probs
 
     remaining, pre_top = eliminate_candidates(state)

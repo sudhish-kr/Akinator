@@ -451,9 +451,10 @@ def test_confidence_changes_increases_decreases():
     live2.pending_question_id = Q_SPORTS
     mgr2.submit_answer(live2, Q_SPORTS, "yes")
     after_yes = live2.engine.probabilities[MESSI]
-    live2.pending_question_id = Q_ANIME
-    down = mgr2.submit_answer(live2, Q_ANIME, "yes")
-    assert live2.engine.probabilities[MESSI] < after_yes
+    live2.pending_question_id = Q_CRICKET
+    down = mgr2.submit_answer(live2, Q_CRICKET, "yes")
+    # Cricket=yes eliminates / crushes footballers like Messi.
+    assert MESSI not in live2.engine.probabilities or live2.engine.probabilities[MESSI] < after_yes
     assert down.top_confidence != pytest.approx(up.top_confidence, abs=1e-6)
 
 

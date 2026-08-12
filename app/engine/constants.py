@@ -27,6 +27,11 @@ ALL_ANSWERS: tuple[Answer, ...] = tuple(Answer)
 # Default engine thresholds (overridable via Settings in services layer)
 DEFAULT_ELIMINATION_FLOOR = 0.0005
 DEFAULT_ELIMINATION_MAGNITUDE = 1000.0
+# Hard constraints from reliable L(C,Q): clear contradiction → drop (YES/NO).
+DEFAULT_CONSTRAINT_AFFIRM_MAX = 0.20  # L <= this contradicts YES
+DEFAULT_CONSTRAINT_NEGATE_MIN = 0.80  # L >= this contradicts NO
+DEFAULT_CONSTRAINT_MIN_SAMPLES = 10
+DEFAULT_CONSTRAINT_SOFT_FACTOR = 0.05  # PROBABLY* soft contradiction multiplier
 DEFAULT_CONFIDENCE_HIGH = 0.85
 DEFAULT_CONFIDENCE_SEPARATION = 0.6
 DEFAULT_CONFIDENCE_MARGIN = 0.4
