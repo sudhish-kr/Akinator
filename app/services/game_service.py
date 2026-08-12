@@ -247,25 +247,35 @@ class GameService:
     ) -> dict:
         from app.workers.queue import enqueue_post_game
 
-        live = await self._get_live_session(session_id)
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
 
         if correct:
+            # Correct confirmation only needs the DB row — do not depend on live
+            # cache / rehydrate (and never hang on a missing Celery broker).
+            if db_session.status not in {
+                GameSessionStatus.IN_PROGRESS,
+                GameSessionStatus.GUESSED_CORRECT,
+            }:
+                raise GameServiceError("Session is already closed", 409)
+            guessed_id = db_session.guessed_character_id
             db_session.status = GameSessionStatus.GUESSED_CORRECT
-            db_session.actual_character_id = db_session.guessed_character_id
+            db_session.actual_character_id = guessed_id or actual_character_id
             db_session.ended_at = datetime.now(timezone.utc)
+            db_session.last_activity_at = db_session.ended_at
             await self.repo.commit()
             self.store.delete(session_id)
-            if db_session.guessed_character_id:
+            if guessed_id or actual_character_id:
                 enqueue_post_game(
                     session_id,
-                    db_session.guessed_character_id,
+                    guessed_id or actual_character_id,
                     wrong_guess=False,
-                    guessed_character_id=db_session.guessed_character_id,
+                    guessed_character_id=guessed_id,
                 )
             return {"status": "guessed_correct"}
+
+        live = await self._get_live_session(session_id)
 
         if actual_character_id is None:
             raise GameServiceError(
@@ -303,6 +313,8 @@ class GameService:
             min_samples=settings.new_question_min_samples,
             question_refs=live.question_refs,
             character_categories=live.character_categories,
+            # After a wrong guess, explore high-IG questions among remaining top mass.
+            explore=True,
         )
         live.pending_question_id = next_q_id
         self.store.save(live)

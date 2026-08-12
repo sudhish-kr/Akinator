@@ -33,6 +33,14 @@ export const api = {
 
   getGuess: (sessionId) => request("GET", `/game/guess/${sessionId}`),
 
+  /** Confirm a correct guess ("Yes — you got it"). */
+  confirmGuess: (sessionId, { correct = true, actualCharacterId = null } = {}) =>
+    request("POST", "/game/guess/confirm", {
+      session_id: sessionId,
+      correct,
+      actual_character_id: actualCharacterId,
+    }),
+
   learn: (sessionId, characterId, { wrongGuess = false } = {}) =>
     request("POST", "/game/learn", {
       session_id: sessionId,

@@ -1,8 +1,7 @@
 /** API origin from Vite env (no trailing slash). Empty = same-origin. */
-export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").replace(
-  /\/$/,
-  ""
-);
+const viteEnv =
+  typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
+export const API_BASE_URL = String(viteEnv.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 export const DEFAULT_CHARACTER_IMAGE = "/media/characters/default.svg";
 

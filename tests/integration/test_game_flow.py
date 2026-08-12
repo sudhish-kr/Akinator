@@ -130,6 +130,37 @@ async def test_full_game_correct_guess(client: AsyncClient):
     assert confirm.status_code == 200
     assert confirm.json()["status"] == "guessed_correct"
 
+    # Session completed — further answers must not succeed as in-progress play.
+    closed = await client.get(f"/game/state/{result['session_id']}")
+    assert closed.status_code in {404, 409}
+
+
+@pytest.mark.asyncio
+async def test_correct_guess_learn_endpoint_still_works(client: AsyncClient):
+    """Legacy Yes path via /game/learn (wrong_guess=false) must also complete."""
+    result = await _play_until_guess(
+        client,
+        {
+            "Is this person alive today?": "no",
+            "Is this person a scientist?": "yes",
+        },
+    )
+    guess = await client.get(f"/game/guess/{result['session_id']}")
+    assert guess.status_code == 200
+    body = guess.json()
+    assert body["character"]["name"] == "Albert Einstein"
+
+    learn = await client.post(
+        "/game/learn",
+        json={
+            "session_id": result["session_id"],
+            "character_id": body["character"]["id"],
+            "wrong_guess": False,
+        },
+    )
+    assert learn.status_code == 200
+    assert learn.json()["status"] == "learned"
+
 
 @pytest.mark.asyncio
 async def test_guess_before_ready_is_rejected(client: AsyncClient):

@@ -75,7 +75,7 @@ export const en = {
   },
   done: {
     title: "Round complete",
-    nailed: "Nailed it — {name}.",
+    nailed: "Great! I got it right — {name}.",
     learnedNamed: "Learned — next time I'll look for {name}.",
     learned: "Learned from that round.",
     playAgain: "Play again",

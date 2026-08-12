@@ -53,16 +53,36 @@ def test_enqueue_post_game_queues_both_jobs():
         assert analytics.call_args.kwargs["update_question_ig"] is True
 
 
-def test_enqueue_post_game_skips_duplicate_ig_on_correct():
+def test_enqueue_uses_inline_apply_when_broker_unreachable(monkeypatch):
+    """Missing Redis must not hang HTTP confirm/learn — fall back to apply()."""
+    monkeypatch.setattr("app.config.settings.celery_task_always_eager", False)
+    monkeypatch.setattr("app.workers.queue._broker_reachable", lambda timeout=0.4: False)
+
+    sid, cid = uuid4(), uuid4()
+    with patch("app.workers.queue.process_learning") as task:
+        task.apply.return_value = MagicMock(id="inline-learn")
+        result = enqueue_learning(sid, cid, wrong_guess=False)
+        task.delay.assert_not_called()
+        task.apply.assert_called_once()
+        assert result.id == "inline-learn"
+
+
+def test_enqueue_post_game_correct_path_survives_broker_outage(monkeypatch):
+    monkeypatch.setattr("app.config.settings.celery_task_always_eager", False)
+    monkeypatch.setattr("app.workers.queue._broker_reachable", lambda timeout=0.4: False)
+
     sid, cid = uuid4(), uuid4()
     with (
-        patch("app.workers.queue.enqueue_learning") as learn,
-        patch("app.workers.queue.enqueue_analytics") as analytics,
+        patch("app.workers.queue.process_learning") as learn_task,
+        patch("app.workers.queue.process_analytics") as analytics_task,
     ):
-        learn.return_value = MagicMock(id="L")
-        analytics.return_value = MagicMock(id="A")
-        enqueue_post_game(sid, cid, wrong_guess=False, guessed_character_id=cid)
-        assert analytics.call_args.kwargs["update_question_ig"] is False
+        learn_task.apply.return_value = MagicMock(id="L")
+        analytics_task.apply.return_value = MagicMock(id="A")
+        jobs = enqueue_post_game(sid, cid, wrong_guess=False, guessed_character_id=cid)
+        assert jobs == {"learning_job_id": "L", "analytics_job_id": "A"}
+        learn_task.delay.assert_not_called()
+        analytics_task.delay.assert_not_called()
+        assert analytics_task.apply.call_args.kwargs["kwargs"]["update_question_ig"] is False
 
 
 def test_process_learning_task_retries_configured():

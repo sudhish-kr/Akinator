@@ -109,7 +109,7 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      await api.learn(sessionId, guess.character.id, { wrongGuess: false });
+      await api.confirmGuess(sessionId, { correct: true });
       setDoneMessage(t("done.nailed", { name: guess.character.name }));
       setScreen("done");
     } catch (err) {
