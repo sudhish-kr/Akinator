@@ -1,4 +1,11 @@
+import re
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Vite starts at 5173 and increments when the port is busy. Development only.
+# Never used in production — production reads CORS_ORIGINS exclusively.
+DEV_VITE_ORIGIN_REGEX = r"^https?://(localhost|127\.0\.0\.1):(517[3-9]|51[89]\d)$"
+_DEV_ENVIRONMENTS = frozenset({"development", "dev", "local", "test"})
 
 
 class Settings(BaseSettings):
@@ -17,13 +24,10 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     jwt_refresh_expire_days: int = 7
 
-    # Comma-separated browser origins allowed to call the API (CORS).
-    # In development, vite may bump past 5173 — see cors_origin_list.
-    cors_origins: str = (
-        "http://127.0.0.1:5173,http://localhost:5173,"
-        "http://127.0.0.1:5174,http://localhost:5174,"
-        "http://127.0.0.1:5175,http://localhost:5175"
-    )
+    # Explicit CORS origins (comma-separated). Production uses this list only.
+    # Development also allows localhost Vite ports 5173–5199 via regex
+    # (see cors_allow_origin_regex) so Vite can bump ports without a code change.
+    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
 
     # Engine thresholds (TDD v1.1)
     elimination_floor: float = 0.0005
@@ -64,21 +68,36 @@ class Settings(BaseSettings):
     rate_limit_game_user_window: int = 60
 
     @property
-    def cors_origin_list(self) -> list[str]:
-        """Configured CORS origins.
+    def is_development(self) -> bool:
+        return self.environment.strip().lower() in _DEV_ENVIRONMENTS
 
-        In local development Vite often moves to 5174/5175 when 5173 is busy.
-        Expand localhost Vite ports automatically without using allow_origins=['*'].
-        Production uses only the explicit CORS_ORIGINS list.
-        """
-        origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
-        if self.environment.lower() in {"development", "dev", "local", "test"}:
-            for host in ("http://localhost", "http://127.0.0.1"):
-                for port in range(5173, 5181):
-                    candidate = f"{host}:{port}"
-                    if candidate not in origins:
-                        origins.append(candidate)
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Explicit allowed origins from CORS_ORIGINS. Never includes '*'."""
+        origins: list[str] = []
+        for origin in self.cors_origins.split(","):
+            value = origin.strip()
+            if not value or value == "*":
+                continue
+            if value not in origins:
+                origins.append(value)
         return origins
+
+    @property
+    def cors_allow_origin_regex(self) -> str | None:
+        """Local Vite origins in development only. None in production."""
+        if not self.is_development:
+            return None
+        return DEV_VITE_ORIGIN_REGEX
+
+    def is_cors_origin_allowed(self, origin: str) -> bool:
+        """True when Starlette CORSMiddleware would accept this Origin."""
+        if origin in self.cors_origin_list:
+            return True
+        pattern = self.cors_allow_origin_regex
+        if pattern and re.fullmatch(pattern, origin):
+            return True
+        return False
 
 
 settings = Settings()
