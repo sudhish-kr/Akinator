@@ -20,7 +20,18 @@ function readVoicePref() {
   }
 }
 
-export default function GamePage({ question, questionNumber, confidence, busy, onAnswer }) {
+export default function GamePage({
+  question,
+  questionNumber,
+  confidence,
+  busy,
+  canBack = false,
+  viewingPrevious = false,
+  onBack,
+  onReturnCurrent,
+  onEndGame,
+  onAnswer,
+}) {
   const { t, tq, lang } = useI18n();
   const [voiceOn, setVoiceOn] = useState(readVoicePref);
   const [listening, setListening] = useState(false);
@@ -140,6 +151,29 @@ export default function GamePage({ question, questionNumber, confidence, busy, o
 
   return (
     <section className="page game">
+      <nav className="game-nav" aria-label={t("game.question")}>
+        {canBack ? (
+          <button
+            type="button"
+            className="btn ghost game-nav-btn"
+            disabled={busy}
+            onClick={onBack}
+          >
+            {t("game.back")}
+          </button>
+        ) : (
+          <span className="game-nav-spacer" aria-hidden="true" />
+        )}
+        <button
+          type="button"
+          className="btn ghost game-nav-btn game-nav-end"
+          disabled={busy}
+          onClick={onEndGame}
+        >
+          {t("game.endGame")}
+        </button>
+      </nav>
+
       <header className="game-hud">
         <div>
           <span className="hud-label">{t("game.question")}</span>
@@ -185,13 +219,27 @@ export default function GamePage({ question, questionNumber, confidence, busy, o
 
       <h2 className="question">{spokenQuestion}</h2>
 
+      {viewingPrevious && (
+        <div className="previous-banner">
+          <p className="previous-note">{t("game.viewingPrevious")}</p>
+          <button
+            type="button"
+            className="btn ghost"
+            disabled={busy}
+            onClick={onReturnCurrent}
+          >
+            {t("game.returnCurrent")}
+          </button>
+        </div>
+      )}
+
       <div className="answers" role="group" aria-label={t("game.answersAria")}>
         {answers.map((a) => (
           <button
             key={a.value}
             type="button"
             className="btn answer"
-            disabled={busy}
+            disabled={busy || viewingPrevious}
             onClick={() => onAnswer(a.value)}
           >
             {a.label}

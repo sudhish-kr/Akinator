@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { api } from "./api.js";
 import { nextConfidence } from "./confidence.js";
+import { canGoBack, popHistory, pushHistory } from "./gameHistory.js";
 import { LanguageSwitch, useI18n } from "./i18n/index.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import GamePage from "./pages/GamePage.jsx";
@@ -21,22 +22,40 @@ export default function App() {
   const [guess, setGuess] = useState(null);
   const [characters, setCharacters] = useState([]);
   const [doneMessage, setDoneMessage] = useState("");
+  /** Snapshots taken before each successful answer — used by Back (no API). */
+  const [history, setHistory] = useState([]);
+  /** When set, UI is rewound; server pending is this tip (session-safe). */
+  const [liveTip, setLiveTip] = useState(null);
+  const [endConfirmOpen, setEndConfirmOpen] = useState(false);
 
   const fail = (err) => {
     setError(err?.message || t("common.error"));
     setBusy(false);
   };
 
-  const goHome = () => {
-    setScreen("home");
+  const clearGameLocal = () => {
     setSessionId(null);
     setQuestion(null);
     setGuess(null);
     setConfidence(0);
     setQuestionNumber(1);
     setDoneMessage("");
-    setError(null);
     setCharacters([]);
+    setHistory([]);
+    setLiveTip(null);
+    setEndConfirmOpen(false);
+  };
+
+  const goHome = () => {
+    setScreen("home");
+    clearGameLocal();
+    setError(null);
+  };
+
+  /** End game without learning / correct-guess — local clear only (no abandon API). */
+  const endGameConfirmed = () => {
+    setEndConfirmOpen(false);
+    goHome();
   };
 
   const enterGame = (data, session) => {
@@ -45,6 +64,9 @@ export default function App() {
     setQuestionNumber((data.questions_asked ?? 0) + 1);
     setConfidence(nextConfidence(0, data.top_confidence));
     setGuess(null);
+    setHistory([]);
+    setLiveTip(null);
+    setEndConfirmOpen(false);
     setScreen("game");
   };
 
@@ -52,6 +74,8 @@ export default function App() {
     const g = await api.getGuess(sid);
     setGuess(g);
     setConfidence(nextConfidence(0, g.confidence));
+    setHistory([]);
+    setLiveTip(null);
     setScreen("guess");
   };
 
@@ -68,13 +92,47 @@ export default function App() {
     }
   }, [t]);
 
+  const onBack = useCallback(() => {
+    if (busy || !canGoBack(history)) return;
+    const popped = popHistory(history);
+    if (!popped) return;
+    // Preserve server pending tip the first time we rewind.
+    setLiveTip((tip) => tip || { question, questionNumber, confidence });
+    setHistory(popped.history);
+    setQuestion(popped.snapshot.question);
+    setQuestionNumber(popped.snapshot.questionNumber);
+    setConfidence(popped.snapshot.confidence);
+    setError(null);
+    setScreen("game");
+  }, [busy, history, question, questionNumber, confidence]);
+
+  const returnToCurrent = useCallback(() => {
+    if (!liveTip || busy) return;
+    setQuestion(liveTip.question);
+    setQuestionNumber(liveTip.questionNumber);
+    setConfidence(liveTip.confidence);
+    setLiveTip(null);
+    setError(null);
+  }, [liveTip, busy]);
+
   const answer = useCallback(
     async (value) => {
       if (!sessionId || !question || busy) return;
+      // Session-safe: while viewing a previous question, jump to live tip first.
+      if (liveTip) {
+        returnToCurrent();
+        return;
+      }
       setBusy(true);
       setError(null);
+      const snapshot = {
+        question,
+        questionNumber,
+        confidence,
+      };
       try {
         const data = await api.submitAnswer(sessionId, question.id, value);
+        setHistory((prev) => pushHistory(prev, snapshot));
         setConfidence((prev) => nextConfidence(prev, data.top_confidence));
         if (data.status === "ready_to_guess") {
           await showGuess(sessionId);
@@ -91,6 +149,7 @@ export default function App() {
             await showGuess(sessionId);
           } else if (state.next_question) {
             setQuestion(state.next_question);
+            setLiveTip(null);
             setScreen("game");
           }
           setError(null);
@@ -101,7 +160,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [sessionId, question, busy, t]
+    [sessionId, question, questionNumber, confidence, busy, liveTip, returnToCurrent, t]
   );
 
   const onCorrect = useCallback(async () => {
@@ -213,6 +272,11 @@ export default function App() {
           questionNumber={questionNumber}
           confidence={confidence}
           busy={busy}
+          canBack={canGoBack(history)}
+          viewingPrevious={Boolean(liveTip)}
+          onBack={onBack}
+          onReturnCurrent={returnToCurrent}
+          onEndGame={() => setEndConfirmOpen(true)}
           onAnswer={answer}
         />
       )}
@@ -242,6 +306,33 @@ export default function App() {
             </button>
           </div>
         </section>
+      )}
+
+      {endConfirmOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="end-game-title"
+          >
+            <h3 id="end-game-title" className="modal-title">
+              {t("game.endConfirmTitle")}
+            </h3>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => setEndConfirmOpen(false)}
+              >
+                {t("game.endConfirmContinue")}
+              </button>
+              <button type="button" className="btn ghost" onClick={endGameConfirmed}>
+                {t("game.endConfirmEnd")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
