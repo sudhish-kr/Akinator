@@ -216,6 +216,7 @@ _OVERRIDES: dict[str, dict[str, list[str]]] = {
         "Mithali Raj": ["Mithali"],
         "Harmanpreet Kaur": ["Harmanpreet"],
         "Jemimah Rodrigues": ["Jemimah"],
+        "Sania Mirza": ["Sania", "Mirza"],
         "Mike Tyson": ["Tyson", "Iron Mike"],
         "Shohei Ohtani": ["Ohtani", "Shotime"],
         "Babe Ruth": ["Babe", "Sultan of Swat"],
@@ -843,6 +844,7 @@ Smriti Mandhana
 Mithali Raj
 Harmanpreet Kaur
 Jemimah Rodrigues
+Sania Mirza
 Diego Maradona
 Mike Tyson
 Shohei Ohtani
@@ -922,6 +924,8 @@ Naomi Osaka
 Iga Swiatek
 Aryna Sabalenka
 Coco Gauff
+Sania Mirza
+Leander Paes
 Rafael Nadal Rafa
 Roger Federer Fed
 Pete Sampras

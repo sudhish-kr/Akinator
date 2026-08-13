@@ -124,6 +124,8 @@ TRAIT_TABLE: dict[str, CharacterTraits] = {
     "derrick rose": _T(regions={"usa"}, sports={"basketball"}),
     "dwyne wade": _T(regions={"usa"}, sports={"basketball"}),
     # --- Tennis ---
+    "sania mirza": _T(female=True, regions={"india"}, sports={"tennis"}),
+    "leander paes": _T(regions={"india"}, sports={"tennis"}),
     "serena williams": _T(female=True, regions={"usa"}, sports={"tennis"}),
     "roger federer": _T(regions={"europe"}, sports={"tennis"}),
     "rafael nadal": _T(regions={"europe"}, sports={"tennis"}),
@@ -267,6 +269,8 @@ _NAME_SPORT_HINTS: tuple[tuple[str, str], ...] = (
     ("nadal", "tennis"),
     ("djokovic", "tennis"),
     ("serena", "tennis"),
+    ("sania", "tennis"),
+    ("leander paes", "tennis"),
 )
 
 _NAME_REGION_HINTS: tuple[tuple[str, str], ...] = (
@@ -278,6 +282,8 @@ _NAME_REGION_HINTS: tuple[tuple[str, str], ...] = (
     ("mithali", "india"),
     ("harmanpreet", "india"),
     ("jemimah", "india"),
+    ("sania", "india"),
+    ("leander paes", "india"),
     ("modi", "india"),
     ("khan", "india"),
     ("bachchan", "india"),
@@ -310,6 +316,7 @@ _FEMALE_NAME_HINTS: frozenset[str] = frozenset(
         "mithali",
         "harmanpreet",
         "jemimah",
+        "sania",
         "serena",
         "simone",
         "naomi",
