@@ -143,6 +143,23 @@ class GameRepository:
         )
         return list(result.scalars().all())
 
+    async def get_active_likelihood_rows(
+        self,
+    ) -> list[tuple[UUID, UUID, float, int]]:
+        """All L(C,Q) for active characters × active questions (no huge IN lists)."""
+        result = await self.db.execute(
+            select(
+                CharacterAnswer.character_id,
+                CharacterAnswer.question_id,
+                CharacterAnswer.likelihood,
+                CharacterAnswer.sample_size,
+            )
+            .join(Character, Character.id == CharacterAnswer.character_id)
+            .join(Question, Question.id == CharacterAnswer.question_id)
+            .where(Character.is_active.is_(True), Question.is_active.is_(True))
+        )
+        return list(result.all())
+
     async def get_character_answer(
         self,
         character_id: UUID,

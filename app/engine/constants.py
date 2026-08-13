@@ -32,12 +32,14 @@ DEFAULT_CONSTRAINT_AFFIRM_MAX = 0.20  # L <= this contradicts YES
 DEFAULT_CONSTRAINT_NEGATE_MIN = 0.80  # L >= this contradicts NO
 DEFAULT_CONSTRAINT_MIN_SAMPLES = 10
 DEFAULT_CONSTRAINT_SOFT_FACTOR = 0.05  # PROBABLY* soft contradiction multiplier
-DEFAULT_CONFIDENCE_HIGH = 0.85
-DEFAULT_CONFIDENCE_SEPARATION = 0.6
-DEFAULT_CONFIDENCE_MARGIN = 0.4
+DEFAULT_CONFIDENCE_HIGH = 0.88
+DEFAULT_CONFIDENCE_SEPARATION = 0.72
+DEFAULT_CONFIDENCE_MARGIN = 0.28
 # Never force a "best available" guess below this unless the question budget is spent.
-DEFAULT_MIN_GUESS_CONFIDENCE = 0.35
-DEFAULT_MAX_QUESTIONS = 20
+DEFAULT_MIN_GUESS_CONFIDENCE = 0.40
+DEFAULT_MAX_QUESTIONS = 25
+# After a nationality NO/don't-know, allow additional place questions (Akinator-like tree).
+DEFAULT_MAX_NATIONALITY_QUESTIONS = 3
 DEFAULT_IG_TIE_THRESHOLD = 0.001
 DEFAULT_CONSECUTIVE_DONT_KNOW_CAP = 5
 DEFAULT_NEW_QUESTION_MIN_SAMPLES = 5
@@ -271,7 +273,7 @@ SPORT_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
 )
 
 # Stage 2 — Origin (place / era), before domain category.
-# Place / nationality questions are mutually exclusive: ask at most one per game.
+# Place / nationality questions: affirm locks geography; NO may continue (≤3).
 NATIONALITY_PLACE_KEYWORDS: frozenset[str] = frozenset(
     {
         "from india",

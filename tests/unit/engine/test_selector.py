@@ -65,12 +65,52 @@ def test_returns_none_when_all_questions_answered():
     assert select_next_question(state, [Q_SPLIT, Q_FLAT], min_samples=1) is None
 
 
-def test_information_gain_supports_yes_no_unknown_outcomes():
-    """IG must be well-defined when averaging yes / no / unknown (dont_know)."""
+def test_information_gain_matches_bayesian_simulation():
+    """Faster IG path must equal simulating bayesian_update per answer."""
+    from app.engine.bayesian import bayesian_update
+    from app.engine.constants import ALL_ANSWERS
+    from app.engine.elimination import entropy
+    from app.engine.models import GameEngineState
+
     state = _state_with_split_and_flat()
-    ig = information_gain(state, Q_SPLIT)
-    assert ig > 0
-    assert ig == pytest.approx(ig)  # finite, not NaN
+    active = state.active_character_ids()
+    current_h = entropy({cid: state.probabilities[cid] for cid in active})
+    weighted = []
+    for answer in ALL_ANSWERS:
+        p_answer = 0.0
+        for cid in active:
+            l_cq = get_likelihood(state.likelihoods, cid, Q_SPLIT)
+            p_answer += state.probabilities[cid] * (1.0 - abs(l_cq - answer.weight))
+        if p_answer <= 0:
+            continue
+        sim = GameEngineState(
+            character_ids=state.character_ids,
+            probabilities=state.copy_probabilities(),
+            likelihoods=state.likelihoods,
+        )
+        weighted.append((p_answer, entropy(bayesian_update(sim, Q_SPLIT, answer))))
+    total_p = sum(w for w, _ in weighted)
+    expected = sum((w / total_p) * h for w, h in weighted)
+    assert information_gain(state, Q_SPLIT) == pytest.approx(current_h - expected, abs=1e-12)
+
+
+def test_precomputed_sample_totals_match_scan():
+    from app.engine.cold_start import compute_question_sample_totals, is_question_eligible
+
+    state = _state_with_split_and_flat()
+    totals = compute_question_sample_totals(state.likelihoods, state.character_ids)
+    for qid in (Q_SPLIT, Q_FLAT):
+        scanned = is_question_eligible(qid, state.likelihoods, state.character_ids, 1)
+        cached = is_question_eligible(
+            qid, state.likelihoods, state.character_ids, 1, sample_totals=totals
+        )
+        assert scanned is cached is True
+    state.question_sample_totals = totals
+    assert (
+        select_next_question(state, [Q_FLAT, Q_SPLIT], min_samples=1, explore=False)
+        == Q_SPLIT
+    )
+
 
 
 def test_never_repeats_used_questions_after_process_answer():

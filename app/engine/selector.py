@@ -31,6 +31,7 @@ from app.engine.constants import (
     DEFAULT_IG_TIE_THRESHOLD,
     DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN,
     DEFAULT_LOW_PRIORITY_AGE_MIN_IG,
+    DEFAULT_MAX_NATIONALITY_QUESTIONS,
     DEFAULT_NEAR_DUPLICATE_PENALTY,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
     DEFAULT_SPECIFICITY_PENALTY,
@@ -345,6 +346,73 @@ def _india_affirmed(
     return False
 
 
+def _place_affirmed(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> bool:
+    """True when any nationality/place question was affirmed (locks geography tree)."""
+    if not question_refs:
+        return False
+    for qid, ans in state.answer_log.items():
+        if ans not in {"yes", "probably_yes"}:
+            continue
+        if is_nationality_place_question(question_refs.get(qid)):
+            return True
+    return False
+
+
+def _nationality_question_count(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> int:
+    if not question_refs:
+        return 0
+    return sum(
+        1
+        for qid in state.used_question_ids
+        if is_nationality_place_question(question_refs.get(qid))
+    )
+
+
+def _last_nationality_answer(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> str | None:
+    """Most recent nationality answer from asked order (or answer_log fallback)."""
+    if not question_refs:
+        return None
+    order = list(state.asked_question_order or ())
+    for qid in reversed(order):
+        if is_nationality_place_question(question_refs.get(qid)):
+            return state.answer_log.get(qid)
+    # Fallback when order missing: arbitrary last from log.
+    last: str | None = None
+    for qid, ans in state.answer_log.items():
+        if is_nationality_place_question(question_refs.get(qid)):
+            last = ans
+    return last
+
+
+def _wants_another_nationality(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+    *,
+    max_nationality: int = DEFAULT_MAX_NATIONALITY_QUESTIONS,
+) -> bool:
+    """Allow follow-up country Qs after NO/don't-know; never after a place YES."""
+    if not question_refs:
+        return False
+    if _place_affirmed(state, question_refs):
+        return False
+    count = _nationality_question_count(state, question_refs)
+    if count >= max_nationality:
+        return False
+    if count == 0:
+        return True
+    last = _last_nationality_answer(state, question_refs)
+    return last in {"no", "probably_no", "dont_know"}
+
+
 def early_question_priority_bonus(question_ref: QuestionRef | None) -> float:
     """Weighted bonus for natural early-game questions (highest match wins)."""
     if question_ref is None:
@@ -453,46 +521,67 @@ def expected_entropy_after_question(
       P(a) ∝ Σ_C P(C) · (1 − |L(C,Q) − w_a|)
       H(a)  = entropy(bayesian_update(state, Q, a))
     Returns Σ_a P(a) · H(a) with P(a) renormalized to sum to 1.
+
+    Algebraically identical to simulating bayesian_update per answer; avoids
+    copying GameEngineState on every candidate question.
     """
     active = state.active_character_ids()
-    weighted: list[tuple[float, float]] = []
+    if not active:
+        return 0.0
 
+    priors = [state.probabilities[cid] for cid in active]
+    likes = [get_likelihood(state.likelihoods, cid, question_id) for cid in active]
+
+    weighted: list[tuple[float, float]] = []
     for answer in _IG_ANSWERS:
+        weight = answer.weight
         p_answer = 0.0
-        for cid in active:
-            l_cq = get_likelihood(state.likelihoods, cid, question_id)
-            p_answer += state.probabilities[cid] * likelihood_match(l_cq, answer.weight)
+        masses: list[float] = []
+        masses_append = masses.append
+        for prior, lik in zip(priors, likes, strict=True):
+            mass = prior * likelihood_match(lik, weight)
+            p_answer += mass
+            masses_append(mass)
 
         if p_answer <= 0:
             continue
 
-        sim_state = GameEngineState(
-            character_ids=state.character_ids,
-            probabilities=state.copy_probabilities(),
-            likelihoods=state.likelihoods,
-        )
-        sim_probs = bayesian_update(sim_state, question_id, answer)
-        weighted.append((p_answer, entropy(sim_probs)))
+        inv = 1.0 / p_answer
+        h = 0.0
+        for mass in masses:
+            p = mass * inv
+            if p > 0:
+                h -= p * math.log2(p)
+        weighted.append((p_answer, h))
 
     total_p = sum(weight for weight, _ in weighted)
     if total_p <= 0:
-        probs = {cid: state.probabilities[cid] for cid in active}
-        return entropy(probs)
+        return entropy({cid: state.probabilities[cid] for cid in active})
 
     return sum((weight / total_p) * h for weight, h in weighted)
 
 
-def information_gain(state: GameEngineState, question_id: UUID) -> float:
+def information_gain(
+    state: GameEngineState,
+    question_id: UUID,
+    *,
+    current_entropy: float | None = None,
+) -> float:
     """IG(Q) = H(current) − expected entropy after asking Q."""
-    active = state.active_character_ids()
-    probs = {cid: state.probabilities[cid] for cid in active}
-    return entropy(probs) - expected_entropy_after_question(state, question_id)
+    if current_entropy is None:
+        active = state.active_character_ids()
+        current_entropy = entropy({cid: state.probabilities[cid] for cid in active})
+    return current_entropy - expected_entropy_after_question(state, question_id)
 
 
 def total_sample_size_for_question(
     state: GameEngineState,
     question_id: UUID,
 ) -> int:
+    if state.question_sample_totals:
+        cached = state.question_sample_totals.get(question_id)
+        if cached is not None:
+            return int(cached)
     total = 0
     for cid in state.character_ids:
         entry = state.likelihoods.get((cid, question_id))
@@ -988,7 +1077,13 @@ def select_next_question(
         qid
         for qid in all_question_ids
         if qid not in state.used_question_ids
-        and is_question_eligible(qid, state.likelihoods, state.character_ids, min_samples)
+        and is_question_eligible(
+            qid,
+            state.likelihoods,
+            state.character_ids,
+            min_samples,
+            sample_totals=state.question_sample_totals,
+        )
     ]
 
     if not unused:
@@ -998,12 +1093,15 @@ def select_next_question(
         return None
 
     focus = focus_candidate_state(state, mass_threshold=candidate_mass_focus)
+    focus_entropy = entropy(
+        {cid: focus.probabilities[cid] for cid in focus.active_character_ids()}
+    )
 
     # Legacy callers (no hierarchy metadata) → pure information-gain selection.
     if question_refs is None:
         scored_legacy: list[tuple[float, int, UUID]] = [
             (
-                information_gain(focus, qid),
+                information_gain(focus, qid, current_entropy=focus_entropy),
                 total_sample_size_for_question(state, qid),
                 qid,
             )
@@ -1047,7 +1145,7 @@ def select_next_question(
             ref = question_refs.get(qid)
             scored_safe.append(
                 (
-                    information_gain(focus, qid)
+                    information_gain(focus, qid, current_entropy=focus_entropy)
                     + broad_question_bonus
                     + early_question_priority_bonus(ref)
                     - specificity_penalty(ref, "1"),
@@ -1087,8 +1185,8 @@ def select_next_question(
         if identity_available:
             stage = "1"
 
-    # Akinator-like opening gate: alive/dead → country → athlete/domain.
-    # At most ONE country/place question per game (never India then Japan…).
+    # Akinator-like opening: alive/dead → country tree → athlete/domain.
+    # Affirmed place locks geography; NO/don't-know may ask another country (≤3).
     opening_pool: list[UUID] | None = None
     asked_alive = _has_asked_matching(
         state.used_question_ids, question_refs, is_alive_status_question
@@ -1096,6 +1194,8 @@ def select_next_question(
     asked_nationality = _has_asked_matching(
         state.used_question_ids, question_refs, is_nationality_place_question
     )
+    place_locked = _place_affirmed(state, question_refs)
+    wants_nationality = _wants_another_nationality(state, question_refs)
     asked_major = _has_asked_matching(
         state.used_question_ids, question_refs, is_major_category_question
     )
@@ -1120,11 +1220,11 @@ def select_next_question(
     if unused_alive and not asked_alive:
         stage = "1"
         opening_pool = unused_alive
-    elif unused_nationality and not asked_nationality:
+    elif unused_nationality and wants_nationality:
         stage = "2"
         opening_pool = unused_nationality
-    elif unused_major and asked_nationality and not asked_major:
-        # After the one country question, jump to domain.
+    elif unused_major and asked_nationality and not wants_nationality and not asked_major:
+        # After geography resolves (affirmed or exhausted), jump to domain.
         # India=yes → prefer athlete/sports (Kohli path); else any major.
         stage = "3"
         opening_pool = unused_major
@@ -1143,7 +1243,7 @@ def select_next_question(
                     sports_majors.append(qid)
             if sports_majors:
                 opening_pool = sports_majors
-    elif unused_major and asked_nationality and _normalize_stage(stage) in {"1", "2"}:
+    elif unused_major and asked_nationality and not wants_nationality and _normalize_stage(stage) in {"1", "2"}:
         stage = "3"
 
     previous_ref = last_asked_ref(
@@ -1169,8 +1269,12 @@ def select_next_question(
                 ref, stage=active_stage, dominant_category=dominant
             ):
                 continue
-            # Never chain country questions: India yes → Japan/Australia/… is banned.
-            if is_nationality_place_question(ref) and asked_nationality:
+            # Geography lock: after a place YES, never ask another country.
+            # After NO/don't-know, allow more until the nationality budget is spent.
+            if is_nationality_place_question(ref) and not wants_nationality:
+                continue
+            # Prefer not re-asking the same place after any nationality answer.
+            if is_nationality_place_question(ref) and place_locked:
                 continue
             q_stage = question_hierarchy_stage(ref)
             if q_stage == "3" and ref.category in DOMAIN_QUESTION_CATEGORY_REQUIREMENTS:
@@ -1232,7 +1336,7 @@ def select_next_question(
             # Do not skip past alive / country milestones via promo.
             if unused_alive and not asked_alive:
                 break
-            if unused_nationality and not asked_nationality and promo in {"3", "4"}:
+            if unused_nationality and wants_nationality and promo in {"3", "4"}:
                 continue
             if promo == "2" and state.questions_asked < 2:
                 continue
@@ -1251,7 +1355,7 @@ def select_next_question(
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
             and not is_hard_gated_niche(question_refs.get(qid))
             and not (
-                is_nationality_place_question(question_refs.get(qid)) and asked_nationality
+                is_nationality_place_question(question_refs.get(qid)) and not wants_nationality
             )
         ]
     if not relevant:
@@ -1263,7 +1367,9 @@ def select_next_question(
         if mass > preference_threshold:
             preferred_cats = preferred_question_categories(dominant)
 
-    ig_by_qid = {qid: information_gain(focus, qid) for qid in relevant}
+    ig_by_qid = {
+        qid: information_gain(focus, qid, current_entropy=focus_entropy) for qid in relevant
+    }
     non_low_igs = [
         ig_by_qid[qid]
         for qid in relevant
@@ -1340,7 +1446,7 @@ def select_next_question(
             ref = question_refs.get(qid)
             if ref is None:
                 continue
-            if is_nationality_place_question(ref) and asked_nationality:
+            if is_nationality_place_question(ref) and not wants_nationality:
                 continue
             if is_hard_gated_niche(ref) and state.questions_asked < 8:
                 continue
@@ -1348,7 +1454,8 @@ def select_next_question(
                 continue
             emergency.append(
                 (
-                    information_gain(focus, qid) + early_question_priority_bonus(ref),
+                    information_gain(focus, qid, current_entropy=focus_entropy)
+                    + early_question_priority_bonus(ref),
                     total_sample_size_for_question(state, qid),
                     qid,
                 )
@@ -1413,11 +1520,13 @@ def create_initial_state(
     likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] | None = None,
     *,
     popularity: dict[UUID, int] | None = None,
+    question_sample_totals: dict[UUID, int] | None = None,
 ) -> GameEngineState:
     return GameEngineState(
         character_ids=list(character_ids),
         probabilities=initialize_priors(character_ids, popularity),
         likelihoods=likelihoods or {},
+        question_sample_totals=question_sample_totals,
     )
 
 

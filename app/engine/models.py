@@ -48,6 +48,8 @@ class GameEngineState:
     questions_asked: int = 0
     consecutive_dont_know: int = 0
     pre_elimination_top: UUID | None = None
+    # Per-question sample totals over character_ids (read-only; speeds eligibility).
+    question_sample_totals: dict[UUID, int] | None = None
 
     def active_character_ids(self) -> list[UUID]:
         return [cid for cid in self.character_ids if cid in self.probabilities]

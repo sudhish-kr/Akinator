@@ -116,7 +116,7 @@ def test_confidence_changes_after_answers_yes_vs_no():
     live_no.pending_question_id = qid
     turn_no = mgr.submit_answer(live_no, qid, "no")
     conf_no = turn_no.top_confidence
-    p1_no = live_no.engine.probabilities[C1]
+    p1_no = live_no.engine.probabilities.get(C1, 0.0)
 
     assert conf_yes != pytest.approx(conf0, abs=1e-9)
     assert conf_no != pytest.approx(conf0, abs=1e-9)

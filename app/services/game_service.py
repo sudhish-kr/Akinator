@@ -51,13 +51,14 @@ class GameService:
             with track_ai_inference("start_game"):
                 live = self.sessions.start(
                     session_id=db_session.id,
-                    character_ids=list(catalog.character_ids),
+                    character_ids=catalog.character_ids,
                     likelihoods=catalog.likelihoods,
-                    question_ids=list(catalog.question_ids),
-                    question_refs=dict(catalog.question_refs),
-                    character_names=dict(catalog.character_names),
-                    character_categories=dict(catalog.character_categories),
-                    character_popularity=dict(catalog.character_popularity),
+                    question_ids=catalog.question_ids,
+                    question_refs=catalog.question_refs,
+                    character_names=catalog.character_names,
+                    character_categories=catalog.character_categories,
+                    character_popularity=catalog.character_popularity,
+                    question_sample_totals=catalog.question_sample_totals,
                 )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
@@ -130,13 +131,8 @@ class GameService:
         self.store.save(live)
         await self.repo.commit()
 
-        if turn.status == "ready_to_guess":
-            return {
-                "status": "ready_to_guess",
-                "next_question": None,
-                "questions_asked": turn.questions_asked,
-                "top_confidence": round(turn.top_confidence, 4),
-            }
+        if turn.status == "ready_to_guess" or turn.next_question_id is None:
+            return self._state_payload(live)
 
         next_q = live.question_refs[turn.next_question_id]
         return {
@@ -359,17 +355,38 @@ class GameService:
         return {"status": "submitted_for_review", "character_id": str(character.id)}
 
     async def _get_live_session(self, session_id: UUID) -> LiveSession:
-        # Warm catalog first so store.get can re-attach shared likelihoods.
-        catalog = await self._catalog()
+        # Do not reload the catalog on the hot path — TTL refresh was stalling answers.
         live = self.store.get(session_id)
         if live:
             if not live.engine.likelihoods:
-                live.engine.likelihoods = catalog.likelihoods
+                await self._catalog()
+            self._attach_catalog(live)
             return live
         live = await self._rehydrate(session_id)
         if not live:
             raise GameServiceError("Session not found or expired", 404)
         return live
+
+    def _attach_catalog(self, live: LiveSession) -> None:
+        from app.services.playable_catalog import peek_catalog
+
+        catalog = peek_catalog()
+        if catalog is None:
+            return
+        if not live.engine.likelihoods:
+            live.engine.likelihoods = catalog.likelihoods
+        if live.engine.question_sample_totals is None:
+            live.engine.question_sample_totals = catalog.question_sample_totals
+        if not live.question_refs:
+            live.question_refs = catalog.question_refs
+        if not live.character_names:
+            live.character_names = catalog.character_names
+        if not live.character_categories:
+            live.character_categories = catalog.character_categories
+        if not live.character_popularity:
+            live.character_popularity = catalog.character_popularity
+        if not live.all_question_ids:
+            live.all_question_ids = catalog.question_ids
 
     async def _rehydrate(self, session_id: UUID) -> LiveSession | None:
         db_session = await self.repo.get_session(session_id)
@@ -381,6 +398,7 @@ class GameService:
             list(catalog.character_ids),
             catalog.likelihoods,
             popularity=dict(catalog.character_popularity),
+            question_sample_totals=catalog.question_sample_totals,
         )
         question_refs = dict(catalog.question_refs)
         character_categories = dict(catalog.character_categories)

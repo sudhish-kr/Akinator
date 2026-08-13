@@ -24,13 +24,31 @@ def smooth_likelihood(entry: LikelihoodEntry | None, default: float = 0.5) -> fl
     return raw * (1.0 - shrink) + default * shrink
 
 
+def compute_question_sample_totals(
+    likelihoods: dict,
+    character_ids: list,
+) -> dict:
+    """Sum sample_size per question over the given character set (one pass)."""
+    wanted = set(character_ids)
+    totals: dict = {}
+    for (cid, qid), entry in likelihoods.items():
+        if cid in wanted:
+            totals[qid] = totals.get(qid, 0) + int(entry.sample_size)
+    return totals
+
+
 def is_question_eligible(
     question_id,
     likelihoods: dict,
     character_ids: list,
     min_samples: int = DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    sample_totals: dict | None = None,
 ) -> bool:
     """A question is eligible for IG selection once it has minimum data (TDD Section 3)."""
+    if sample_totals:
+        cached = sample_totals.get(question_id)
+        if cached is not None:
+            return int(cached) >= min_samples
     total_samples = 0
     for cid in character_ids:
         entry = likelihoods.get((cid, question_id))

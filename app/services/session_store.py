@@ -68,12 +68,18 @@ class SessionStore:
             return payload
         live = decode_live_session(payload)
         if not live.engine.likelihoods:
-            from app.services.playable_catalog import peek_likelihoods
+            from app.services.playable_catalog import peek_catalog
 
-            shared = peek_likelihoods()
-            if shared:
-                # Share the catalog dict (read-only during a game).
-                live.engine.likelihoods = shared
+            catalog = peek_catalog()
+            if catalog:
+                live.engine.likelihoods = catalog.likelihoods
+                live.engine.question_sample_totals = catalog.question_sample_totals
+        elif live.engine.question_sample_totals is None:
+            from app.services.playable_catalog import peek_catalog
+
+            catalog = peek_catalog()
+            if catalog:
+                live.engine.question_sample_totals = catalog.question_sample_totals
         return live
 
     def delete(self, session_id: UUID) -> None:

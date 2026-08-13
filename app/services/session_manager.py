@@ -65,6 +65,7 @@ class GameSessionManager:
         character_names: dict[UUID, str],
         character_categories: dict[UUID, str] | None = None,
         character_popularity: dict[UUID, int] | None = None,
+        question_sample_totals: dict[UUID, int] | None = None,
     ) -> LiveSession:
         """Start a new session and select the first question."""
         categories = dict(character_categories or {})
@@ -73,6 +74,7 @@ class GameSessionManager:
             character_ids,
             likelihoods,
             popularity=popularity,
+            question_sample_totals=question_sample_totals,
         )
         first_q = select_next_question(
             engine,

@@ -30,6 +30,7 @@ class PlayableCatalog:
     character_names: dict[UUID, str]
     character_categories: dict[UUID, str]
     character_popularity: dict[UUID, int]
+    question_sample_totals: dict[UUID, int] = field(default_factory=dict)
     loaded_at: float = field(default_factory=time.monotonic)
     character_count: int = 0
     question_count: int = 0
@@ -106,6 +107,10 @@ async def get_playable_catalog(repo, *, ttl_seconds: float = DEFAULT_TTL_SECONDS
         return loaded
 
 
+def _as_uuid(value) -> UUID:
+    return value if isinstance(value, UUID) else UUID(str(value))
+
+
 async def _load_catalog(repo, *, identity: int) -> PlayableCatalog:
     characters = await repo.get_active_characters()
     questions = await repo.get_active_questions()
@@ -114,28 +119,36 @@ async def _load_catalog(repo, *, identity: int) -> PlayableCatalog:
     if not questions:
         raise ValueError("No active questions available")
 
-    character_ids = [c.id for c in characters]
-    question_ids = [q.id for q in questions]
-    rows = await repo.get_likelihoods(character_ids, question_ids)
-    likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] = {
-        (row.character_id, row.question_id): LikelihoodEntry(
-            likelihood=row.likelihood,
-            sample_size=row.sample_size,
+    character_ids = [_as_uuid(c.id) for c in characters]
+    question_ids = [_as_uuid(q.id) for q in questions]
+    rows = await repo.get_active_likelihood_rows()
+    likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] = {}
+    sample_totals: dict[UUID, int] = {}
+    for character_id, question_id, likelihood, sample_size in rows:
+        cid = _as_uuid(character_id)
+        qid = _as_uuid(question_id)
+        n = int(sample_size)
+        likelihoods[(cid, qid)] = LikelihoodEntry(
+            likelihood=float(likelihood),
+            sample_size=n,
         )
-        for row in rows
-    }
+        sample_totals[qid] = sample_totals.get(qid, 0) + n
     return PlayableCatalog(
         character_ids=character_ids,
         question_ids=question_ids,
         likelihoods=likelihoods,
         question_refs={
-            q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
+            _as_uuid(q.id): QuestionRef(
+                id=_as_uuid(q.id), text=q.text, category=q.category
+            )
+            for q in questions
         },
-        character_names={c.id: c.name for c in characters},
-        character_categories={c.id: c.category for c in characters},
+        character_names={_as_uuid(c.id): c.name for c in characters},
+        character_categories={_as_uuid(c.id): c.category for c in characters},
         character_popularity={
-            c.id: int(getattr(c, "popularity_score", 0) or 0) for c in characters
+            _as_uuid(c.id): int(getattr(c, "popularity_score", 0) or 0) for c in characters
         },
+        question_sample_totals=sample_totals,
         character_count=len(character_ids),
         question_count=len(question_ids),
         likelihood_count=len(likelihoods),
