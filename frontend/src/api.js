@@ -48,6 +48,14 @@ export const api = {
       wrong_guess: wrongGuess,
     }),
 
+  /** Remaining session candidates for the Learn wizard (posterior rank). */
+  listRemainingCandidates: (sessionId, { category, q, pageSize = 40 } = {}) => {
+    const params = new URLSearchParams({ limit: String(pageSize) });
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    return request("GET", `/game/candidates/${sessionId}?${params.toString()}`);
+  },
+
   /** Character list for the Learn wizard (popular first). */
   listCharacters: ({ category, q, pageSize = 40 } = {}) => {
     const params = new URLSearchParams({

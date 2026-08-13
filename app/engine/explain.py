@@ -56,6 +56,46 @@ def top_candidates(
     return out
 
 
+def remaining_candidates(
+    probabilities: dict[UUID, float],
+    character_names: dict[UUID, str],
+    character_categories: dict[UUID, str] | None = None,
+    *,
+    category: str | None = None,
+    q: str | None = None,
+    exclude_ids: set[UUID] | frozenset[UUID] | None = None,
+    limit: int = 40,
+) -> list[dict]:
+    """Rank the current posterior pool for wrong-guess recovery (in-memory)."""
+    if not probabilities or limit <= 0:
+        return []
+
+    excluded = exclude_ids or set()
+    needle = (q or "").strip().casefold()
+    wanted_cat = (category or "").strip()
+    cats = character_categories or {}
+    ranked = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)
+    out: list[dict] = []
+    for cid, prob in ranked:
+        if cid in excluded:
+            continue
+        if wanted_cat and cats.get(cid) != wanted_cat:
+            continue
+        name = character_names.get(cid, str(cid))
+        if needle and needle not in name.casefold():
+            continue
+        out.append(
+            {
+                "id": str(cid),
+                "name": name,
+                "probability": round(float(prob), 4),
+            }
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
 def influential_questions(
     *,
     guessed_id: UUID,

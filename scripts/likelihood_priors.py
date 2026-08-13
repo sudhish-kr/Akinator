@@ -465,33 +465,43 @@ def refine_prior(
         if needle in text:
             p = high if character_category == match_cat else min(p, low)
 
-    # Geography — must be question-specific (Anime≠India just because Nationality).
+    # Geography — defaults stay LOW so YES hard-constraints eliminate mismatches.
+    # Character overrides raise true matches (India cricket stars, USA athletes, …).
     if "from india" in text:
         if character_category == "Anime":
             p = 0.08
         elif character_category in {"Sports", "Politicians", "Musicians", "Business Leaders", "Movies"}:
-            p = 0.35  # category-neutral; character overrides raise Indians
+            p = 0.12  # below constraint affirm_max; overrides raise Indians
         else:
-            p = min(p, 0.25)
+            p = min(p, 0.15)
     elif "from japan" in text:
         if character_category == "Anime":
             p = 0.88
         elif character_category in REAL_WORLD:
-            p = min(p, 0.2)
+            p = min(p, 0.12)
         else:
-            p = min(p, 0.3)
+            p = min(p, 0.2)
     elif "japan" in text or ("asia" in text and "india" not in text):
         if character_category == "Anime":
             p = max(p, 0.85)
         elif character_category in REAL_WORLD:
-            p = min(max(p, 0.25), 0.55)
+            p = min(p, 0.18)
     if "europe" in text and character_category in {"Historical Figures", "Literature"}:
         p = max(p, 0.55)
+    elif "from europe" in text and character_category in REAL_WORLD:
+        p = min(p, 0.18)
     if "united states" in text or "from the usa" in text or "from america" in text:
         if character_category in {"Sports", "Movies", "Business Leaders", "Musicians"}:
-            p = min(max(p, 0.3), 0.45)
+            p = 0.15  # overrides raise US stars
         elif character_category == "Anime":
             p = min(p, 0.12)
+    if "from australia" in text and character_category in REAL_WORLD:
+        p = min(p, 0.12)
+    if "from the uk" in text or "united kingdom" in text:
+        if character_category in REAL_WORLD:
+            p = min(p, 0.15)
+        if character_category in {"Historical Figures", "Literature"}:
+            p = max(p, 0.4)
 
     # Sport subtypes — category Sports is NOT enough; defaults stay low so
     # cricket≠football. Character overrides raise the matching athletes.
@@ -514,7 +524,7 @@ def refine_prior(
     )
     if any(n in text for n in sport_needles) and "sports player" not in text and "athlete" not in text:
         if character_category == "Sports":
-            p = 0.18
+            p = 0.12  # below affirm_max; overrides raise the matching sport
         else:
             p = min(p, 0.08)
 

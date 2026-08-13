@@ -4,7 +4,7 @@ from uuid import UUID
 from app.config import settings
 from app.db.models import GameSessionStatus
 from app.db.repositories.game_repository import GameRepository
-from app.engine.explain import AnswerObservation, build_guess_explanation
+from app.engine.explain import AnswerObservation, build_guess_explanation, remaining_candidates
 from app.engine.selector import (
     create_initial_state,
     decide_after_answer,
@@ -353,6 +353,31 @@ class GameService:
         await self.repo.commit()
         self.store.delete(session_id)
         return {"status": "submitted_for_review", "character_id": str(character.id)}
+
+    async def list_remaining_candidates(
+        self,
+        session_id: UUID,
+        *,
+        category: str | None = None,
+        q: str | None = None,
+        limit: int = 40,
+    ) -> dict:
+        """Wrong-guess recovery: rank the live posterior pool (no catalog scan)."""
+        live = await self._get_live_session(session_id)
+        exclude: set[UUID] = set()
+        db_session = await self.repo.get_session(session_id)
+        if db_session and db_session.guessed_character_id:
+            exclude.add(db_session.guessed_character_id)
+        items = remaining_candidates(
+            live.engine.probabilities,
+            live.character_names,
+            live.character_categories,
+            category=category,
+            q=q,
+            exclude_ids=exclude,
+            limit=limit,
+        )
+        return {"items": items, "total": len(items)}
 
     async def _get_live_session(self, session_id: UUID) -> LiveSession:
         # Do not reload the catalog on the hot path — TTL refresh was stalling answers.

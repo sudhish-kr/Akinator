@@ -6,6 +6,7 @@ from app.engine.explain import (
     AnswerObservation,
     build_guess_explanation,
     influential_questions,
+    remaining_candidates,
     top_candidates,
 )
 from app.engine.models import LikelihoodEntry, QuestionRef
@@ -82,3 +83,20 @@ def test_build_guess_explanation_shape_and_empty_answers():
     assert payload["top_candidates"][0]["name"] == "Solo"
     assert payload["influential_questions"] == []
     assert "Solo" in payload["summary"]
+
+
+def test_remaining_candidates_use_current_pool_not_generic_popularity():
+    smriti, nadia, messi = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    probs = {smriti: 0.62, nadia: 0.21, messi: 0.17}
+    names = {smriti: "Smriti Mandhana", nadia: "Nadia Comăneci", messi: "Lionel Messi"}
+    cats = {smriti: "Sports", nadia: "Sports", messi: "Sports"}
+
+    rows = remaining_candidates(probs, names, cats, category="Sports", exclude_ids={nadia})
+    assert [r["name"] for r in rows] == ["Smriti Mandhana", "Lionel Messi"]
+
+    searched = remaining_candidates(probs, names, cats, category="Sports", q="Mandhana")
+    assert [r["name"] for r in searched] == ["Smriti Mandhana"]
+
+    empty_cat = remaining_candidates(probs, names, cats, category="Movies")
+    assert empty_cat == []
+

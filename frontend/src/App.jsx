@@ -197,15 +197,27 @@ export default function App() {
       setBusy(true);
       setError(null);
       try {
+        const excludeId = guess?.character?.id;
+        if (sessionId) {
+          const remaining = await api.listRemainingCandidates(sessionId, {
+            category,
+            pageSize: 40,
+          });
+          const items = (remaining.items || []).filter((c) => c.id !== excludeId);
+          if (items.length > 0) {
+            setCharacters(items);
+            return;
+          }
+        }
         const data = await api.listCharacters({ category, pageSize: 40 });
-        setCharacters((data.items || []).filter((c) => c.id !== guess?.character?.id));
+        setCharacters((data.items || []).filter((c) => c.id !== excludeId));
       } catch (err) {
         fail(err);
       } finally {
         setBusy(false);
       }
     },
-    [guess, t]
+    [guess, sessionId, t]
   );
 
   const searchLearnCharacters = useCallback(
@@ -213,15 +225,28 @@ export default function App() {
       setBusy(true);
       setError(null);
       try {
+        const excludeId = guess?.character?.id;
+        if (sessionId) {
+          const remaining = await api.listRemainingCandidates(sessionId, {
+            category,
+            q,
+            pageSize: 40,
+          });
+          const items = (remaining.items || []).filter((c) => c.id !== excludeId);
+          if (items.length > 0) {
+            setCharacters(items);
+            return;
+          }
+        }
         const data = await api.listCharacters({ category, q, pageSize: 40 });
-        setCharacters((data.items || []).filter((c) => c.id !== guess?.character?.id));
+        setCharacters((data.items || []).filter((c) => c.id !== excludeId));
       } catch (err) {
         fail(err);
       } finally {
         setBusy(false);
       }
     },
-    [guess, t]
+    [guess, sessionId, t]
   );
 
   const onLearnPick = useCallback(

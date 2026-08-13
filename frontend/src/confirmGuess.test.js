@@ -52,3 +52,29 @@ test("learn wrong-guess still posts to /game/learn", async () => {
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.wrong_guess, true);
 });
+
+test("listRemainingCandidates queries the session candidate pool", async () => {
+  const calls = [];
+  globalThis.fetch = mock.fn(async (url, options) => {
+    calls.push({ url: String(url), options });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ items: [{ id: "c1", name: "Smriti Mandhana", probability: 0.6 }], total: 1 }),
+    };
+  });
+
+  const { api } = await import(`./api.js?t=${Date.now()}-remaining`);
+  const out = await api.listRemainingCandidates("11111111-1111-1111-1111-111111111111", {
+    category: "Sports",
+    q: "Mandhana",
+    pageSize: 40,
+  });
+
+  assert.equal(out.total, 1);
+  assert.equal(out.items[0].name, "Smriti Mandhana");
+  assert.equal(calls[0].options.method, "GET");
+  assert.match(calls[0].url, /\/game\/candidates\/11111111-1111-1111-1111-111111111111\?/);
+  assert.match(calls[0].url, /category=Sports/);
+  assert.match(calls[0].url, /q=Mandhana/);
+});

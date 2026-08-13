@@ -212,6 +212,10 @@ _OVERRIDES: dict[str, dict[str, list[str]]] = {
         "Simone Biles": ["Simone", "Biles"],
         "Sachin Tendulkar": ["Tendulkar", "Master Blaster"],
         "Virat Kohli": ["Kohli", "King Kohli"],
+        "Smriti Mandhana": ["Mandhana", "Smriti"],
+        "Mithali Raj": ["Mithali"],
+        "Harmanpreet Kaur": ["Harmanpreet"],
+        "Jemimah Rodrigues": ["Jemimah"],
         "Mike Tyson": ["Tyson", "Iron Mike"],
         "Shohei Ohtani": ["Ohtani", "Shotime"],
         "Babe Ruth": ["Babe", "Sultan of Swat"],
@@ -835,6 +839,10 @@ Babe Ruth
 Nadia Comăneci
 Sachin Tendulkar
 Virat Kohli
+Smriti Mandhana
+Mithali Raj
+Harmanpreet Kaur
+Jemimah Rodrigues
 Diego Maradona
 Mike Tyson
 Shohei Ohtani

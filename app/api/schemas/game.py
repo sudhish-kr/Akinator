@@ -93,3 +93,14 @@ class SuggestCharacterRequest(BaseModel):
 class SuggestCharacterResponse(BaseModel):
     status: str
     character_id: str
+
+
+class RemainingCandidateOut(BaseModel):
+    id: str
+    name: str
+    probability: float = 0.0
+
+
+class RemainingCandidatesResponse(BaseModel):
+    items: list[RemainingCandidateOut]
+    total: int
