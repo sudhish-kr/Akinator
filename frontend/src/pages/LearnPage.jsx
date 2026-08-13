@@ -1,12 +1,21 @@
-export default function LearnPage({ wrongGuessName, characters, busy, onPick, onHome }) {
+import { t } from "../i18n.js";
+
+export default function LearnPage({
+  lang,
+  wrongGuessName,
+  characters,
+  busy,
+  onPick,
+  onHome,
+}) {
   return (
     <section className="page learn">
-      <p className="kicker">Learning</p>
-      <h2 className="title">Who was it?</h2>
+      <p className="kicker">{t(lang, "learning")}</p>
+      <h2 className="title">{t(lang, "whoWasIt")}</h2>
       <p className="lede">
         {wrongGuessName
-          ? `Not ${wrongGuessName}. Choose the correct character so I can update my model.`
-          : "Choose the correct character so I can update my model."}
+          ? t(lang, "notNameChoose", wrongGuessName)
+          : t(lang, "chooseCorrect")}
       </p>
 
       <div className="char-grid">
@@ -24,11 +33,11 @@ export default function LearnPage({ wrongGuessName, characters, busy, onPick, on
       </div>
 
       {!busy && characters.length === 0 && (
-        <p className="muted">No active characters available.</p>
+        <p className="muted">{t(lang, "noCharacters")}</p>
       )}
 
       <button type="button" className="btn ghost" disabled={busy} onClick={onHome}>
-        Back to home
+        {t(lang, "backToHome")}
       </button>
     </section>
   );

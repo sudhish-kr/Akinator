@@ -1,47 +1,85 @@
 import { useCallback, useState } from "react";
 import { api } from "./api.js";
+import {
+  getStoredLang,
+  loadLeaderboard,
+  saveLeaderboardEntry,
+  storeLang,
+  t,
+} from "./i18n.js";
 import HomePage from "./pages/HomePage.jsx";
 import GamePage from "./pages/GamePage.jsx";
 import GuessPage from "./pages/GuessPage.jsx";
 import LearnPage from "./pages/LearnPage.jsx";
+import LeaderboardPage from "./pages/LeaderboardPage.jsx";
 
-/** Screens: home | game | guess | learn | done */
+/** Screens: home | game | guess | learn | done | leaderboard */
 export default function App() {
   const [screen, setScreen] = useState("home");
+  const [returnScreen, setReturnScreen] = useState("home");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [lang, setLang] = useState(getStoredLang);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
 
   const [sessionId, setSessionId] = useState(null);
-  const [question, setQuestion] = useState(null);
-  const [questionNumber, setQuestionNumber] = useState(1);
-  const [confidence, setConfidence] = useState(0);
+  const [trail, setTrail] = useState([]);
+  const [cursor, setCursor] = useState(0);
   const [guess, setGuess] = useState(null);
   const [characters, setCharacters] = useState([]);
   const [doneMessage, setDoneMessage] = useState("");
+  const [leaderboard, setLeaderboard] = useState(loadLeaderboard);
 
   const fail = (err) => {
-    setError(err?.message || "Something went wrong");
+    setError(err?.message || t(lang, "somethingWrong"));
     setBusy(false);
+  };
+
+  const changeLang = (next) => {
+    const value = next === "hi" ? "hi" : "en";
+    setLang(value);
+    storeLang(value);
+  };
+
+  const resetGameState = () => {
+    setSessionId(null);
+    setTrail([]);
+    setCursor(0);
+    setGuess(null);
+    setDoneMessage("");
+    setCharacters([]);
+    setShowEndConfirm(false);
   };
 
   const goHome = () => {
     setScreen("home");
-    setSessionId(null);
-    setQuestion(null);
-    setGuess(null);
-    setConfidence(0);
-    setQuestionNumber(1);
-    setDoneMessage("");
+    resetGameState();
     setError(null);
-    setCharacters([]);
+  };
+
+  const openLeaderboard = () => {
+    setLeaderboard(loadLeaderboard());
+    setReturnScreen(screen === "leaderboard" ? "home" : screen);
+    setScreen("leaderboard");
+  };
+
+  const closeLeaderboard = () => {
+    setScreen(returnScreen === "leaderboard" ? "home" : returnScreen);
   };
 
   const enterGame = (data, session) => {
+    const q = data.question || data.next_question;
+    const step = {
+      question: q,
+      answer: null,
+      questionNumber: (data.questions_asked ?? 0) + 1,
+      confidence: data.top_confidence ?? 0,
+    };
     setSessionId(session);
-    setQuestion(data.question || data.next_question);
-    setQuestionNumber((data.questions_asked ?? 0) + 1);
-    setConfidence(data.top_confidence ?? 0);
+    setTrail([step]);
+    setCursor(0);
     setGuess(null);
+    setShowEndConfirm(false);
     setScreen("game");
   };
 
@@ -62,31 +100,67 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [lang]);
 
   const answer = useCallback(
     async (value) => {
-      if (!sessionId || !question || busy) return;
+      if (!sessionId || busy) return;
+      const tip = trail[trail.length - 1];
+      if (!tip?.question || cursor !== trail.length - 1 || tip.answer) return;
+
       setBusy(true);
       setError(null);
       try {
-        const data = await api.submitAnswer(sessionId, question.id, value);
-        setConfidence(data.top_confidence ?? 0);
+        const data = await api.submitAnswer(sessionId, tip.question.id, value);
+        const confidence = data.top_confidence ?? 0;
+
+        setTrail((prev) => {
+          const next = prev.map((step, i) =>
+            i === prev.length - 1 ? { ...step, answer: value, confidence } : step
+          );
+          if (data.status === "ready_to_guess") {
+            return next;
+          }
+          return [
+            ...next,
+            {
+              question: data.next_question,
+              answer: null,
+              questionNumber: data.questions_asked + 1,
+              confidence,
+            },
+          ];
+        });
+
         if (data.status === "ready_to_guess") {
           await showGuess(sessionId);
         } else {
-          setQuestion(data.next_question);
-          setQuestionNumber(data.questions_asked + 1);
+          setCursor((c) => c + 1);
         }
       } catch {
         try {
           const state = await api.getState(sessionId);
-          setConfidence(state.top_confidence ?? 0);
-          setQuestionNumber(state.questions_asked + 1);
+          const confidence = state.top_confidence ?? 0;
           if (state.status === "ready_to_guess") {
             await showGuess(sessionId);
           } else if (state.next_question) {
-            setQuestion(state.next_question);
+            setTrail((prev) => {
+              const next = prev.map((step, i) =>
+                i === prev.length - 1
+                  ? { ...step, answer: value, confidence }
+                  : step
+              );
+              return [
+                ...next,
+                {
+                  question: state.next_question,
+                  answer: null,
+                  questionNumber: state.questions_asked + 1,
+                  confidence,
+                },
+              ];
+            });
+            setCursor((c) => c + 1);
             setScreen("game");
           }
           setError(null);
@@ -97,8 +171,29 @@ export default function App() {
         setBusy(false);
       }
     },
-    [sessionId, question, busy]
+    [sessionId, trail, cursor, busy, lang]
   );
+
+  const onPrevious = () => {
+    if (cursor <= 0) return;
+    setCursor((c) => c - 1);
+  };
+
+  const onNext = () => {
+    if (cursor >= trail.length - 1) return;
+    setCursor((c) => c + 1);
+  };
+
+  const recordScore = (result) => {
+    const asked = trail.filter((s) => s.answer).length;
+    setLeaderboard(
+      saveLeaderboardEntry({
+        name: "Player",
+        result,
+        questions: asked || Math.max(trail.length - 1, 0),
+      })
+    );
+  };
 
   const onCorrect = useCallback(async () => {
     if (!sessionId || !guess || busy) return;
@@ -106,14 +201,15 @@ export default function App() {
     setError(null);
     try {
       await api.learn(sessionId, guess.character.id, { wrongGuess: false });
-      setDoneMessage(`Nailed it — ${guess.character.name}.`);
+      recordScore("correct");
+      setDoneMessage(t(lang, "nailedIt", guess.character.name));
       setScreen("done");
     } catch (err) {
       fail(err);
     } finally {
       setBusy(false);
     }
-  }, [sessionId, guess, busy]);
+  }, [sessionId, guess, busy, lang, trail]);
 
   const openLearn = useCallback(async () => {
     if (busy) return;
@@ -128,7 +224,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [busy, guess]);
+  }, [busy, guess, lang]);
 
   const onLearnPick = useCallback(
     async (characterId, characterName) => {
@@ -137,10 +233,9 @@ export default function App() {
       setError(null);
       try {
         await api.learn(sessionId, characterId, { wrongGuess: true });
+        recordScore("learned");
         setDoneMessage(
-          characterName
-            ? `Learned — next time I’ll look for ${characterName}.`
-            : "Learned from that round."
+          characterName ? t(lang, "learnedNamed", characterName) : t(lang, "learned")
         );
         setScreen("done");
       } catch (err) {
@@ -149,8 +244,10 @@ export default function App() {
         setBusy(false);
       }
     },
-    [sessionId, busy]
+    [sessionId, busy, lang, trail]
   );
+
+  const current = trail[cursor] || null;
 
   return (
     <div className="shell">
@@ -159,27 +256,62 @@ export default function App() {
       {error && (
         <div className="toast" role="alert">
           <span>{error}</span>
-          <button type="button" className="toast-x" onClick={() => setError(null)} aria-label="Dismiss">
+          <button
+            type="button"
+            className="toast-x"
+            onClick={() => setError(null)}
+            aria-label="Dismiss"
+          >
             ×
           </button>
         </div>
       )}
 
-      {screen === "home" && <HomePage onStart={startGame} busy={busy} />}
-      {screen === "game" && (
-        <GamePage
-          question={question}
-          questionNumber={questionNumber}
-          confidence={confidence}
+      {screen === "home" && (
+        <HomePage
+          lang={lang}
+          onStart={startGame}
+          onLeaderboard={openLeaderboard}
+          onLangChange={changeLang}
           busy={busy}
+        />
+      )}
+      {screen === "leaderboard" && (
+        <LeaderboardPage lang={lang} entries={leaderboard} onBack={closeLeaderboard} />
+      )}
+      {screen === "game" && current && (
+        <GamePage
+          lang={lang}
+          question={current.question}
+          questionNumber={current.questionNumber}
+          confidence={current.confidence}
+          busy={busy}
+          selectedAnswer={current.answer}
+          canGoPrevious={cursor > 0}
+          canGoNext={cursor < trail.length - 1}
+          showEndConfirm={showEndConfirm}
           onAnswer={answer}
+          onBack={goHome}
+          onPrevious={onPrevious}
+          onNext={onNext}
+          onEndGameRequest={() => setShowEndConfirm(true)}
+          onEndConfirm={goHome}
+          onEndCancel={() => setShowEndConfirm(false)}
         />
       )}
       {screen === "guess" && (
-        <GuessPage guess={guess} busy={busy} onCorrect={onCorrect} onWrong={openLearn} />
+        <GuessPage
+          lang={lang}
+          guess={guess}
+          busy={busy}
+          onCorrect={onCorrect}
+          onWrong={openLearn}
+          onBack={goHome}
+        />
       )}
       {screen === "learn" && (
         <LearnPage
+          lang={lang}
           wrongGuessName={guess?.character?.name}
           characters={characters}
           busy={busy}
@@ -189,16 +321,54 @@ export default function App() {
       )}
       {screen === "done" && (
         <section className="page done">
-          <h2 className="title">{doneMessage || "Round complete"}</h2>
+          <div className="lang-toggle done-lang" role="group" aria-label={t(lang, "language")}>
+            <button
+              type="button"
+              className={`btn sm lang-btn${lang === "en" ? " active" : ""}`}
+              onClick={() => changeLang("en")}
+            >
+              {t(lang, "english")}
+            </button>
+            <button
+              type="button"
+              className={`btn sm lang-btn${lang === "hi" ? " active" : ""}`}
+              onClick={() => changeLang("hi")}
+            >
+              {t(lang, "hindi")}
+            </button>
+          </div>
+          <h2 className="title">{doneMessage || t(lang, "roundComplete")}</h2>
           <div className="actions">
             <button type="button" className="btn primary" onClick={startGame} disabled={busy}>
-              Play again
+              {t(lang, "playAgain")}
             </button>
             <button type="button" className="btn ghost" onClick={goHome} disabled={busy}>
-              Home
+              {t(lang, "home")}
+            </button>
+            <button type="button" className="btn ghost" onClick={openLeaderboard} disabled={busy}>
+              {t(lang, "leaderboard")}
             </button>
           </div>
         </section>
+      )}
+
+      {(screen === "game" || screen === "guess" || screen === "learn") && (
+        <div className="floating-lang" aria-label={t(lang, "language")}>
+          <button
+            type="button"
+            className={`btn sm lang-btn${lang === "en" ? " active" : ""}`}
+            onClick={() => changeLang("en")}
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            className={`btn sm lang-btn${lang === "hi" ? " active" : ""}`}
+            onClick={() => changeLang("hi")}
+          >
+            हिं
+          </button>
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.api.routes.admin import router as admin_router
@@ -33,6 +34,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Register logging first, then CORS last so CORS is outermost and still
+# attaches headers when routes return error Responses (e.g. DB failures).
+app.middleware("http")(request_logging_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -41,11 +45,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.middleware("http")(request_logging_middleware)
-
 app.include_router(auth_router)
 app.include_router(game_router)
 app.include_router(admin_router)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Return JSON 500 with CORS headers so the browser does not report Failed to fetch."""
+    headers = {
+        "Access-Control-Allow-Origin": request.headers.get("origin")
+        or settings.cors_origin_list[0],
+        "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin",
+    }
+    origin = request.headers.get("origin")
+    if origin and origin not in settings.cors_origin_list:
+        headers.pop("Access-Control-Allow-Origin", None)
+        headers.pop("Access-Control-Allow-Credentials", None)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+        headers=headers,
+    )
 
 
 @app.get("/health", tags=["health"])
