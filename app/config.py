@@ -17,16 +17,21 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     jwt_refresh_expire_days: int = 7
 
-    # Comma-separated browser origins allowed to call the API (CORS)
-    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
+    # Comma-separated browser origins allowed to call the API (CORS).
+    # In development, vite may bump past 5173 — see cors_origin_list.
+    cors_origins: str = (
+        "http://127.0.0.1:5173,http://localhost:5173,"
+        "http://127.0.0.1:5174,http://localhost:5174,"
+        "http://127.0.0.1:5175,http://localhost:5175"
+    )
 
     # Engine thresholds (TDD v1.1)
     elimination_floor: float = 0.0005
     elimination_magnitude: float = 1000.0
-    confidence_high: float = 0.85
-    confidence_separation: float = 0.6
-    confidence_margin: float = 0.4
-    max_questions: int = 20
+    confidence_high: float = 0.88
+    confidence_separation: float = 0.72
+    confidence_margin: float = 0.28
+    max_questions: int = 25
     learning_rate: float = 0.07
     consecutive_dont_know_cap: int = 5
     ig_tie_threshold: float = 0.001
@@ -60,7 +65,20 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        """Configured CORS origins.
+
+        In local development Vite often moves to 5174/5175 when 5173 is busy.
+        Expand localhost Vite ports automatically without using allow_origins=['*'].
+        Production uses only the explicit CORS_ORIGINS list.
+        """
+        origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        if self.environment.lower() in {"development", "dev", "local", "test"}:
+            for host in ("http://localhost", "http://127.0.0.1"):
+                for port in range(5173, 5181):
+                    candidate = f"{host}:{port}"
+                    if candidate not in origins:
+                        origins.append(candidate)
+        return origins
 
 
 settings = Settings()
