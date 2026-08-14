@@ -14,6 +14,9 @@ ROOT = SCRIPTS.parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+from character_popularity import popularity_for  # noqa: E402
+from character_trait_priors import build_all_overrides  # noqa: E402
+from knowledge_expansion_v2 import expansion_characters  # noqa: E402
 from knowledge_phase1_data import CATEGORIES, CURATED_CORE, themed_fill  # noqa: E402
 from knowledge_questions_data import build_question_catalog, legacy_question_texts  # noqa: E402
 from likelihood_priors import assert_mapping_quality, build_likelihood_rules  # noqa: E402
@@ -154,12 +157,29 @@ def _default_aliases(name: str) -> list[str]:
 def _collect_characters() -> tuple[list[dict], dict[str, int]]:
     seen: set[str] = set()
     characters: list[dict] = []
+    by_name: dict[str, dict] = {}
     per_category: dict[str, int] = {cat: 0 for cat in CATEGORIES}
     fill_start: dict[str, int] = {cat: 0 for cat in CATEGORIES}
 
     def add(name: str, category: str, aliases: list[str]) -> bool:
         key = name.casefold().strip()
-        if not key or key in seen:
+        if not key:
+            return False
+        if key in by_name:
+            row = by_name[key]
+            alias_seen = {a.casefold() for a in row.get("aliases") or []}
+            for alias in aliases:
+                ak = alias.casefold().strip()
+                if not ak or ak == key or ak in seen or ak in alias_seen:
+                    continue
+                row.setdefault("aliases", []).append(alias.strip())
+                alias_seen.add(ak)
+                seen.add(ak)
+            score = popularity_for(name)
+            if score and int(row.get("popularity_score") or 0) < score:
+                row["popularity_score"] = score
+            return False
+        if key in seen:
             return False
         clean_aliases: list[str] = []
         alias_seen: set[str] = set()
@@ -180,14 +200,15 @@ def _collect_characters() -> tuple[list[dict], dict[str, int]]:
         seen.add(key)
         for alias in clean_aliases:
             seen.add(alias.casefold())
-        characters.append(
-            {
-                "name": name.strip(),
-                "category": category,
-                "aliases": clean_aliases,
-                "is_active": True,
-            }
-        )
+        row = {
+            "name": name.strip(),
+            "category": category,
+            "aliases": clean_aliases,
+            "is_active": True,
+            "popularity_score": popularity_for(name),
+        }
+        characters.append(row)
+        by_name[key] = row
         per_category[category] += 1
         return True
 
@@ -201,6 +222,9 @@ def _collect_characters() -> tuple[list[dict], dict[str, int]]:
     for category in CATEGORIES:
         for name, aliases in CURATED_CORE.get(category, []):
             add(name, category, list(aliases))
+
+    for name, category, aliases in expansion_characters():
+        add(name, category, list(aliases))
 
     for category in CATEGORIES:
         quota = category_targets[category]
@@ -416,6 +440,14 @@ def build_seed() -> dict:
     for row in overrides:
         if row["question"] not in question_texts:
             raise RuntimeError(f"Override question missing from catalog: {row['question']}")
+
+    generated = build_all_overrides(characters, questions, sample_size=80)
+    merged_ov: dict[tuple[str, str], dict] = {}
+    for ov in overrides:
+        merged_ov[(ov["character"].casefold(), ov["question"].casefold())] = ov
+    for ov in generated:
+        merged_ov[(ov["character"].casefold(), ov["question"].casefold())] = ov
+    overrides = [merged_ov[k] for k in sorted(merged_ov)]
 
     rules = build_likelihood_rules(questions, explicit_rules=RULES)
     assert_mapping_quality(characters, questions, rules)

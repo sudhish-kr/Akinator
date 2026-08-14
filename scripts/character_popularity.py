@@ -6,6 +6,8 @@ Bayesian update math — listing / catalog ordering only.
 
 from __future__ import annotations
 
+from knowledge_expansion_v2 import expansion_popularity  # noqa: E402
+
 # name (casefold) → popularity_score
 CHARACTER_POPULARITY: dict[str, int] = {
     "virat kohli": 100,
@@ -34,12 +36,15 @@ CHARACTER_POPULARITY: dict[str, int] = {
     "doraemon": 94,
     "shinchan": 93,
     "shin chan": 93,
+    "mario": 96,
+    "sonic the hedgehog": 92,
 }
+CHARACTER_POPULARITY.update(expansion_popularity())
 
 # Characters that must exist in the knowledge base (name, category, aliases).
 REQUIRED_FAMOUS_CHARACTERS: list[tuple[str, str, list[str]]] = [
-    ("Virat Kohli", "Sports", ["Kohli", "King Kohli"]),
-    ("MS Dhoni", "Sports", ["Dhoni", "Mahendra Singh Dhoni", "MSD"]),
+    ("Virat Kohli", "Sports", ["Kohli", "King Kohli", "Virat"]),
+    ("MS Dhoni", "Sports", ["Dhoni", "Mahendra Singh Dhoni", "MSD", "Mahi"]),
     ("Sachin Tendulkar", "Sports", ["Tendulkar", "Master Blaster"]),
     ("Rohit Sharma", "Sports", ["Rohit", "Hitman"]),
     ("Smriti Mandhana", "Sports", ["Mandhana", "Smriti"]),
@@ -62,6 +67,8 @@ REQUIRED_FAMOUS_CHARACTERS: list[tuple[str, str, list[str]]] = [
     ("Goku", "Anime", ["Son Goku", "Kakarot"]),
     ("Doraemon", "Cartoons", ["Doramon"]),
     ("Shinchan", "Cartoons", ["Shin Chan", "Crayon Shin-chan", "Shinnosuke"]),
+    ("Mario", "Gaming", ["Super Mario"]),
+    ("Sonic the Hedgehog", "Gaming", ["Sonic"]),
 ]
 
 

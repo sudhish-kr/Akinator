@@ -238,6 +238,10 @@ TRAIT_TABLE: dict[str, CharacterTraits] = {
     "neo": _T(real=False, regions={"usa"}, fictional_media={"movie"}),
 }
 
+from knowledge_expansion_v2 import trait_table_from_expansion  # noqa: E402
+
+TRAIT_TABLE = {**TRAIT_TABLE, **trait_table_from_expansion(_T)}
+
 # Name substrings → sport (applied when not in TRAIT_TABLE).
 _NAME_SPORT_HINTS: tuple[tuple[str, str], ...] = (
     ("kohli", "cricket"),
@@ -495,7 +499,11 @@ def overrides_for_character(
             lik = 0.94 if "uk" in traits.regions else 0.1
         elif "from australia" in t:
             lik = 0.94 if "australia" in traits.regions else 0.08
-        elif "americas" in t:
+        elif "from africa" in t:
+            lik = 0.94 if "africa" in traits.regions else 0.08
+        elif "middle east" in t:
+            lik = 0.94 if "asia" in traits.regions and not (traits.regions & {"japan", "india"}) else 0.08
+        elif "americas" in t or "from america" in t:
             lik = 0.9 if traits.regions & {"americas", "usa"} else 0.12
         elif "another country" in t:
             lik = None
@@ -507,8 +515,25 @@ def overrides_for_character(
             lik = 0.96 if "basketball" in traits.sports else (0.08 if traits.sports else None)
         elif "tennis" in t:
             lik = 0.96 if "tennis" in traits.sports else (0.08 if traits.sports else None)
-        elif "boxing" in t:
-            lik = 0.96 if "boxing" in traits.sports else (0.08 if traits.sports else None)
+        elif "badminton" in t:
+            lik = 0.96 if "badminton" in traits.sports else (0.08 if traits.sports else None)
+        elif "wrestling" in t:
+            lik = 0.96 if "wrestling" in traits.sports else (0.08 if traits.sports else None)
+        elif "formula" in t or "race cars" in t or "car racing" in t:
+            lik = 0.96 if "racing" in traits.sports else (0.08 if traits.sports else None)
+        elif "mma" in t or "ufc" in t:
+            lik = 0.96 if "mma" in traits.sports else (0.08 if traits.sports else None)
+        elif "boxing" in t or "fight in a ring" in t:
+            if traits.sports & {"boxing", "mma", "wrestling"}:
+                lik = 0.94
+            elif traits.sports:
+                lik = 0.08
+        elif "swim" in t:
+            lik = 0.96 if "swimming" in traits.sports else (0.08 if traits.sports else None)
+        elif "gymnastic" in t:
+            lik = 0.96 if "gymnastics" in traits.sports else (0.08 if traits.sports else None)
+        elif "volleyball" in t:
+            lik = 0.96 if "volleyball" in traits.sports else (0.08 if traits.sports else None)
         elif "baseball" in t:
             lik = 0.96 if "baseball" in traits.sports else (0.08 if traits.sports else None)
         elif "hockey" in t:

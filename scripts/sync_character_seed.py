@@ -78,12 +78,16 @@ async def sync_characters(path: Path) -> dict[str, int]:
                 key = _norm(name)
                 if key in by_name:
                     character = by_name[key]
+                    score = int(item.get("popularity_score") or 0)
+                    if score and getattr(character, "popularity_score", 0) != score:
+                        character.popularity_score = score
                 else:
                     character = await repo.create_character(
                         name=name,
                         category=item["category"].strip(),
                         image_url=item.get("image_url"),
                         is_active=bool(item.get("is_active", True)),
+                        popularity_score=int(item.get("popularity_score") or 0),
                     )
                     by_name[key] = character
                     existing_aliases.add(key)

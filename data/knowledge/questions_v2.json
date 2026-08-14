@@ -10,7 +10,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.61,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a real person?"
     },
     {
       "text": "Is your character made-up?",
@@ -20,7 +21,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.61,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a made-up character?"
     },
     {
       "text": "Is your character still alive?",
@@ -30,7 +32,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.54,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this person still alive?"
     },
     {
       "text": "Is your character a man?",
@@ -40,7 +43,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.48,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they male?"
     },
     {
       "text": "Is your character a woman?",
@@ -50,7 +54,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.48,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a girl or woman?"
     },
     {
       "text": "Is your character a kid?",
@@ -60,7 +65,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a kid or teen?"
     },
     {
       "text": "Is your character a grown-up?",
@@ -70,7 +76,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a grown-up?"
     },
     {
       "text": "Is your character human?",
@@ -80,7 +87,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.51,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they human?"
     },
     {
       "text": "Is your character an animal?",
@@ -90,7 +98,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they an animal?"
     },
     {
       "text": "Does your character wear a costume?",
@@ -100,7 +109,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear a costume?"
     },
     {
       "text": "Does your character wear a mask?",
@@ -110,7 +120,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear a mask?"
     },
     {
       "text": "Does your character have long hair?",
@@ -120,7 +131,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have long hair?"
     },
     {
       "text": "Does your character have short hair?",
@@ -130,7 +142,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have short hair?"
     },
     {
       "text": "Does your character have dark hair?",
@@ -140,7 +153,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have dark hair?"
     },
     {
       "text": "Does your character have light hair?",
@@ -150,7 +164,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have light hair?"
     },
     {
       "text": "Does your character wear glasses?",
@@ -160,7 +175,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear glasses?"
     },
     {
       "text": "Is your character tall?",
@@ -170,7 +186,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they tall?"
     },
     {
       "text": "Is your character known by one name?",
@@ -180,7 +197,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known by one name?"
     },
     {
       "text": "Is your character famous?",
@@ -190,7 +208,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.48,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous worldwide?"
     },
     {
       "text": "Is your character from India?",
@@ -200,7 +219,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from India?"
     },
     {
       "text": "Is your character from Japan?",
@@ -210,7 +230,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Japan?"
     },
     {
       "text": "Is your character from the USA?",
@@ -220,7 +241,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the United States?"
     },
     {
       "text": "Is your character from the UK?",
@@ -230,7 +252,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the United Kingdom?"
     },
     {
       "text": "Is your character from Asia?",
@@ -240,7 +263,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Asia?"
     },
     {
       "text": "Is your character from Europe?",
@@ -250,7 +274,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Europe?"
     },
     {
       "text": "Is your character from America?",
@@ -260,7 +285,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the Americas?"
     },
     {
       "text": "Is your character from Africa?",
@@ -270,7 +296,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Africa?"
     },
     {
       "text": "Is your character from Australia?",
@@ -280,7 +307,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Australia?"
     },
     {
       "text": "Is your character kind and helpful?",
@@ -290,7 +318,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they kind and helpful?"
     },
     {
       "text": "Is your character mostly serious?",
@@ -300,7 +329,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they mostly serious?"
     },
     {
       "text": "Is your character mostly funny?",
@@ -310,7 +340,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they mostly funny?"
     },
     {
       "text": "Is your character brave?",
@@ -320,7 +351,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they brave?"
     },
     {
       "text": "Is your character very smart?",
@@ -330,7 +362,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they very smart?"
     },
     {
       "text": "Is your character strong?",
@@ -340,7 +373,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they strong?"
     },
     {
       "text": "Does your character have a special outfit?",
@@ -350,7 +384,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have a special outfit?"
     },
     {
       "text": "Does your character look young?",
@@ -360,7 +395,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they look young?"
     },
     {
       "text": "Does your character look old?",
@@ -370,7 +406,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they look old?"
     },
     {
       "text": "Is your character a hero?",
@@ -380,7 +417,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a hero?"
     },
     {
       "text": "Is your character a villain?",
@@ -390,7 +428,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a villain?"
     },
     {
       "text": "Does your character use magic?",
@@ -400,7 +439,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about magic?"
     },
     {
       "text": "Is your character from sci-fi?",
@@ -410,7 +450,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this sci-fi?"
     },
     {
       "text": "Can your character talk like a person?",
@@ -420,7 +461,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Can they talk like a person?"
     },
     {
       "text": "Does your character live in a city?",
@@ -430,7 +472,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they live in a city?"
     },
     {
       "text": "Does your character live in nature?",
@@ -440,7 +483,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they live in nature?"
     },
     {
       "text": "Is your character part of a big story?",
@@ -450,7 +494,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they part of a big story?"
     },
     {
       "text": "Is your character still famous?",
@@ -460,7 +505,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do people still talk about them?"
     },
     {
       "text": "Was your character famous long ago?",
@@ -470,7 +516,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Were they famous long ago?"
     },
     {
       "text": "Does your character have a best friend?",
@@ -480,7 +527,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have a best friend?"
     },
     {
       "text": "Do people dress like them?",
@@ -490,7 +538,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do people dress like them?"
     },
     {
       "text": "Does your character smile a lot?",
@@ -500,7 +549,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they smile a lot?"
     },
     {
       "text": "Is your character from another country?",
@@ -510,7 +560,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from another country?"
     },
     {
       "text": "Is your character from modern times?",
@@ -520,7 +571,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from modern times?"
     },
     {
       "text": "Is your character from history?",
@@ -530,7 +582,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from history?"
     },
     {
       "text": "Is your character an athlete?",
@@ -540,7 +593,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.64,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a sports player?"
     },
     {
       "text": "Is your character from a movie?",
@@ -550,7 +604,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.64,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from a movie?"
     },
     {
       "text": "Is your character from TV?",
@@ -560,7 +615,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.6,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from a TV show?"
     },
     {
       "text": "Is your character from anime?",
@@ -570,7 +626,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.62,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from anime?"
     },
     {
       "text": "Is your character from a cartoon?",
@@ -580,7 +637,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.62,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from a cartoon?"
     },
     {
       "text": "Is your character from a game?",
@@ -590,7 +648,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.61,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from a video game?"
     },
     {
       "text": "Is your character a scientist?",
@@ -600,7 +659,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.61,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a scientist?"
     },
     {
       "text": "Is your character a musician?",
@@ -610,7 +670,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.62,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a musician?"
     },
     {
       "text": "Is your character a writer?",
@@ -620,7 +681,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.52,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a writer?"
     },
     {
       "text": "Is your character a politician?",
@@ -630,7 +692,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.61,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a political leader?"
     },
     {
       "text": "Is your character a business person?",
@@ -640,7 +703,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.5,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a business leader?"
     },
     {
       "text": "Is your character from a myth?",
@@ -650,7 +714,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.57,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from an old legend?"
     },
     {
       "text": "Is your character from history books?",
@@ -660,7 +725,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.5,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from long-ago history?"
     },
     {
       "text": "Does your character play team sports?",
@@ -670,7 +736,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play team sports?"
     },
     {
       "text": "Does your character play alone sports?",
@@ -680,7 +747,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play alone sports?"
     },
     {
       "text": "Is your character in action movies?",
@@ -690,7 +758,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in action movies?"
     },
     {
       "text": "Is your character in funny movies?",
@@ -700,7 +769,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in funny movies?"
     },
     {
       "text": "Is your character in kids movies?",
@@ -710,7 +780,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in kids movies?"
     },
     {
       "text": "Is your character on a kids TV show?",
@@ -720,7 +791,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they on a kids TV show?"
     },
     {
       "text": "Is your character on a funny TV show?",
@@ -730,7 +802,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they on a funny TV show?"
     },
     {
       "text": "Is your character on a serious TV show?",
@@ -740,7 +813,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they on a serious TV show?"
     },
     {
       "text": "Is your character from kids anime?",
@@ -750,7 +824,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from kids anime?"
     },
     {
       "text": "Is your character from action anime?",
@@ -760,7 +835,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from action anime?"
     },
     {
       "text": "Is your character from a funny cartoon?",
@@ -770,7 +846,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a funny cartoon?"
     },
     {
       "text": "Is your character from a school cartoon?",
@@ -780,7 +857,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a school cartoon?"
     },
     {
       "text": "Is your character from an adventure game?",
@@ -790,7 +868,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from an adventure game?"
     },
     {
       "text": "Is your character from a fighting game?",
@@ -800,7 +879,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a fighting game?"
     },
     {
       "text": "Does your character study nature?",
@@ -810,7 +890,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they study nature?"
     },
     {
       "text": "Does your character study stars?",
@@ -820,7 +901,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they study stars?"
     },
     {
       "text": "Does your character study numbers?",
@@ -830,7 +912,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they study numbers?"
     },
     {
       "text": "Does your character sing?",
@@ -840,7 +923,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they sing songs?"
     },
     {
       "text": "Does your character play an instrument?",
@@ -850,7 +934,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play an instrument?"
     },
     {
       "text": "Does your character write books?",
@@ -860,7 +945,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write books?"
     },
     {
       "text": "Does your character write poems?",
@@ -870,7 +956,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write poems?"
     },
     {
       "text": "Does your character lead a country?",
@@ -880,7 +967,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they lead a country?"
     },
     {
       "text": "Does your character run a big company?",
@@ -890,7 +978,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they run a big company?"
     },
     {
       "text": "Is your character from Greek myths?",
@@ -900,7 +989,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Greek myths?"
     },
     {
       "text": "Is your character from Norse myths?",
@@ -910,7 +1000,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Norse myths?"
     },
     {
       "text": "Is your character from Egyptian myths?",
@@ -920,7 +1011,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from Egyptian myths?"
     },
     {
       "text": "Did your character live before cars?",
@@ -930,7 +1022,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they live before cars?"
     },
     {
       "text": "Did your character live with kings?",
@@ -940,7 +1033,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they live with kings?"
     },
     {
       "text": "Is your character from space stories?",
@@ -950,7 +1044,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from space stories?"
     },
     {
       "text": "Is your character from animal stories?",
@@ -960,7 +1055,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from animal stories?"
     },
     {
       "text": "Is your character from robot stories?",
@@ -970,7 +1066,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from robot stories?"
     },
     {
       "text": "Is your character about sports?",
@@ -980,7 +1077,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about sports games?"
     },
     {
       "text": "Is your character about school?",
@@ -990,7 +1088,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about school life?"
     },
     {
       "text": "Is your character about music?",
@@ -1000,7 +1099,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about music shows?"
     },
     {
       "text": "Is your character about science?",
@@ -1010,7 +1110,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about science work?"
     },
     {
       "text": "Is your character about war?",
@@ -1020,7 +1121,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about old wars?"
     },
     {
       "text": "Is your character a royal?",
@@ -1030,7 +1132,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about kings and queens?"
     },
     {
       "text": "Is your character about computers?",
@@ -1040,7 +1143,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about computers?"
     },
     {
       "text": "Is your character about phones?",
@@ -1050,7 +1154,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about phones or apps?"
     },
     {
       "text": "Is your character a superhero?",
@@ -1060,7 +1165,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.51,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this a superhero?"
     },
     {
       "text": "Is your character linked to space?",
@@ -1070,7 +1176,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this about space?"
     },
     {
       "text": "Is your character linked to war?",
@@ -1080,7 +1187,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they linked to war?"
     },
     {
       "text": "Is your character from long ago?",
@@ -1090,7 +1198,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.48,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Is this from long ago?"
     },
     {
       "text": "Is your character known today?",
@@ -1100,7 +1209,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known today?"
     },
     {
       "text": "Was your character famous in the 1900s?",
@@ -1110,7 +1220,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Were they famous in the 1900s?"
     },
     {
       "text": "Has your character won awards?",
@@ -1120,7 +1231,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.42,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Have they won big awards?"
     },
     {
       "text": "Does your character play with a ball?",
@@ -1130,7 +1242,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play with a ball?"
     },
     {
       "text": "Does your character race or run fast?",
@@ -1140,7 +1253,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they race or run fast?"
     },
     {
       "text": "Does your character swim in contests?",
@@ -1150,7 +1264,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they swim in contests?"
     },
     {
       "text": "Does your character play on ice?",
@@ -1160,7 +1275,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play on ice?"
     },
     {
       "text": "Does your character fight in a ring?",
@@ -1170,7 +1286,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they fight in a ring?"
     },
     {
       "text": "Is your character a movie hero?",
@@ -1180,7 +1297,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a movie hero?"
     },
     {
       "text": "Is your character a movie villain?",
@@ -1190,7 +1308,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a movie villain?"
     },
     {
       "text": "Is your character in cartoon movies?",
@@ -1200,7 +1319,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in cartoon movies?"
     },
     {
       "text": "Is your character in scary movies?",
@@ -1210,7 +1330,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in scary movies?"
     },
     {
       "text": "Is your character in love story movies?",
@@ -1220,7 +1341,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in love story movies?"
     },
     {
       "text": "Is your character in a police TV show?",
@@ -1230,7 +1352,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in a police TV show?"
     },
     {
       "text": "Is your character in a hospital TV show?",
@@ -1240,7 +1363,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in a hospital TV show?"
     },
     {
       "text": "Is your character in a family TV show?",
@@ -1250,7 +1374,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in a family TV show?"
     },
     {
       "text": "Is your character in a cooking TV show?",
@@ -1260,7 +1385,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they in a cooking TV show?"
     },
     {
       "text": "Does your character train hard in anime?",
@@ -1270,7 +1396,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they train hard in anime?"
     },
     {
       "text": "Does your character go to school in anime?",
@@ -1280,7 +1407,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they go to school in anime?"
     },
     {
       "text": "Does your character have powers?",
@@ -1290,7 +1418,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have anime powers?"
     },
     {
       "text": "Is your character a talking cartoon animal?",
@@ -1300,7 +1429,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a talking cartoon animal?"
     },
     {
       "text": "Is your character a cartoon kid?",
@@ -1310,7 +1440,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a cartoon kid?"
     },
     {
       "text": "Is your character a cartoon adult?",
@@ -1320,7 +1451,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a cartoon adult?"
     },
     {
       "text": "Does your character explore game worlds?",
@@ -1330,7 +1462,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they explore game worlds?"
     },
     {
       "text": "Does your character race in games?",
@@ -1340,7 +1473,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they race in games?"
     },
     {
       "text": "Does your character solve puzzles in games?",
@@ -1350,7 +1484,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they solve puzzles in games?"
     },
     {
       "text": "Does your character build things in games?",
@@ -1360,7 +1495,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they build things in games?"
     },
     {
       "text": "Does your character study living things?",
@@ -1370,7 +1506,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they study living things?"
     },
     {
       "text": "Does your character invent new things?",
@@ -1380,7 +1517,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they invent new things?"
     },
     {
       "text": "Does your character work with computers?",
@@ -1390,7 +1528,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they work with computers?"
     },
     {
       "text": "Does your character sing pop songs?",
@@ -1400,7 +1539,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they sing pop songs?"
     },
     {
       "text": "Does your character sing rock songs?",
@@ -1410,7 +1550,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they sing rock songs?"
     },
     {
       "text": "Does your character make classical music?",
@@ -1420,7 +1561,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they make classical music?"
     },
     {
       "text": "Does your character write kids books?",
@@ -1430,7 +1572,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write kids books?"
     },
     {
       "text": "Does your character write adventure books?",
@@ -1440,7 +1583,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write adventure books?"
     },
     {
       "text": "Does your character write mystery books?",
@@ -1450,7 +1594,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write mystery books?"
     },
     {
       "text": "Is your character a president?",
@@ -1460,7 +1605,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a president?"
     },
     {
       "text": "Is your character a prime minister?",
@@ -1470,7 +1616,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a prime minister?"
     },
     {
       "text": "Is your character a king or queen?",
@@ -1480,7 +1627,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a king or queen?"
     },
     {
       "text": "Did your character start a tech company?",
@@ -1490,7 +1638,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they start a tech company?"
     },
     {
       "text": "Did your character make cars or rockets?",
@@ -1500,7 +1649,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they make cars or rockets?"
     },
     {
       "text": "Is your character a sky god?",
@@ -1510,7 +1660,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a sky god?"
     },
     {
       "text": "Is your character a sea god?",
@@ -1520,7 +1671,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a sea god?"
     },
     {
       "text": "Is your character a trickster in myths?",
@@ -1530,7 +1682,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a trickster in myths?"
     },
     {
       "text": "Did your character lead armies long ago?",
@@ -1540,7 +1693,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they lead armies long ago?"
     },
     {
       "text": "Did your character explore new lands?",
@@ -1550,7 +1704,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they explore new lands?"
     },
     {
       "text": "Did your character help change laws?",
@@ -1560,7 +1715,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they help change laws?"
     },
     {
       "text": "Is your character on a team?",
@@ -1570,7 +1726,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they on a famous team?"
     },
     {
       "text": "Does your character have a famous rival?",
@@ -1580,7 +1737,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have a famous rival?"
     },
     {
       "text": "Does your character have a famous mentor?",
@@ -1590,7 +1748,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have a famous mentor?"
     },
     {
       "text": "Is your character known for a special move?",
@@ -1600,7 +1759,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for a special move?"
     },
     {
       "text": "Is your character known for a catchphrase?",
@@ -1610,7 +1770,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for a catchphrase?"
     },
     {
       "text": "Does your character wear team colors?",
@@ -1620,7 +1781,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear team colors?"
     },
     {
       "text": "Does your character wear a cape?",
@@ -1630,7 +1792,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear a cape?"
     },
     {
       "text": "Does your character fly or jump very high?",
@@ -1640,7 +1803,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they fly or jump very high?"
     },
     {
       "text": "Does your character use tools or gadgets?",
@@ -1650,7 +1814,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they use tools or gadgets?"
     },
     {
       "text": "Does your character work in a lab?",
@@ -1660,7 +1825,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they work in a lab?"
     },
     {
       "text": "Does your character perform on a stage?",
@@ -1670,7 +1836,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they perform on a stage?"
     },
     {
       "text": "Does your character appear in comics too?",
@@ -1680,7 +1847,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they appear in comics too?"
     },
     {
       "text": "Does your character play cricket?",
@@ -1690,7 +1858,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.48,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous for cricket?"
     },
     {
       "text": "Does your character play football?",
@@ -1700,7 +1869,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.5,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous for football?"
     },
     {
       "text": "Does your character play basketball?",
@@ -1710,7 +1880,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.4,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous for basketball?"
     },
     {
       "text": "Does your character play tennis?",
@@ -1720,7 +1891,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous for tennis?"
     },
     {
       "text": "Does your character play baseball?",
@@ -1730,7 +1902,85 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they famous for baseball?"
+    },
+    {
+      "text": "Does your character box?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for boxing?"
+    },
+    {
+      "text": "Does your character play badminton?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for badminton?"
+    },
+    {
+      "text": "Does your character play golf?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for golf?"
+    },
+    {
+      "text": "Does your character play hockey?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for hockey?"
+    },
+    {
+      "text": "Does your character wrestle?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for wrestling?"
+    },
+    {
+      "text": "Does your character race cars?",
+      "category": "Sports",
+      "hierarchy_level": 3,
+      "hierarchy_name": "Subcategory",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0,
+      "legacy_text": "Are they famous for car racing?"
+    },
+    {
+      "text": "Is your character from the Middle East?",
+      "category": "Nationality",
+      "hierarchy_level": 2,
+      "hierarchy_name": "Category",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.3,
+      "times_asked": 0,
+      "legacy_text": "Are they from the Middle East?"
     },
     {
       "text": "Did your character win sports gold?",
@@ -1740,7 +1990,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they an Olympic winner?"
     },
     {
       "text": "Is your character a singer?",
@@ -1750,7 +2001,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a singer?"
     },
     {
       "text": "Is your character an actor?",
@@ -1760,7 +2012,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.36,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they an actor?"
     },
     {
       "text": "Is your character an actress?",
@@ -1770,7 +2023,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.34,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they an actress?"
     },
     {
       "text": "Did your character win a Nobel science prize?",
@@ -1780,7 +2034,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they win a Nobel science prize?"
     },
     {
       "text": "Did your character win a big music prize?",
@@ -1790,7 +2045,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they win a big music prize?"
     },
     {
       "text": "Did your character win a big movie prize?",
@@ -1800,7 +2056,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they win a big movie prize?"
     },
     {
       "text": "Is your character a ninja?",
@@ -1810,7 +2067,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.38,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a ninja or samurai?"
     },
     {
       "text": "Does your character go to space?",
@@ -1820,7 +2078,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a space traveler?"
     },
     {
       "text": "Is your character a pirate?",
@@ -1830,7 +2089,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a pirate?"
     },
     {
       "text": "Does your character solve mysteries?",
@@ -1840,7 +2100,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a detective?"
     },
     {
       "text": "Is your character a doctor?",
@@ -1850,7 +2111,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a doctor in the story?"
     },
     {
       "text": "Is your character a teacher?",
@@ -1860,7 +2122,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a teacher in the story?"
     },
     {
       "text": "Is your character a student?",
@@ -1870,7 +2133,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a student in the story?"
     },
     {
       "text": "Is your character part robot?",
@@ -1880,7 +2144,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a robot or cyborg?"
     },
     {
       "text": "Does your character cast magic spells?",
@@ -1890,7 +2155,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a wizard?"
     },
     {
       "text": "Is your character a princess?",
@@ -1900,7 +2166,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a princess?"
     },
     {
       "text": "Does your character wear metal armor?",
@@ -1910,7 +2177,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a knight?"
     },
     {
       "text": "Does your character play guitar?",
@@ -1920,7 +2188,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play guitar?"
     },
     {
       "text": "Does your character play piano?",
@@ -1930,7 +2199,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play piano?"
     },
     {
       "text": "Does your character play drums?",
@@ -1940,7 +2210,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they play drums?"
     },
     {
       "text": "Does your character write for kids?",
@@ -1950,7 +2221,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write for kids?"
     },
     {
       "text": "Does your character write fantasy stories?",
@@ -1960,7 +2232,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they write fantasy stories?"
     },
     {
       "text": "Did your character lead during a war?",
@@ -1970,7 +2243,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they lead during a war?"
     },
     {
       "text": "Did your character invent something famous?",
@@ -1980,7 +2254,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.32,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they invent something famous?"
     },
     {
       "text": "Did your character discover something new?",
@@ -1990,7 +2265,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Did they discover something new?"
     },
     {
       "text": "Is your character linked to phones?",
@@ -2000,7 +2276,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they linked to phones?"
     },
     {
       "text": "Is your character linked to electric cars?",
@@ -2010,7 +2287,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they linked to electric cars?"
     },
     {
       "text": "Is your character linked to online shops?",
@@ -2020,7 +2298,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they linked to online shops?"
     },
     {
       "text": "Is your character from a book series?",
@@ -2030,7 +2309,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a book series?"
     },
     {
       "text": "Is your character from a movie series?",
@@ -2040,7 +2320,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a movie series?"
     },
     {
       "text": "Is your character from a game series?",
@@ -2050,7 +2331,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a game series?"
     },
     {
       "text": "Does your character wear a jersey?",
@@ -2060,7 +2342,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear a sports jersey?"
     },
     {
       "text": "Does your character wear a school uniform?",
@@ -2070,7 +2353,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they wear a school uniform?"
     },
     {
       "text": "Does your character use a sword?",
@@ -2080,7 +2364,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they fight with a sword?"
     },
     {
       "text": "Does your character use a shield?",
@@ -2090,7 +2375,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they use a shield?"
     },
     {
       "text": "Does your character throw lightning?",
@@ -2100,7 +2386,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they throw lightning?"
     },
     {
       "text": "Does your character control the sea?",
@@ -2110,7 +2397,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they control the sea?"
     },
     {
       "text": "Is your character known for speed?",
@@ -2120,7 +2408,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for speed?"
     },
     {
       "text": "Is your character a forward?",
@@ -2130,7 +2419,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.3,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for goals scored?"
     },
     {
       "text": "Is your character known for home runs?",
@@ -2140,7 +2430,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for home runs?"
     },
     {
       "text": "Is your character known for slam dunks?",
@@ -2150,7 +2441,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.24,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for slam dunks?"
     },
     {
       "text": "Is your character known for serve and volley?",
@@ -2160,7 +2452,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.22,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they known for serve and volley?"
     },
     {
       "text": "Is your character from the 2000s?",
@@ -2170,7 +2463,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the 2000s?"
     },
     {
       "text": "Is your character from the 1800s?",
@@ -2180,7 +2474,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.26,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the 1800s?"
     },
     {
       "text": "Is your character mainly from ancient times?",
@@ -2190,7 +2485,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they mainly from ancient times?"
     },
     {
       "text": "Does your character have blue skin?",
@@ -2200,7 +2496,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have blue skin?"
     },
     {
       "text": "Does your character have green skin?",
@@ -2210,7 +2507,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.16,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have green skin?"
     },
     {
       "text": "Does your character have one eye?",
@@ -2220,7 +2518,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.16,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have one eye?"
     },
     {
       "text": "Does your character have wings?",
@@ -2230,7 +2529,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.22,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have wings?"
     },
     {
       "text": "Does your character have a tail?",
@@ -2240,7 +2540,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have a tail?"
     },
     {
       "text": "Is your character a talking animal?",
@@ -2250,7 +2551,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.28,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a talking animal?"
     },
     {
       "text": "Is your character made of metal?",
@@ -2260,7 +2562,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.22,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they made of metal?"
     },
     {
       "text": "Is your character invisible sometimes?",
@@ -2270,7 +2573,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they invisible sometimes?"
     },
     {
       "text": "Can your character shrink or grow?",
@@ -2280,7 +2584,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Can they shrink or grow?"
     },
     {
       "text": "Can your character turn into animals?",
@@ -2290,7 +2595,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Can they turn into animals?"
     },
     {
       "text": "Can your character stop time?",
@@ -2300,7 +2606,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Can they stop time?"
     },
     {
       "text": "Can your character read minds?",
@@ -2310,7 +2617,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Can they read minds?"
     },
     {
       "text": "Does your character live underwater?",
@@ -2320,7 +2628,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they live underwater?"
     },
     {
       "text": "Does your character live in space?",
@@ -2330,7 +2639,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.22,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they live in space?"
     },
     {
       "text": "Does your character live underground?",
@@ -2340,7 +2650,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they live underground?"
     },
     {
       "text": "Is your character a ghost?",
@@ -2350,7 +2661,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a ghost?"
     },
     {
       "text": "Is your character a vampire?",
@@ -2360,7 +2672,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a vampire?"
     },
     {
       "text": "Is your character a dragon?",
@@ -2370,7 +2683,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a dragon?"
     },
     {
       "text": "Is your character a giant?",
@@ -2380,7 +2694,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a giant?"
     },
     {
       "text": "Is your character tiny like a toy?",
@@ -2390,7 +2705,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they tiny like a toy?"
     },
     {
       "text": "Does your character have four arms?",
@@ -2400,7 +2716,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.16,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have four arms?"
     },
     {
       "text": "Does your character breathe fire?",
@@ -2410,7 +2727,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they breathe fire?"
     },
     {
       "text": "Does your character freeze things?",
@@ -2420,7 +2738,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they freeze things?"
     },
     {
       "text": "Does your character shoot lasers?",
@@ -2430,7 +2749,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they shoot lasers?"
     },
     {
       "text": "Does your character ride a flying broom?",
@@ -2440,7 +2760,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.16,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they ride a flying broom?"
     },
     {
       "text": "Does your character ride a flying carpet?",
@@ -2450,7 +2771,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.14,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they ride a flying carpet?"
     },
     {
       "text": "Is your character a clone or twin?",
@@ -2460,7 +2782,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.16,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they a clone or twin?"
     },
     {
       "text": "Is your character from the future?",
@@ -2470,7 +2793,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from the future?"
     },
     {
       "text": "Is your character from another planet?",
@@ -2480,7 +2804,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.22,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from another planet?"
     },
     {
       "text": "Is your character from a dream world?",
@@ -2490,7 +2815,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they from a dream world?"
     },
     {
       "text": "Does your character change shape?",
@@ -2500,7 +2826,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.2,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they change shape?"
     },
     {
       "text": "Does your character have no shadow?",
@@ -2510,7 +2837,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.14,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they have no shadow?"
     },
     {
       "text": "Does your character glow in the dark?",
@@ -2520,7 +2848,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.14,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Do they glow in the dark?"
     },
     {
       "text": "Is your character stuck as a kid forever?",
@@ -2530,7 +2859,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they stuck as a kid forever?"
     },
     {
       "text": "Is your character older than countries?",
@@ -2540,7 +2870,8 @@
       "dataset": "v2",
       "is_active": true,
       "avg_information_gain": 0.18,
-      "times_asked": 0
+      "times_asked": 0,
+      "legacy_text": "Are they older than countries?"
     }
   ]
 }
