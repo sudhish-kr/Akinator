@@ -210,7 +210,7 @@ def test_generated_seed_has_2000_plus_characters_and_validates():
     assert seed["likelihood_overrides"]
     active = [q for q in seed["questions"] if q.get("is_active")]
     inactive = [q for q in seed["questions"] if not q.get("is_active")]
-    assert 220 <= len(active) <= 280
+    assert 220 <= len(active) <= 300
     assert len(inactive) >= 400
     assert all(
         isinstance(q.get("avg_information_gain"), (int, float)) and q.get("is_active") is True
@@ -226,7 +226,7 @@ def test_seed_v1_file_exists_and_is_valid():
     assert len(data["characters"]) >= 2000
     assert len(data["questions"]) >= 500
     active = [q for q in data["questions"] if q.get("is_active")]
-    assert 220 <= len(active) <= 280
+    assert 220 <= len(active) <= 300
     assert set(data["categories"]) == {
         "Movies",
         "TV Shows",
@@ -362,7 +362,7 @@ async def test_import_full_seed_questions_into_database(db: AsyncSession):
     assert len(questions) >= 500
     active = [q for q in questions if q.is_active]
     inactive = [q for q in questions if not q.is_active]
-    assert 220 <= len(active) <= 280
+    assert 220 <= len(active) <= 300
     assert len(inactive) >= 400
     assert all(q.category for q in questions)
     assert all(q.avg_information_gain is not None for q in questions)

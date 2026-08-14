@@ -17,6 +17,7 @@ if str(SCRIPTS) not in sys.path:
 from character_popularity import popularity_for  # noqa: E402
 from character_trait_priors import build_all_overrides  # noqa: E402
 from knowledge_expansion_v2 import expansion_characters  # noqa: E402
+from india_cinema_politics import india_characters  # noqa: E402
 from knowledge_phase1_data import CATEGORIES, CURATED_CORE, themed_fill  # noqa: E402
 from knowledge_questions_data import build_question_catalog, legacy_question_texts  # noqa: E402
 from likelihood_priors import assert_mapping_quality, build_likelihood_rules  # noqa: E402
@@ -33,7 +34,7 @@ TARGET = 2100
 MIN_CHARACTERS = 2000
 MIN_QUESTIONS = 500
 MIN_ACTIVE_V2 = 220
-MAX_ACTIVE_V2 = 280
+MAX_ACTIVE_V2 = 300
 
 RULES: dict[str, dict[str, float]] = {
     "Movies": {
@@ -224,6 +225,9 @@ def _collect_characters() -> tuple[list[dict], dict[str, int]]:
             add(name, category, list(aliases))
 
     for name, category, aliases in expansion_characters():
+        add(name, category, list(aliases))
+
+    for name, category, aliases in india_characters():
         add(name, category, list(aliases))
 
     for category in CATEGORIES:

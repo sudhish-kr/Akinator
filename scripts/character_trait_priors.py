@@ -20,6 +20,9 @@ class CharacterTraits:
     regions: frozenset[str] = field(default_factory=frozenset)
     sports: frozenset[str] = field(default_factory=frozenset)
     fictional_media: frozenset[str] = field(default_factory=frozenset)
+    industries: frozenset[str] = field(default_factory=frozenset)
+    states: frozenset[str] = field(default_factory=frozenset)
+    roles: frozenset[str] = field(default_factory=frozenset)
 
 
 def _T(
@@ -30,6 +33,9 @@ def _T(
     regions: frozenset[str] | set[str] = frozenset(),
     sports: frozenset[str] | set[str] = frozenset(),
     fictional_media: frozenset[str] | set[str] = frozenset(),
+    industries: frozenset[str] | set[str] | tuple[str, ...] = frozenset(),
+    states: frozenset[str] | set[str] | tuple[str, ...] = frozenset(),
+    roles: frozenset[str] | set[str] | tuple[str, ...] = frozenset(),
 ) -> CharacterTraits:
     return CharacterTraits(
         real=real,
@@ -38,6 +44,9 @@ def _T(
         regions=frozenset(regions),
         sports=frozenset(sports),
         fictional_media=frozenset(fictional_media),
+        industries=frozenset(industries),
+        states=frozenset(states),
+        roles=frozenset(roles),
     )
 
 
@@ -239,8 +248,13 @@ TRAIT_TABLE: dict[str, CharacterTraits] = {
 }
 
 from knowledge_expansion_v2 import trait_table_from_expansion  # noqa: E402
+from india_cinema_politics import trait_table_from_india  # noqa: E402
 
-TRAIT_TABLE = {**TRAIT_TABLE, **trait_table_from_expansion(_T)}
+TRAIT_TABLE = {
+    **TRAIT_TABLE,
+    **trait_table_from_expansion(_T),
+    **trait_table_from_india(_T),
+}
 
 # Name substrings → sport (applied when not in TRAIT_TABLE).
 _NAME_SPORT_HINTS: tuple[tuple[str, str], ...] = (
@@ -458,6 +472,20 @@ def _clamp(value: float) -> float:
     return round(max(0.02, min(0.98, float(value))), 3)
 
 
+def _industry_lik(traits: CharacterTraits, industry: str) -> float | None:
+    if traits.industries:
+        return 0.96 if industry in traits.industries else 0.08
+    if traits.real is True and "india" not in traits.regions and traits.roles & {"actor", "director"}:
+        return 0.08
+    return None
+
+
+def _state_lik(traits: CharacterTraits, state: str) -> float | None:
+    if traits.states:
+        return 0.96 if state in traits.states else 0.08
+    return None
+
+
 def overrides_for_character(
     name: str,
     question_texts: list[str],
@@ -557,6 +585,82 @@ def overrides_for_character(
             lik = 0.95
         elif "from a movie" in t and "movie" in traits.fictional_media:
             lik = 0.94
+        elif "from a movie" in t and traits.roles & {"actor", "director"}:
+            lik = 0.92
+        elif ("an actor" in t or "character an actor" in t) and "actress" not in t:
+            if traits.roles & {"actor", "director"}:
+                lik = 0.95 if "actor" in traits.roles else 0.55
+            elif traits.real is True and "india" in traits.regions and not traits.roles:
+                lik = None
+            elif traits.real is True and traits.roles & {"politician"}:
+                lik = 0.12 if "actor" not in traits.roles else 0.9
+        elif "an actress" in t or "character an actress" in t:
+            if "actor" in traits.roles and traits.female:
+                lik = 0.96
+            elif traits.roles & {"actor", "director", "politician"}:
+                lik = 0.08
+        elif "film director" in t or "a director" in t:
+            lik = 0.96 if "director" in traits.roles else (0.08 if traits.roles else None)
+        elif "freedom fighter" in t:
+            lik = 0.96 if "freedom_fighter" in traits.roles else (
+                0.08 if traits.roles or "india" in traits.regions else None
+            )
+        elif "a politician" in t or "political leader" in t:
+            if "politician" in traits.roles or "freedom_fighter" in traits.roles:
+                lik = 0.96
+            elif (category or "") == "Politicians":
+                lik = 0.95
+        elif "hindi movies" in t or "bollywood" in t:
+            lik = _industry_lik(traits, "hindi")
+        elif "telugu movies" in t:
+            lik = _industry_lik(traits, "telugu")
+        elif "tamil movies" in t:
+            lik = _industry_lik(traits, "tamil")
+        elif "malayalam movies" in t:
+            lik = _industry_lik(traits, "malayalam")
+        elif "kannada movies" in t:
+            lik = _industry_lik(traits, "kannada")
+        elif "bengali movies" in t:
+            lik = _industry_lik(traits, "bengali")
+        elif "marathi movies" in t:
+            lik = _industry_lik(traits, "marathi")
+        elif "punjabi movies" in t:
+            lik = _industry_lik(traits, "punjabi")
+        elif "gujarati movies" in t:
+            lik = _industry_lik(traits, "gujarati")
+        elif "bhojpuri movies" in t:
+            lik = _industry_lik(traits, "bhojpuri")
+        elif "assamese movies" in t:
+            lik = _industry_lik(traits, "assamese")
+        elif "odia movies" in t:
+            lik = _industry_lik(traits, "odia")
+        elif "maharashtra" in t:
+            lik = _state_lik(traits, "maharashtra")
+        elif "uttar pradesh" in t:
+            lik = _state_lik(traits, "uttar_pradesh")
+        elif "west bengal" in t:
+            lik = _state_lik(traits, "west_bengal")
+        elif "tamil nadu" in t:
+            lik = _state_lik(traits, "tamil_nadu")
+        elif "karnataka" in t:
+            lik = _state_lik(traits, "karnataka")
+        elif "kerala" in t:
+            lik = _state_lik(traits, "kerala")
+        elif "gujarat" in t:
+            lik = _state_lik(traits, "gujarat")
+        elif "bihar" in t:
+            lik = _state_lik(traits, "bihar")
+        elif "andhra" in t or "telangana" in t:
+            if traits.states & {"andhra_pradesh", "telangana"}:
+                lik = 0.96
+            elif traits.states:
+                lik = 0.08
+            else:
+                lik = None
+        elif "punjab" in t and "movies" not in t:
+            lik = _state_lik(traits, "punjab")
+        elif "delhi" in t:
+            lik = _state_lik(traits, "delhi")
 
         if lik is None:
             continue

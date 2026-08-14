@@ -17,7 +17,7 @@ DATASET_ID = "v2"
 QUESTION_PHASE = 2
 TARGET_COUNT = 250
 MIN_COUNT = 220
-MAX_COUNT = 280
+MAX_COUNT = 300
 MAX_WORDS = 10
 
 # Level → engine question.category buckets (matches Stage A/B/C in constants).
@@ -229,6 +229,31 @@ _QUESTIONS: list[tuple[str, str, int, float]] = [
     ("Do they work in a lab?", "Science", 3, 0.32),
     ("Do they perform on a stage?", "Music", 3, 0.34),
     ("Do they appear in comics too?", "Movies", 3, 0.30),
+    ("Are they from Hindi movies?", "Movies", 3, 0.40),
+    ("Are they from Telugu movies?", "Movies", 3, 0.38),
+    ("Are they from Tamil movies?", "Movies", 3, 0.38),
+    ("Are they from Malayalam movies?", "Movies", 3, 0.36),
+    ("Are they from Kannada movies?", "Movies", 3, 0.36),
+    ("Are they from Bengali movies?", "Movies", 3, 0.34),
+    ("Are they from Marathi movies?", "Movies", 3, 0.32),
+    ("Are they from Punjabi movies?", "Movies", 3, 0.32),
+    ("Are they from Gujarati movies?", "Movies", 3, 0.28),
+    ("Are they from Bhojpuri movies?", "Movies", 3, 0.28),
+    ("Are they from Assamese movies?", "Movies", 3, 0.24),
+    ("Are they from Odia movies?", "Movies", 3, 0.24),
+    ("Are they a film director?", "Profession", 3, 0.36),
+    ("Are they a freedom fighter?", "History", 3, 0.38),
+    ("Are they linked to Maharashtra?", "Politics", 4, 0.30),
+    ("Are they linked to Uttar Pradesh?", "Politics", 4, 0.30),
+    ("Are they linked to West Bengal?", "Politics", 4, 0.28),
+    ("Are they linked to Tamil Nadu?", "Politics", 4, 0.28),
+    ("Are they linked to Karnataka?", "Politics", 4, 0.28),
+    ("Are they linked to Kerala?", "Politics", 4, 0.26),
+    ("Are they linked to Gujarat?", "Politics", 4, 0.28),
+    ("Are they linked to Bihar?", "Politics", 4, 0.26),
+    ("Are they linked to Andhra or Telangana?", "Politics", 4, 0.28),
+    ("Are they linked to Punjab?", "Politics", 4, 0.26),
+    ("Are they linked to Delhi?", "Politics", 4, 0.26),
     # --- Level 4 · Specific (sport subtypes are Level 3) ---
     ("Are they famous for cricket?", "Sports", 3, 0.42),
     ("Are they famous for football?", "Sports", 3, 0.44),

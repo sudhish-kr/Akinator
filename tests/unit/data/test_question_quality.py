@@ -25,7 +25,7 @@ HARD_VOCAB = {
 def test_active_seed_questions_are_short_and_simple():
     data = json.loads(SEED_PATH.read_text(encoding="utf-8"))
     active = [q for q in data["questions"] if q.get("is_active")]
-    assert 220 <= len(active) <= 280
+    assert 220 <= len(active) <= 300
     assert data.get("active_question_dataset") == "v2"
 
     over_ten = [q["text"] for q in active if len(q["text"].split()) > 10]

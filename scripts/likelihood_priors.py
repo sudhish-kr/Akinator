@@ -528,6 +528,50 @@ def refine_prior(
         else:
             p = min(p, 0.08)
 
+    cinema_needles = (
+        "hindi movies",
+        "telugu movies",
+        "tamil movies",
+        "malayalam movies",
+        "kannada movies",
+        "bengali movies",
+        "marathi movies",
+        "punjabi movies",
+        "gujarati movies",
+        "bhojpuri movies",
+        "assamese movies",
+        "odia movies",
+        "bollywood",
+    )
+    if any(n in text for n in cinema_needles):
+        p = 0.12 if character_category == "Movies" else min(p, 0.08)
+
+    if "film director" in text:
+        p = 0.12 if character_category == "Movies" else min(p, 0.08)
+
+    if "freedom fighter" in text:
+        if character_category in {"Historical Figures", "Politicians"}:
+            p = 0.12
+        else:
+            p = min(p, 0.08)
+
+    state_needles = (
+        "maharashtra",
+        "uttar pradesh",
+        "west bengal",
+        "tamil nadu",
+        "karnataka",
+        "kerala",
+        "gujarat",
+        "bihar",
+        "andhra",
+        "telangana",
+        "punjab",
+        "delhi",
+    )
+    if any(n in text for n in state_needles) and "movies" not in text:
+        p = 0.12 if character_category in {"Politicians", "Historical Figures"} else min(p, 0.10)
+
     # Gender — category defaults are uninformative; keep near-neutral here.
     if "girl or woman" in text or "a woman" in text or "are they female" in text:
         p = 0.48

@@ -7,6 +7,7 @@ Bayesian update math — listing / catalog ordering only.
 from __future__ import annotations
 
 from knowledge_expansion_v2 import expansion_popularity  # noqa: E402
+from india_cinema_politics import india_popularity  # noqa: E402
 
 # name (casefold) → popularity_score
 CHARACTER_POPULARITY: dict[str, int] = {
@@ -40,6 +41,7 @@ CHARACTER_POPULARITY: dict[str, int] = {
     "sonic the hedgehog": 92,
 }
 CHARACTER_POPULARITY.update(expansion_popularity())
+CHARACTER_POPULARITY.update(india_popularity())
 
 # Characters that must exist in the knowledge base (name, category, aliases).
 REQUIRED_FAMOUS_CHARACTERS: list[tuple[str, str, list[str]]] = [

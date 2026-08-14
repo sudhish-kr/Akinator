@@ -22,6 +22,9 @@ def E(
     regions: tuple[str, ...] = (),
     sports: tuple[str, ...] = (),
     media: tuple[str, ...] = (),
+    industries: tuple[str, ...] = (),
+    states: tuple[str, ...] = (),
+    roles: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     fiction_cats = {
         "Movies",
@@ -46,6 +49,9 @@ def E(
         "regions": tuple(regions),
         "sports": tuple(sports),
         "media": tuple(media),
+        "industries": tuple(industries),
+        "states": tuple(states),
+        "roles": tuple(roles),
     }
 
 
@@ -555,5 +561,8 @@ def trait_table_from_expansion(trait_factory) -> dict[str, Any]:
             regions=e["regions"],
             sports=e["sports"],
             fictional_media=e["media"],
+            industries=e.get("industries") or (),
+            states=e.get("states") or (),
+            roles=e.get("roles") or (),
         )
     return out

@@ -68,7 +68,7 @@ def seed():
 
 
 def test_v2_catalog_size_and_hierarchy(v2_questions):
-    assert 220 <= len(v2_questions) <= 280
+    assert 220 <= len(v2_questions) <= 300
     by_level = questions_by_level()
     assert set(by_level) == set(LEVEL_NAMES)
     assert all(by_level[level] for level in LEVEL_NAMES)
@@ -128,7 +128,7 @@ def test_seed_defaults_to_active_v2_and_deactivated_legacy(seed):
     questions = seed["questions"]
     active = [q for q in questions if q.get("is_active")]
     inactive = [q for q in questions if not q.get("is_active")]
-    assert 220 <= len(active) <= 280
+    assert 220 <= len(active) <= 300
     assert len(inactive) >= 400
     assert all(q.get("dataset") == DATASET_ID for q in active)
     assert all(q.get("dataset") == "v1" for q in inactive)
