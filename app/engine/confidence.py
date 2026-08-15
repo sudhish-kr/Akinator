@@ -20,6 +20,7 @@ from app.engine.constants import (
     DEFAULT_CONFIDENCE_MARGIN,
     DEFAULT_CONFIDENCE_SEPARATION,
     DEFAULT_MAX_QUESTIONS,
+    DEFAULT_MIN_GUESS_CONFIDENCE,
 )
 from app.engine.elimination import top_two
 from app.engine.models import ConfidenceResult, GameEngineState
@@ -27,10 +28,25 @@ from app.engine.models import ConfidenceResult, GameEngineState
 
 def confidence_score(state: GameEngineState) -> float:
     """Top character posterior probability, clamped to [0.0, 1.0]."""
-    if not state.probabilities:
+    probs = [p for p in state.probabilities.values() if p > 0]
+    if not probs:
         return 0.0
-    top = max(state.probabilities.values())
+    top = max(probs)
     return max(0.0, min(1.0, float(top)))
+
+
+def normalize_probabilities(probabilities: dict[UUID, float]) -> dict[UUID, float]:
+    """Safely renormalize posterior mass to sum to 1.0 (no-op if empty)."""
+    if not probabilities:
+        return {}
+    total = sum(max(0.0, float(p)) for p in probabilities.values())
+    if total <= 0:
+        n = len(probabilities)
+        if n == 0:
+            return {}
+        uniform = 1.0 / n
+        return {cid: uniform for cid in probabilities}
+    return {cid: max(0.0, float(p)) / total for cid, p in probabilities.items()}
 
 
 def evaluate_confidence(
@@ -157,13 +173,14 @@ def resolve_turn(
     confidence_separation: float = DEFAULT_CONFIDENCE_SEPARATION,
     confidence_margin: float = DEFAULT_CONFIDENCE_MARGIN,
     max_questions: int = DEFAULT_MAX_QUESTIONS,
+    min_guess_confidence: float = DEFAULT_MIN_GUESS_CONFIDENCE,
 ) -> ConfidenceResult:
     """
     Session-manager turn resolution after an answer.
 
     - High confidence / stop rules → guess
-    - Low confidence + a next question → keep asking
-    - Low confidence + no next question → best available guess
+    - Low confidence + a next *useful* question → keep asking
+    - No next question → best available guess (even if confidence is still low)
     """
     result = evaluate_confidence(
         state,
@@ -174,6 +191,7 @@ def resolve_turn(
     )
     if result.should_guess:
         return result
-    if next_question_id is None:
-        return best_available_guess(state)
-    return result
+    if next_question_id is not None:
+        return result
+    del min_guess_confidence  # Safety: unused Q + remaining pool → guess, never wander.
+    return best_available_guess(state)

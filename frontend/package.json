@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test src/confidence.test.js src/confirmGuess.test.js src/gameNav.test.js src/mascotMood.test.js src/homeBallInteract.test.js src/guessBeat.test.js"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.0",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^0.21.1"
   }
 }

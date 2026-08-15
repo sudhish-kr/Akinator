@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { adminApi } from "../api.js";
+import { useI18n } from "../../i18n/index.jsx";
 
 const emptyForm = { text: "", category: "", is_active: true };
 
 export default function QuestionsPage({ token }) {
+  const { t, tq } = useI18n();
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,9 +36,10 @@ export default function QuestionsPage({ token }) {
     return items.filter(
       (item) =>
         item.text.toLowerCase().includes(q) ||
+        tq(item.text).toLowerCase().includes(q) ||
         (item.category || "").toLowerCase().includes(q)
     );
-  }, [items, search]);
+  }, [items, search, tq]);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -76,7 +79,7 @@ export default function QuestionsPage({ token }) {
   };
 
   const remove = async (id) => {
-    if (!confirm("Deactivate this question?")) return;
+    if (!confirm(t("admin.deactivateQuestion"))) return;
     setBusy(true);
     setError(null);
     try {
@@ -93,12 +96,12 @@ export default function QuestionsPage({ token }) {
     <div className="admin-panel">
       <header className="admin-panel-head">
         <div>
-          <h2>Questions</h2>
-          <p>Curate the question bank used by the guessing engine.</p>
+          <h2>{t("admin.questionsTitle")}</h2>
+          <p>{t("admin.questionsLede")}</p>
         </div>
         <input
           className="admin-search"
-          placeholder="Search question text…"
+          placeholder={t("admin.searchQuestion")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -108,9 +111,9 @@ export default function QuestionsPage({ token }) {
 
       <div className="admin-grid">
         <form className="admin-card admin-form" onSubmit={save}>
-          <h3>{editingId ? "Edit question" : "Create question"}</h3>
+          <h3>{editingId ? t("admin.editQuestion") : t("admin.createQuestion")}</h3>
           <label>
-            Text
+            {t("admin.text")}
             <textarea
               rows={3}
               value={form.text}
@@ -120,7 +123,7 @@ export default function QuestionsPage({ token }) {
             />
           </label>
           <label>
-            Category
+            {t("admin.category")}
             <input
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -132,15 +135,15 @@ export default function QuestionsPage({ token }) {
               checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
             />
-            Active
+            {t("admin.active")}
           </label>
           <div className="admin-actions">
             <button type="submit" className="admin-btn primary" disabled={busy}>
-              {editingId ? "Save changes" : "Create"}
+              {editingId ? t("admin.save") : t("admin.create")}
             </button>
             {editingId && (
               <button type="button" className="admin-btn ghost" onClick={resetForm}>
-                Cancel
+                {t("admin.cancel")}
               </button>
             )}
           </div>
@@ -150,9 +153,9 @@ export default function QuestionsPage({ token }) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Question</th>
-                <th>Asked</th>
-                <th>Active</th>
+                <th>{t("admin.questionsTitle")}</th>
+                <th>{t("admin.timesAsked")}</th>
+                <th>{t("admin.active")}</th>
                 <th />
               </tr>
             </thead>
@@ -160,18 +163,18 @@ export default function QuestionsPage({ token }) {
               {filtered.map((q) => (
                 <tr key={q.id} className={!q.is_active ? "muted-row" : undefined}>
                   <td>
-                    <div className="admin-q-text">{q.text}</div>
+                    <div className="admin-q-text">{tq(q.text)}</div>
                     {q.category && <span className="admin-tag">{q.category}</span>}
                   </td>
                   <td>{q.times_asked}</td>
-                  <td>{q.is_active ? "Yes" : "No"}</td>
+                  <td>{q.is_active ? t("admin.yes") : t("admin.no")}</td>
                   <td className="admin-row-actions">
                     <button type="button" className="admin-link" onClick={() => startEdit(q)}>
-                      Edit
+                      {t("admin.edit")}
                     </button>
                     {q.is_active && (
                       <button type="button" className="admin-link danger" onClick={() => remove(q.id)}>
-                        Delete
+                        {t("admin.delete")}
                       </button>
                     )}
                   </td>
@@ -179,7 +182,7 @@ export default function QuestionsPage({ token }) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4}>{busy ? "Loading…" : "No questions found."}</td>
+                  <td colSpan={4}>{busy ? t("admin.loading") : t("admin.noQuestions")}</td>
                 </tr>
               )}
             </tbody>

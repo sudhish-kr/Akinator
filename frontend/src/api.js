@@ -33,6 +33,14 @@ export const api = {
 
   getGuess: (sessionId) => request("GET", `/game/guess/${sessionId}`),
 
+  /** Confirm a correct guess ("Yes — you got it"). */
+  confirmGuess: (sessionId, { correct = true, actualCharacterId = null } = {}) =>
+    request("POST", "/game/guess/confirm", {
+      session_id: sessionId,
+      correct,
+      actual_character_id: actualCharacterId,
+    }),
+
   learn: (sessionId, characterId, { wrongGuess = false } = {}) =>
     request("POST", "/game/learn", {
       session_id: sessionId,
@@ -40,6 +48,23 @@ export const api = {
       wrong_guess: wrongGuess,
     }),
 
-  /** Character list for the Learn page picker (existing public API). */
-  listCharacters: () => request("GET", "/characters?is_active=true&page_size=100"),
+  /** Remaining session candidates for the Learn wizard (posterior rank). */
+  listRemainingCandidates: (sessionId, { category, q, pageSize = 40 } = {}) => {
+    const params = new URLSearchParams({ limit: String(pageSize) });
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    return request("GET", `/game/candidates/${sessionId}?${params.toString()}`);
+  },
+
+  /** Character list for the Learn wizard (popular first). */
+  listCharacters: ({ category, q, pageSize = 40 } = {}) => {
+    const params = new URLSearchParams({
+      is_active: "true",
+      page_size: String(pageSize),
+      sort: "popularity",
+    });
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    return request("GET", `/characters?${params.toString()}`);
+  },
 };

@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import get_game_service, get_optional_user_id
 from app.api.schemas.game import (
@@ -14,6 +14,7 @@ from app.api.schemas.game import (
     LearnRequest,
     LearnResponse,
     QuestionOut,
+    RemainingCandidatesResponse,
     StartGameResponse,
     SuggestCharacterRequest,
     SuggestCharacterResponse,
@@ -127,5 +128,25 @@ async def suggest_character(
     try:
         result = await service.suggest_character(body.session_id, body.name, body.category)
         return SuggestCharacterResponse(**result)
+    except GameServiceError as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/candidates/{session_id}", response_model=RemainingCandidatesResponse)
+async def list_remaining_candidates(
+    session_id: UUID,
+    category: str | None = None,
+    q: str | None = None,
+    limit: int = Query(40, ge=1, le=100),
+    service: GameService = Depends(get_game_service),
+):
+    try:
+        return RemainingCandidatesResponse(
+            **(
+                await service.list_remaining_candidates(
+                    session_id, category=category, q=q, limit=limit
+                )
+            )
+        )
     except GameServiceError as exc:
         raise _http_error(exc) from exc

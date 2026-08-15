@@ -12,6 +12,7 @@ class StartGameResponse(BaseModel):
     session_id: str
     question: QuestionOut
     questions_asked: int = 0
+    top_confidence: float = 0.0
 
 
 class AnswerRequest(BaseModel):
@@ -35,9 +36,26 @@ class CharacterOut(BaseModel):
     image_url: str | None = None
 
 
+class CandidateOut(BaseModel):
+    id: str
+    name: str
+    probability: float
+
+
+class InfluentialQuestionOut(BaseModel):
+    id: str
+    text: str
+    answer: str
+    influence: float
+
+
 class GuessResponse(BaseModel):
     character: CharacterOut
     confidence: float
+    confidence_percent: float
+    summary: str
+    top_candidates: list[CandidateOut]
+    influential_questions: list[InfluentialQuestionOut]
 
 
 class LearnRequest(BaseModel):
@@ -50,7 +68,9 @@ class LearnRequest(BaseModel):
 
 class LearnResponse(BaseModel):
     status: str = "learned"
-    updates: int
+    updates: int = 0
+    learning_job_id: str | None = None
+    analytics_job_id: str | None = None
 
 
 class GuessConfirmRequest(BaseModel):
@@ -73,3 +93,14 @@ class SuggestCharacterRequest(BaseModel):
 class SuggestCharacterResponse(BaseModel):
     status: str
     character_id: str
+
+
+class RemainingCandidateOut(BaseModel):
+    id: str
+    name: str
+    probability: float = 0.0
+
+
+class RemainingCandidatesResponse(BaseModel):
+    items: list[RemainingCandidateOut]
+    total: int

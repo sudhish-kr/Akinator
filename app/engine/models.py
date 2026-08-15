@@ -43,9 +43,13 @@ class GameEngineState:
     probabilities: dict[UUID, float]
     likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry]
     used_question_ids: set[UUID] = field(default_factory=set)
+    asked_question_order: list[UUID] = field(default_factory=list)
+    answer_log: dict[UUID, str] = field(default_factory=dict)
     questions_asked: int = 0
     consecutive_dont_know: int = 0
     pre_elimination_top: UUID | None = None
+    # Per-question sample totals over character_ids (read-only; speeds eligibility).
+    question_sample_totals: dict[UUID, int] | None = None
 
     def active_character_ids(self) -> list[UUID]:
         return [cid for cid in self.character_ids if cid in self.probabilities]

@@ -18,9 +18,14 @@ from app.engine.constants import (
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
     Answer,
 )
-from app.engine.models import LikelihoodEntry, QuestionRef
-from app.engine.selector import create_initial_state, process_answer, select_next_question
-from app.services.session_store import LiveSession, StoredAnswer
+from app.engine.models import ConfidenceResult, LikelihoodEntry, QuestionRef
+from app.engine.selector import (
+    create_initial_state,
+    process_answer,
+    select_next_question,
+    should_delay_guess_for_sport_split,
+)
+from app.services.live_session import LiveSession, StoredAnswer
 
 
 @dataclass
@@ -63,11 +68,25 @@ class GameSessionManager:
         question_ids: list[UUID],
         question_refs: dict[UUID, QuestionRef],
         character_names: dict[UUID, str],
+        character_categories: dict[UUID, str] | None = None,
+        character_popularity: dict[UUID, int] | None = None,
+        question_sample_totals: dict[UUID, int] | None = None,
     ) -> LiveSession:
         """Start a new session and select the first question."""
-        engine = create_initial_state(character_ids, likelihoods)
+        categories = dict(character_categories or {})
+        popularity = dict(character_popularity or {})
+        engine = create_initial_state(
+            character_ids,
+            likelihoods,
+            popularity=popularity,
+            question_sample_totals=question_sample_totals,
+        )
         first_q = select_next_question(
-            engine, question_ids, min_samples=self.min_samples
+            engine,
+            question_ids,
+            min_samples=self.min_samples,
+            question_refs=question_refs,
+            character_categories=categories,
         )
         if first_q is None:
             raise ValueError("No eligible questions to start game")
@@ -78,6 +97,8 @@ class GameSessionManager:
             question_refs=question_refs,
             character_names=character_names,
             all_question_ids=list(question_ids),
+            character_categories=categories,
+            character_popularity=popularity,
             pending_question_id=first_q,
             answers=[],
         )
@@ -111,6 +132,7 @@ class GameSessionManager:
         live.last_answered_question_id = question_id
 
         # Confidence after every answer (0.0–1.0). High → guess; low → ask next.
+        # Athlete clones (Dhoni/Kohli) skip an early guess until sport/role splits.
         confidence = evaluate_confidence(
             engine,
             confidence_high=self.thresholds.high,
@@ -118,21 +140,39 @@ class GameSessionManager:
             confidence_margin=self.thresholds.margin,
             max_questions=self.thresholds.max_questions,
         )
+        at_budget = engine.questions_asked >= self.thresholds.max_questions
+        delay_sport = (not at_budget) and should_delay_guess_for_sport_split(
+            engine, live.question_refs, live.character_categories
+        )
 
         next_q_id: UUID | None = None
-        if not confidence.should_guess:
+        if not confidence.should_guess or delay_sport:
             next_q_id = select_next_question(
-                engine, live.all_question_ids, min_samples=self.min_samples
-            )
-            # No useful questions left → best available guess
-            confidence = resolve_turn(
                 engine,
-                next_question_id=next_q_id,
-                confidence_high=self.thresholds.high,
-                confidence_separation=self.thresholds.separation,
-                confidence_margin=self.thresholds.margin,
-                max_questions=self.thresholds.max_questions,
+                live.all_question_ids,
+                min_samples=self.min_samples,
+                question_refs=live.question_refs,
+                character_categories=live.character_categories,
+                character_names=live.character_names,
             )
+            if delay_sport and next_q_id is not None:
+                confidence = ConfidenceResult(
+                    should_guess=False,
+                    confidence=confidence.confidence,
+                    margin=confidence.margin,
+                    top_character_id=confidence.top_character_id,
+                    second_character_id=confidence.second_character_id,
+                    reason="need_sport_split",
+                )
+            else:
+                confidence = resolve_turn(
+                    engine,
+                    next_question_id=next_q_id,
+                    confidence_high=self.thresholds.high,
+                    confidence_separation=self.thresholds.separation,
+                    confidence_margin=self.thresholds.margin,
+                    max_questions=self.thresholds.max_questions,
+                )
 
         must_end = confidence.should_guess
         live.pending_question_id = None if must_end else next_q_id
@@ -151,10 +191,17 @@ class GameSessionManager:
 
     @staticmethod
     def best_guess_id(live: LiveSession) -> UUID | None:
-        """Return the character id with highest posterior probability."""
+        """Highest posterior; popularity breaks ties when evidence is similar."""
         if not live.engine.probabilities:
             return None
-        return max(live.engine.probabilities, key=live.engine.probabilities.get)
+        pop = live.character_popularity or {}
+        return max(
+            live.engine.probabilities,
+            key=lambda cid: (
+                live.engine.probabilities[cid],
+                pop.get(cid, 0),
+            ),
+        )
 
     @staticmethod
     def best_guess(live: LiveSession) -> tuple[UUID, float] | None:

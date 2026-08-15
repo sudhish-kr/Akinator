@@ -84,11 +84,29 @@ class Character(Base):
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    popularity_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     times_guessed_correctly: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     times_guessed_incorrectly: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     answers: Mapped[list["CharacterAnswer"]] = relationship(back_populates="character")
+    aliases: Mapped[list["CharacterAlias"]] = relationship(
+        back_populates="character", cascade="all, delete-orphan"
+    )
+
+
+class CharacterAlias(Base):
+    """Alternate names for a character (search / display; engine unchanged)."""
+
+    __tablename__ = "character_aliases"
+    __table_args__ = (UniqueConstraint("alias", name="uq_character_alias"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    character_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("characters.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    character: Mapped["Character"] = relationship(back_populates="aliases")
 
 
 class Question(Base):

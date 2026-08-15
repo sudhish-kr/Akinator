@@ -288,6 +288,90 @@
   margin-bottom: 1rem;
 }
 
+.admin-stat-grid.analytics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-chart-card {
+  margin-bottom: 1rem;
+}
+
+.admin-chart {
+  width: 100%;
+  height: auto;
+  margin-top: 0.75rem;
+  display: block;
+}
+
+.admin-chart-axis {
+  stroke: var(--admin-line);
+  stroke-width: 1;
+}
+
+.admin-chart-bar {
+  fill: var(--admin-accent);
+  opacity: 0.9;
+}
+
+.admin-chart-label {
+  fill: var(--admin-muted);
+  font-size: 9px;
+}
+
+.admin-rank {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.admin-rank-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.admin-rank-meta em {
+  color: var(--admin-muted);
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+.admin-rank-track {
+  margin-top: 0.35rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(232, 240, 236, 0.08);
+  overflow: hidden;
+}
+
+.admin-rank-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f7d64, var(--admin-accent));
+}
+
+.analytics-grid {
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .admin-stat-grid,
+  .admin-stat-grid.analytics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-stat-grid,
+  .admin-stat-grid.analytics {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-stat {
   background: var(--admin-card);
   border: 1px solid var(--admin-line);
@@ -337,6 +421,34 @@
 .admin-error {
   color: var(--admin-danger);
   margin-bottom: 0.75rem;
+}
+
+.admin-success {
+  color: var(--admin-accent);
+  margin-bottom: 0.75rem;
+}
+
+.admin-image-preview {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  border: 1px solid var(--admin-line);
+  background: #121916;
+}
+
+.admin-image-preview img,
+.admin-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-thumb {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.45rem;
 }
 
 .admin-login {

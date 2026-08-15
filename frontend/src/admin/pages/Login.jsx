@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { adminApi, adminAuth } from "../api.js";
+import { LanguageSwitch, useI18n } from "../../i18n/index.jsx";
 
 export default function AdminLogin({ onSuccess }) {
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -14,12 +16,12 @@ export default function AdminLogin({ onSuccess }) {
     try {
       const data = await adminApi.login(email.trim(), password);
       if (data.user?.role !== "admin") {
-        throw new Error("Admin role required");
+        throw new Error(t("admin.adminRequired"));
       }
       adminAuth.saveSession(data);
       onSuccess(data);
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || t("admin.loginFailed"));
     } finally {
       setBusy(false);
     }
@@ -28,12 +30,13 @@ export default function AdminLogin({ onSuccess }) {
   return (
     <section className="admin-login">
       <div className="admin-login-card">
-        <p className="admin-kicker">Knowledge console</p>
-        <h1>Admin sign in</h1>
-        <p className="admin-lede">Manage characters, questions, and learning stats.</p>
+        <LanguageSwitch className="lang-switch-admin" />
+        <p className="admin-kicker">{t("admin.loginKicker")}</p>
+        <h1>{t("admin.loginTitle")}</h1>
+        <p className="admin-lede">{t("admin.loginLede")}</p>
         <form onSubmit={submit} className="admin-form">
           <label>
-            Email
+            {t("admin.email")}
             <input
               type="email"
               autoComplete="username"
@@ -43,7 +46,7 @@ export default function AdminLogin({ onSuccess }) {
             />
           </label>
           <label>
-            Password
+            {t("admin.password")}
             <input
               type="password"
               autoComplete="current-password"
@@ -55,11 +58,11 @@ export default function AdminLogin({ onSuccess }) {
           </label>
           {error && <p className="admin-error">{error}</p>}
           <button type="submit" className="admin-btn primary" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
+            {busy ? t("admin.signingIn") : t("admin.signIn")}
           </button>
         </form>
         <a className="admin-back" href="#/">
-          ← Back to game
+          {t("admin.backToGame")}
         </a>
       </div>
     </section>

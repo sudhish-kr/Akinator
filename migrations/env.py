@@ -12,8 +12,22 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# Alembic uses sync driver; convert async URL (works for postgres and sqlite)
-sync_url = settings.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
+# Alembic uses a sync driver. Strip SQLite async; for Postgres prefer psycopg2
+# when present, otherwise SQLAlchemy's psycopg (v3) dialect.
+def _sync_database_url(url: str) -> str:
+    if "+aiosqlite" in url:
+        return url.replace("+aiosqlite", "")
+    if "+asyncpg" not in url:
+        return url
+    psycopg2_url = url.replace("+asyncpg", "")
+    try:
+        import psycopg2  # noqa: F401
+    except ImportError:
+        return url.replace("+asyncpg", "+psycopg")
+    return psycopg2_url
+
+
+sync_url = _sync_database_url(settings.database_url)
 config.set_main_option("sqlalchemy.url", sync_url)
 
 

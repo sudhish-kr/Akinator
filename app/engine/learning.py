@@ -56,6 +56,13 @@ def _dedupe_observations(observations: list[AnswerObservation]) -> list[AnswerOb
     return list(by_question.values())
 
 
+def _nudge_or_keep(old_l: float, weight: float, learning_rate: float) -> float:
+    """Confirming an already-strong fact must not inflate L (Dhoni 0.97→0.978)."""
+    if (old_l >= 0.85 and weight >= 0.75) or (old_l <= 0.15 and weight <= 0.25):
+        return old_l
+    return apply_learning_update(old_l, weight, learning_rate)
+
+
 def learn_from_completed_game(
     character_id: UUID,
     observations: list[AnswerObservation],
@@ -78,7 +85,7 @@ def learn_from_completed_game(
         updates[key] = KnowledgeUpdate(
             character_id=character_id,
             question_id=obs.question_id,
-            likelihood=apply_learning_update(old_l, weight, learning_rate),
+            likelihood=_nudge_or_keep(old_l, weight, learning_rate),
             sample_size=old_n + 1,
         )
 
@@ -104,7 +111,7 @@ def store_distinguishing_fact(
     return KnowledgeUpdate(
         character_id=correct_character_id,
         question_id=question_id,
-        likelihood=apply_learning_update(old_l, weight, learning_rate),
+        likelihood=_nudge_or_keep(old_l, weight, learning_rate),
         sample_size=old_n + 1,
     )
 

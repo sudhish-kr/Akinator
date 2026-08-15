@@ -130,6 +130,37 @@ async def test_full_game_correct_guess(client: AsyncClient):
     assert confirm.status_code == 200
     assert confirm.json()["status"] == "guessed_correct"
 
+    # Session completed — further answers must not succeed as in-progress play.
+    closed = await client.get(f"/game/state/{result['session_id']}")
+    assert closed.status_code in {404, 409}
+
+
+@pytest.mark.asyncio
+async def test_correct_guess_learn_endpoint_still_works(client: AsyncClient):
+    """Legacy Yes path via /game/learn (wrong_guess=false) must also complete."""
+    result = await _play_until_guess(
+        client,
+        {
+            "Is this person alive today?": "no",
+            "Is this person a scientist?": "yes",
+        },
+    )
+    guess = await client.get(f"/game/guess/{result['session_id']}")
+    assert guess.status_code == 200
+    body = guess.json()
+    assert body["character"]["name"] == "Albert Einstein"
+
+    learn = await client.post(
+        "/game/learn",
+        json={
+            "session_id": result["session_id"],
+            "character_id": body["character"]["id"],
+            "wrong_guess": False,
+        },
+    )
+    assert learn.status_code == 200
+    assert learn.json()["status"] == "learned"
+
 
 @pytest.mark.asyncio
 async def test_guess_before_ready_is_rejected(client: AsyncClient):
@@ -266,7 +297,8 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
     )
     session_id = result["session_id"]
 
-    guess = await client.post("/game/guess", json={"session_id": session_id})
+    guess = await client.get(f"/game/guess/{session_id}")
+    assert guess.status_code == 200
     assert guess.json()["character"]["name"] == "Albert Einstein"
 
     chars = (await client.get("/characters?is_active=true")).json()["items"]
@@ -281,7 +313,7 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
     # Simulate a restart: wipe the cache, forcing DB rehydration
     session_store.delete(uuid.UUID(session_id))
 
-    state = await client.get(f"/game/{session_id}/state")
+    state = await client.get(f"/game/state/{session_id}")
     assert state.status_code == 200
     data = state.json()
 
@@ -300,7 +332,7 @@ async def test_rejected_guess_not_reguessed_after_cache_loss(client: AsyncClient
         assert resp.status_code == 200
         data = resp.json()
 
-    guess2 = await client.post("/game/guess", json={"session_id": session_id})
+    guess2 = await client.get(f"/game/guess/{session_id}")
     assert guess2.status_code == 200
     assert guess2.json()["character"]["name"] != "Albert Einstein"
 
@@ -354,6 +386,48 @@ async def test_admin_can_create_and_update(client: AsyncClient, admin_token: str
 
 
 @pytest.mark.asyncio
+async def test_admin_can_upload_character_image(client: AsyncClient, admin_token: str):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    created = await client.post(
+        "/admin/characters",
+        json={"name": "Image Person", "category": "real_person"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    char_id = created.json()["id"]
+
+    # Tiny valid PNG (1x1)
+    png = (
+        b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00"
+        b"\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    upload = await client.post(
+        f"/admin/characters/{char_id}/image",
+        headers=headers,
+        files={"file": ("face.png", png, "image/png")},
+    )
+    assert upload.status_code == 200, upload.text
+    path = upload.json()["image_url"]
+    assert path.startswith("/media/characters/")
+    assert path.endswith(".png")
+
+    media = await client.get(path)
+    assert media.status_code == 200
+    assert media.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+    denied = await client.post(
+        f"/admin/characters/{char_id}/image",
+        files={"file": ("face.png", png, "image/png")},
+    )
+    assert denied.status_code == 401
+
+    placeholder = await client.get("/media/characters/default.svg")
+    assert placeholder.status_code == 200
+    assert b"<svg" in placeholder.content
+
+
+@pytest.mark.asyncio
 async def test_suggest_character_creates_inactive(client: AsyncClient):
     start = (await client.post("/game/start")).json()
     resp = await client.post(
@@ -376,3 +450,105 @@ async def test_statistics_endpoint(client: AsyncClient):
     data = resp.json()
     assert "total_games_played" in data
     assert "guess_accuracy_rate" in data
+    assert "learning_rate" in data
+    assert "average_questions_per_game" in data
+    assert "most_asked_questions" in data
+    assert "most_guessed_characters" in data
+    assert "daily_activity" in data
+    assert len(data["daily_activity"]) == 14
+    assert all("date" in d and "games" in d for d in data["daily_activity"])
+
+
+@pytest.mark.asyncio
+async def test_knowledge_export_import_admin_only(client: AsyncClient, admin_token: str):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    denied = await client.get("/admin/knowledge/export")
+    assert denied.status_code == 401
+
+    exported = await client.get("/admin/knowledge/export", headers=headers)
+    assert exported.status_code == 200
+    payload = exported.json()
+    assert payload["version"] == 1
+    assert isinstance(payload["characters"], list)
+    assert isinstance(payload["questions"], list)
+    assert len(payload["characters"]) >= 1
+    assert len(payload["questions"]) >= 1
+
+    # Duplicate against existing DB rejected
+    clash = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {
+                    "name": payload["characters"][0]["name"],
+                    "category": "real_person",
+                    "is_active": True,
+                }
+            ],
+            "questions": [],
+        },
+    )
+    assert clash.status_code == 409
+
+    # Duplicate within payload rejected
+    within = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {"name": "Ada Lovelace", "category": "real_person", "is_active": True},
+                {"name": "ada lovelace", "category": "real_person", "is_active": True},
+            ],
+            "questions": [],
+        },
+    )
+    assert within.status_code == 400
+    assert "Duplicate characters" in within.json()["detail"]
+
+    before_chars = (await client.get("/characters?page_size=100")).json()["meta"]["total"]
+    ok = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [
+                {"name": "Marie Curie", "category": "real_person", "is_active": True}
+            ],
+            "questions": [
+                {
+                    "text": "Did this person win a Nobel Prize?",
+                    "category": "awards",
+                    "is_active": True,
+                }
+            ],
+        },
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["characters_imported"] == 1
+    assert ok.json()["questions_imported"] == 1
+    after_chars = (await client.get("/characters?page_size=100")).json()["meta"]["total"]
+    assert after_chars == before_chars + 1
+
+
+@pytest.mark.asyncio
+async def test_knowledge_import_rolls_back_on_failure(client: AsyncClient, admin_token: str):
+    """If import fails after partial writes, nothing from the batch remains."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    before_q = (await client.get("/questions?page_size=100")).json()["meta"]["total"]
+
+    # Second question duplicates the first → validation fails before commit
+    bad = await client.post(
+        "/admin/knowledge/import",
+        headers=headers,
+        json={
+            "characters": [],
+            "questions": [
+                {"text": "Is this person a composer?", "is_active": True},
+                {"text": "Is this person a composer?", "is_active": True},
+            ],
+        },
+    )
+    assert bad.status_code == 400
+    after_q = (await client.get("/questions?page_size=100")).json()["meta"]["total"]
+    assert after_q == before_q

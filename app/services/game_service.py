@@ -4,16 +4,17 @@ from uuid import UUID
 from app.config import settings
 from app.db.models import GameSessionStatus
 from app.db.repositories.game_repository import GameRepository
-from app.engine.models import LikelihoodEntry, QuestionRef
+from app.engine.explain import AnswerObservation, build_guess_explanation, remaining_candidates
 from app.engine.selector import (
     create_initial_state,
     decide_after_answer,
     process_answer,
     select_next_question,
 )
-from app.services.learning_service import LearningService
 from app.services.session_manager import ConfidenceThresholds, GameSessionManager
 from app.services.session_store import LiveSession, SessionStore, StoredAnswer, session_store
+from app.services.playable_catalog import get_playable_catalog
+from app.monitoring.instrumentation import track_ai_inference
 
 
 class GameServiceError(Exception):
@@ -26,7 +27,6 @@ class GameService:
     def __init__(self, repo: GameRepository, store: SessionStore | None = None):
         self.repo = repo
         self.store = store or session_store
-        self.learning = LearningService(repo)
         self.sessions = GameSessionManager(
             thresholds=ConfidenceThresholds(
                 high=settings.confidence_high,
@@ -37,57 +37,42 @@ class GameService:
             min_samples=settings.new_question_min_samples,
         )
 
-    async def _load_playable_data(self) -> tuple[list, list, dict, list[UUID]]:
-        characters = await self.repo.get_active_characters()
-        questions = await self.repo.get_active_questions()
-
-        if not characters:
-            raise GameServiceError("No active characters available", 503)
-        if not questions:
-            raise GameServiceError("No active questions available", 503)
-
-        character_ids = [c.id for c in characters]
-        question_ids = [q.id for q in questions]
-
-        rows = await self.repo.get_likelihoods(character_ids, question_ids)
-        likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] = {}
-        for row in rows:
-            likelihoods[(row.character_id, row.question_id)] = LikelihoodEntry(
-                likelihood=row.likelihood,
-                sample_size=row.sample_size,
-            )
-
-        return characters, questions, likelihoods, question_ids
+    async def _catalog(self):
+        try:
+            return await get_playable_catalog(self.repo)
+        except ValueError as exc:
+            raise GameServiceError(str(exc), 503) from exc
 
     async def start_game(self, user_id: UUID | None = None) -> dict:
-        characters, questions, likelihoods, question_ids = await self._load_playable_data()
+        catalog = await self._catalog()
         db_session = await self.repo.create_session(user_id=user_id)
 
-        question_refs = {
-            q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
-        }
-        character_names = {c.id: c.name for c in characters}
-
         try:
-            live = self.sessions.start(
-                session_id=db_session.id,
-                character_ids=[c.id for c in characters],
-                likelihoods=likelihoods,
-                question_ids=question_ids,
-                question_refs=question_refs,
-                character_names=character_names,
-            )
+            with track_ai_inference("start_game"):
+                live = self.sessions.start(
+                    session_id=db_session.id,
+                    character_ids=catalog.character_ids,
+                    likelihoods=catalog.likelihoods,
+                    question_ids=catalog.question_ids,
+                    question_refs=catalog.question_refs,
+                    character_names=catalog.character_names,
+                    character_categories=catalog.character_categories,
+                    character_popularity=catalog.character_popularity,
+                    question_sample_totals=catalog.question_sample_totals,
+                )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
 
         self.store.save(live)
         await self.repo.commit()
 
-        first_q = question_refs[live.pending_question_id]
+        first_q = catalog.question_refs[live.pending_question_id]
+        top_confidence = max(live.engine.probabilities.values(), default=0.0)
         return {
             "session_id": str(db_session.id),
             "question": {"id": str(first_q.id), "text": first_q.text},
             "questions_asked": 0,
+            "top_confidence": round(top_confidence, 4),
         }
 
     def _state_payload(self, live: LiveSession) -> dict:
@@ -122,7 +107,8 @@ class GameService:
             return self._state_payload(live)
 
         try:
-            turn = self.sessions.submit_answer(live, question_id, answer)
+            with track_ai_inference("submit_answer"):
+                turn = self.sessions.submit_answer(live, question_id, answer)
         except ValueError as exc:
             msg = str(exc)
             code = 409 if "ready to guess" in msg or "does not match" in msg else 400
@@ -145,13 +131,8 @@ class GameService:
         self.store.save(live)
         await self.repo.commit()
 
-        if turn.status == "ready_to_guess":
-            return {
-                "status": "ready_to_guess",
-                "next_question": None,
-                "questions_asked": turn.questions_asked,
-                "top_confidence": round(turn.top_confidence, 4),
-            }
+        if turn.status == "ready_to_guess" or turn.next_question_id is None:
+            return self._state_payload(live)
 
         next_q = live.question_refs[turn.next_question_id]
         return {
@@ -166,21 +147,37 @@ class GameService:
         if not live.awaiting_guess:
             raise GameServiceError("Engine is not ready to guess yet", 409)
 
-        guess = self.sessions.best_guess(live)
-        if guess is None:
-            raise GameServiceError("No candidates available to guess", 500)
-        top_id, confidence = guess
+        with track_ai_inference("make_guess"):
+            guess = self.sessions.best_guess(live)
+            if guess is None:
+                raise GameServiceError("No candidates available to guess", 500)
+            top_id, confidence = guess
 
-        character = await self.repo.get_character(top_id)
-        if not character:
-            raise GameServiceError("Top candidate character not found", 500)
+            character = await self.repo.get_character(top_id)
+            if not character:
+                raise GameServiceError("Top candidate character not found", 500)
 
-        db_session = await self.repo.get_session(session_id)
-        if db_session:
-            db_session.guessed_character_id = top_id
-            db_session.last_activity_at = datetime.now(timezone.utc)
+            db_session = await self.repo.get_session(session_id)
+            if db_session:
+                db_session.guessed_character_id = top_id
+                db_session.last_activity_at = datetime.now(timezone.utc)
 
-        await self.repo.commit()
+            await self.repo.commit()
+
+            explanation = build_guess_explanation(
+                guessed_id=top_id,
+                guessed_name=character.name,
+                confidence=confidence,
+                probabilities=live.engine.probabilities,
+                character_ids=list(live.engine.character_ids),
+                character_names=live.character_names,
+                likelihoods=live.engine.likelihoods,
+                answers=[
+                    AnswerObservation(question_id=a.question_id, answer=a.answer)
+                    for a in live.answers
+                ],
+                question_refs=live.question_refs,
+            )
 
         return {
             "character": {
@@ -189,6 +186,7 @@ class GameService:
                 "image_url": character.image_url,
             },
             "confidence": round(confidence, 4),
+            **explanation,
         }
 
     async def learn(
@@ -200,7 +198,9 @@ class GameService:
         distinguishing_question_id: UUID | None = None,
         distinguishing_answer: str | None = None,
     ) -> dict:
-        """Apply post-game learning, persist guess stats, and close the session."""
+        """Close the session quickly; learning + analytics run in Celery workers."""
+        from app.workers.queue import enqueue_post_game
+
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
@@ -211,34 +211,29 @@ class GameService:
         guessed_id = db_session.guessed_character_id
 
         if wrong_guess:
-            updates = await self.learning.learn_from_wrong_guess(
-                session_id,
-                character_id,
-                distinguishing_question_id=distinguishing_question_id,
-                distinguishing_answer=distinguishing_answer,
-            )
             db_session.status = GameSessionStatus.GUESSED_INCORRECT
             db_session.actual_character_id = character_id
-            if guessed_id:
-                char = await self.repo.get_character(guessed_id)
-                if char:
-                    char.times_guessed_incorrectly += 1
         else:
-            updates = await self.learning.learn_from_session(session_id, character_id)
             db_session.status = GameSessionStatus.GUESSED_CORRECT
             db_session.actual_character_id = character_id
             if not db_session.guessed_character_id:
                 db_session.guessed_character_id = character_id
-            target_id = db_session.guessed_character_id or character_id
-            char = await self.repo.get_character(target_id)
-            if char:
-                char.times_guessed_correctly += 1
 
         db_session.ended_at = now
         db_session.last_activity_at = now
         await self.repo.commit()
         self.store.delete(session_id)
-        return {"status": "learned", "updates": updates}
+
+        jobs = enqueue_post_game(
+            session_id,
+            character_id,
+            wrong_guess=wrong_guess,
+            guessed_character_id=guessed_id,
+            distinguishing_question_id=distinguishing_question_id,
+            distinguishing_answer=distinguishing_answer,
+        )
+        # updates stays 0 in the HTTP response — workers apply KB changes async
+        return {"status": "learned", "updates": 0, **jobs}
 
     async def confirm_guess(
         self,
@@ -246,23 +241,37 @@ class GameService:
         correct: bool,
         actual_character_id: UUID | None = None,
     ) -> dict:
-        live = await self._get_live_session(session_id)
+        from app.workers.queue import enqueue_post_game
+
         db_session = await self.repo.get_session(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
 
         if correct:
+            # Correct confirmation only needs the DB row — do not depend on live
+            # cache / rehydrate (and never hang on a missing Celery broker).
+            if db_session.status not in {
+                GameSessionStatus.IN_PROGRESS,
+                GameSessionStatus.GUESSED_CORRECT,
+            }:
+                raise GameServiceError("Session is already closed", 409)
+            guessed_id = db_session.guessed_character_id
             db_session.status = GameSessionStatus.GUESSED_CORRECT
-            db_session.actual_character_id = db_session.guessed_character_id
+            db_session.actual_character_id = guessed_id or actual_character_id
             db_session.ended_at = datetime.now(timezone.utc)
-            if db_session.guessed_character_id:
-                char = await self.repo.get_character(db_session.guessed_character_id)
-                if char:
-                    char.times_guessed_correctly += 1
-                await self.learning.learn_from_session(session_id, db_session.guessed_character_id)
+            db_session.last_activity_at = db_session.ended_at
             await self.repo.commit()
             self.store.delete(session_id)
+            if guessed_id or actual_character_id:
+                enqueue_post_game(
+                    session_id,
+                    guessed_id or actual_character_id,
+                    wrong_guess=False,
+                    guessed_character_id=guessed_id,
+                )
             return {"status": "guessed_correct"}
+
+        live = await self._get_live_session(session_id)
 
         if actual_character_id is None:
             raise GameServiceError(
@@ -272,14 +281,9 @@ class GameService:
 
         guessed_id = db_session.guessed_character_id
         if guessed_id:
-            char = await self.repo.get_character(guessed_id)
-            if char:
-                char.times_guessed_incorrectly += 1
             # Persist the rejection so rehydration can re-exclude this
             # character after a cache loss (docs/ARCHITECTURE.md gap fix)
             await self.repo.record_rejected_guess(session_id, guessed_id)
-
-        await self.learning.learn_from_wrong_guess(session_id, actual_character_id)
 
         if guessed_id and guessed_id in live.engine.probabilities:
             del live.engine.probabilities[guessed_id]
@@ -303,10 +307,21 @@ class GameService:
             live.engine,
             live.all_question_ids,
             min_samples=settings.new_question_min_samples,
+            question_refs=live.question_refs,
+            character_categories=live.character_categories,
+            # After a wrong guess, explore high-IG questions among remaining top mass.
+            explore=True,
         )
         live.pending_question_id = next_q_id
         self.store.save(live)
         await self.repo.commit()
+
+        enqueue_post_game(
+            session_id,
+            actual_character_id,
+            wrong_guess=True,
+            guessed_character_id=guessed_id,
+        )
 
         if next_q_id is None:
             live.awaiting_guess = True
@@ -339,22 +354,81 @@ class GameService:
         self.store.delete(session_id)
         return {"status": "submitted_for_review", "character_id": str(character.id)}
 
+    async def list_remaining_candidates(
+        self,
+        session_id: UUID,
+        *,
+        category: str | None = None,
+        q: str | None = None,
+        limit: int = 40,
+    ) -> dict:
+        """Wrong-guess recovery: rank the live posterior pool (no catalog scan)."""
+        live = await self._get_live_session(session_id)
+        exclude: set[UUID] = set()
+        db_session = await self.repo.get_session(session_id)
+        if db_session and db_session.guessed_character_id:
+            exclude.add(db_session.guessed_character_id)
+        items = remaining_candidates(
+            live.engine.probabilities,
+            live.character_names,
+            live.character_categories,
+            category=category,
+            q=q,
+            exclude_ids=exclude,
+            limit=limit,
+        )
+        return {"items": items, "total": len(items)}
+
     async def _get_live_session(self, session_id: UUID) -> LiveSession:
+        # Do not reload the catalog on the hot path — TTL refresh was stalling answers.
         live = self.store.get(session_id)
         if live:
+            if not live.engine.likelihoods:
+                await self._catalog()
+            self._attach_catalog(live)
             return live
         live = await self._rehydrate(session_id)
         if not live:
             raise GameServiceError("Session not found or expired", 404)
         return live
 
+    def _attach_catalog(self, live: LiveSession) -> None:
+        from app.services.playable_catalog import peek_catalog
+
+        catalog = peek_catalog()
+        if catalog is None:
+            return
+        if not live.engine.likelihoods:
+            live.engine.likelihoods = catalog.likelihoods
+        if live.engine.question_sample_totals is None:
+            live.engine.question_sample_totals = catalog.question_sample_totals
+        if not live.question_refs:
+            live.question_refs = catalog.question_refs
+        if not live.character_names:
+            live.character_names = catalog.character_names
+        if not live.character_categories:
+            live.character_categories = catalog.character_categories
+        if not live.character_popularity:
+            live.character_popularity = catalog.character_popularity
+        if not live.all_question_ids:
+            live.all_question_ids = catalog.question_ids
+
     async def _rehydrate(self, session_id: UUID) -> LiveSession | None:
         db_session = await self.repo.get_session(session_id)
         if not db_session or db_session.status != GameSessionStatus.IN_PROGRESS:
             return None
 
-        characters, questions, likelihoods, question_ids = await self._load_playable_data()
-        engine = create_initial_state([c.id for c in characters], likelihoods)
+        catalog = await self._catalog()
+        engine = create_initial_state(
+            list(catalog.character_ids),
+            catalog.likelihoods,
+            popularity=dict(catalog.character_popularity),
+            question_sample_totals=catalog.question_sample_totals,
+        )
+        question_refs = dict(catalog.question_refs)
+        character_categories = dict(catalog.character_categories)
+        character_popularity = dict(catalog.character_popularity)
+        question_ids = list(catalog.question_ids)
 
         # Re-exclude characters the user already rejected in this session
         rejected = await self.repo.get_rejected_character_ids(session_id)
@@ -382,6 +456,8 @@ class GameService:
         confidence, next_q_id = decide_after_answer(
             engine,
             question_ids,
+            question_refs=question_refs,
+            character_categories=character_categories,
             confidence_high=settings.confidence_high,
             confidence_separation=settings.confidence_separation,
             confidence_margin=settings.confidence_margin,
@@ -392,10 +468,10 @@ class GameService:
         live = LiveSession(
             session_id=session_id,
             engine=engine,
-            question_refs={
-                q.id: QuestionRef(id=q.id, text=q.text, category=q.category) for q in questions
-            },
-            character_names={c.id: c.name for c in characters},
+            question_refs=question_refs,
+            character_names=dict(catalog.character_names),
+            character_categories=character_categories,
+            character_popularity=character_popularity,
             all_question_ids=question_ids,
             pending_question_id=None if must_guess else next_q_id,
             last_answered_question_id=last_qid,

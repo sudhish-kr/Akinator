@@ -5,6 +5,9 @@ Answer weights: yes=1.0, no=0.0, dont_know/unknown=0.5
 (also probably_yes=0.75, probably_no=0.25 per TDD).
 """
 
+from __future__ import annotations
+
+import math
 from uuid import UUID
 
 from app.engine.cold_start import get_likelihood, likelihood_match
@@ -18,6 +21,10 @@ _ANSWER_ALIASES: dict[str, str] = {
     "don't_know": "dont_know",
 }
 
+# Mild popularity tilt: famous characters start slightly ahead of obscure ones.
+# Does not invent confidence — mass still sums to 1.0.
+DEFAULT_POPULARITY_PRIOR_STRENGTH = 0.35
+
 
 def initialize_uniform_priors(character_ids: list[UUID]) -> dict[UUID, float]:
     """P(C) = 1/N for all characters (TDD Section 2.1)."""
@@ -25,6 +32,31 @@ def initialize_uniform_priors(character_ids: list[UUID]) -> dict[UUID, float]:
         return {}
     p = 1.0 / len(character_ids)
     return {cid: p for cid in character_ids}
+
+
+def initialize_priors(
+    character_ids: list[UUID],
+    popularity: dict[UUID, int] | None = None,
+    *,
+    strength: float = DEFAULT_POPULARITY_PRIOR_STRENGTH,
+) -> dict[UUID, float]:
+    """
+    Prior P(C). Uniform when popularity is absent; otherwise
+    P(C) ∝ 1 + strength * log1p(popularity_score), then normalized.
+    """
+    if not character_ids:
+        return {}
+    if not popularity or strength <= 0:
+        return initialize_uniform_priors(character_ids)
+
+    weights = {
+        cid: 1.0 + float(strength) * math.log1p(max(0, int(popularity.get(cid, 0))))
+        for cid in character_ids
+    }
+    total = sum(weights.values())
+    if total <= 0:
+        return initialize_uniform_priors(character_ids)
+    return {cid: w / total for cid, w in weights.items()}
 
 
 def _resolve_answer(answer: Answer | str) -> Answer:

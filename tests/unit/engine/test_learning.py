@@ -59,6 +59,27 @@ class TestLearnFromCompletedGame:
         assert updates[0].likelihood == pytest.approx(0.45)
 
 
+    def test_does_not_inflate_already_strong_yes(self):
+        knowledge = {(CHAR, Q1): KnowledgeEntry(0.97, 80)}
+        updates = learn_from_completed_game(
+            CHAR,
+            [AnswerObservation(Q1, "yes")],
+            knowledge,
+            learning_rate=0.07,
+        )
+        assert updates[0].likelihood == pytest.approx(0.97)
+        assert updates[0].sample_size == 81
+
+    def test_still_corrects_strong_yes_after_no(self):
+        knowledge = {(CHAR, Q1): KnowledgeEntry(0.97, 80)}
+        updates = learn_from_completed_game(
+            CHAR,
+            [AnswerObservation(Q1, "no")],
+            knowledge,
+            learning_rate=0.07,
+        )
+        assert updates[0].likelihood == pytest.approx(0.97 + 0.07 * (0.0 - 0.97))
+
 class TestWrongGuessLearning:
     def test_stores_correct_object_with_distinguishing_fact(self):
         fact = store_distinguishing_fact(CHAR, Q1, "yes", {}, learning_rate=0.1)

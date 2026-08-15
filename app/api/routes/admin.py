@@ -1,7 +1,7 @@
 import math
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.api.deps import get_game_repository, require_admin
 from app.api.schemas.admin import (
@@ -9,14 +9,23 @@ from app.api.schemas.admin import (
     CharacterItem,
     CharacterListResponse,
     CharacterUpdate,
+    KnowledgeExportResponse,
+    KnowledgeImportRequest,
+    KnowledgeImportResponse,
     PaginatedMeta,
     QuestionCreate,
     QuestionItem,
     QuestionListResponse,
     QuestionUpdate,
+    RateLimitConfig,
+    RateLimitConfigUpdate,
     StatisticsResponse,
 )
 from app.db.repositories.game_repository import GameRepository
+from app.security.rate_limit_policy import RateLimitPolicy
+from app.security.rate_limiter import rate_limiter
+from app.services.knowledge_io import KnowledgeIOError, KnowledgeIOService
+from app.services.media_service import MediaError, save_character_image
 
 router = APIRouter(tags=["catalog"])
 
@@ -28,6 +37,7 @@ def _character_item(c) -> CharacterItem:
         category=c.category,
         image_url=c.image_url,
         is_active=c.is_active,
+        popularity_score=getattr(c, "popularity_score", 0) or 0,
         times_guessed_correctly=c.times_guessed_correctly,
         times_guessed_incorrectly=c.times_guessed_incorrectly,
     )
@@ -59,22 +69,15 @@ async def list_characters(
     page_size: int = Query(20, ge=1, le=100),
     category: str | None = None,
     is_active: bool | None = None,
+    q: str | None = None,
+    sort: str = Query("popularity", pattern="^(popularity|name)$"),
     repo: GameRepository = Depends(get_game_repository),
 ):
-    items, total = await repo.list_characters(page, page_size, category, is_active)
+    items, total = await repo.list_characters(
+        page, page_size, category, is_active, q=q, sort=sort
+    )
     return CharacterListResponse(
-        items=[
-            CharacterItem(
-                id=str(c.id),
-                name=c.name,
-                category=c.category,
-                image_url=c.image_url,
-                is_active=c.is_active,
-                times_guessed_correctly=c.times_guessed_correctly,
-                times_guessed_incorrectly=c.times_guessed_incorrectly,
-            )
-            for c in items
-        ],
+        items=[_character_item(c) for c in items],
         meta=_paginated_meta(page, page_size, total),
     )
 
@@ -150,6 +153,24 @@ async def update_character(
     return _character_item(character)
 
 
+@admin_router.post("/characters/{character_id}/image", response_model=CharacterItem)
+async def upload_character_image(
+    character_id: UUID,
+    file: UploadFile = File(...),
+    repo: GameRepository = Depends(get_game_repository),
+):
+    character = await repo.get_character(character_id)
+    if not character:
+        raise HTTPException(status_code=404, detail="Character not found")
+    try:
+        path = await save_character_image(file, character_id)
+    except MediaError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    character.image_url = path
+    await repo.commit()
+    return _character_item(character)
+
+
 @admin_router.post("/questions", response_model=QuestionItem, status_code=201)
 async def create_question(
     body: QuestionCreate,
@@ -176,6 +197,44 @@ async def update_question(
         setattr(question, field, value)
     await repo.commit()
     return _question_item(question)
+
+
+@admin_router.get("/knowledge/export", response_model=KnowledgeExportResponse)
+async def export_knowledge(repo: GameRepository = Depends(get_game_repository)):
+    return KnowledgeExportResponse(**(await KnowledgeIOService(repo).export_knowledge()))
+
+
+@admin_router.post("/knowledge/import", response_model=KnowledgeImportResponse)
+async def import_knowledge(
+    body: KnowledgeImportRequest,
+    repo: GameRepository = Depends(get_game_repository),
+):
+    if not body.characters and not body.questions:
+        raise HTTPException(status_code=400, detail="Import must include characters or questions")
+    try:
+        result = await KnowledgeIOService(repo).import_knowledge(
+            characters=[c.model_dump() for c in body.characters],
+            questions=[q.model_dump() for q in body.questions],
+        )
+    except KnowledgeIOError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    return KnowledgeImportResponse(**result)
+
+
+@admin_router.get("/rate-limits", response_model=RateLimitConfig)
+async def get_rate_limits():
+    """Current rate-limit policy (settings defaults + admin overrides)."""
+    return RateLimitConfig(**rate_limiter.get_policy().to_dict())
+
+
+@admin_router.put("/rate-limits", response_model=RateLimitConfig)
+async def update_rate_limits(body: RateLimitConfigUpdate):
+    """Admin-configurable rate limits for auth and game endpoints."""
+    current = rate_limiter.get_policy().to_dict()
+    updates = body.model_dump(exclude_unset=True)
+    current.update(updates)
+    saved = rate_limiter.set_policy(RateLimitPolicy.from_dict(current))
+    return RateLimitConfig(**saved.to_dict())
 
 
 router.include_router(admin_router)
