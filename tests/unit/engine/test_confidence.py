@@ -65,9 +65,22 @@ class TestEvaluateConfidence:
         assert result.should_guess is True
         assert result.reason == "clear_separation"
 
-    def test_question_budget_forces_guess(self):
-        state = _state({C1: 0.4, C2: 0.6}, questions_asked=25)
-        result = evaluate_confidence(state, confidence_high=0.85, max_questions=25)
+    def test_question_budget_always_guesses(self):
+        """Safety limit: never keep asking once the budget is spent."""
+        state = _state({C1: 0.36, C2: 0.34, C3: 0.30}, questions_asked=20)
+        result = evaluate_confidence(state, confidence_high=0.85, max_questions=20)
+        assert result.should_guess is True
+        assert result.reason == "question_budget"
+
+    def test_question_budget_guesses_when_separated(self):
+        state = _state({C1: 0.70, C2: 0.30}, questions_asked=25)
+        result = evaluate_confidence(
+            state,
+            confidence_high=0.95,
+            confidence_separation=0.72,
+            confidence_margin=0.28,
+            max_questions=25,
+        )
         assert result.should_guess is True
         assert result.reason == "question_budget"
 
@@ -81,11 +94,9 @@ class TestResolveTurn:
         assert result.top_character_id == C1
         assert result.confidence == pytest.approx(0.55)
 
-    def test_tiny_confidence_without_next_question_does_not_guess(self):
-        """Regression: never flash a 1% Amancio-style guess mid-game."""
-        state = _state({C1: 0.01, C2: 0.01, C3: 0.98}, questions_asked=5)
-        # Renormalize-like tiny top (many candidates case)
-        state = _state({C1: 0.012, C2: 0.011, C3: 0.010}, questions_asked=5)
+    def test_no_next_question_guesses_even_at_tiny_confidence(self):
+        """No useful remaining split → best available guess, not more trivia."""
+        state = _state({C1: 0.012, C2: 0.011, C3: 0.010}, questions_asked=8)
         result = resolve_turn(
             state,
             next_question_id=None,
@@ -93,8 +104,8 @@ class TestResolveTurn:
             max_questions=20,
             min_guess_confidence=0.35,
         )
-        assert result.should_guess is False
-        assert result.reason == "awaiting_questions"
+        assert result.should_guess is True
+        assert result.reason == "no_questions_remain"
 
     def test_tiny_confidence_guesses_only_when_budget_spent(self):
         state = _state({C1: 0.02, C2: 0.01}, questions_asked=20)

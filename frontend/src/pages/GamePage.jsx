@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { formatConfidencePercent } from "../confidence.js";
 import { useI18n } from "../i18n/index.jsx";
 import {
   createRecognizer,
@@ -9,6 +8,18 @@ import {
   stopSpeaking,
   ttsSupported,
 } from "../voice/speech.js";
+import GameHeader from "../components/GameHeader.jsx";
+import Mascot from "../components/Mascot.jsx";
+import QuestionCard from "../components/QuestionCard.jsx";
+import {
+  CURIOUS_MS,
+  GAZE,
+  REACTION_MS,
+  classifyQuestionCue,
+  reactionAfterAnswer,
+  reactionMessageKey,
+  resolveBaseMood,
+} from "../components/mascotMood.js";
 
 const VOICE_PREF_KEY = "mg_voice_mode";
 
@@ -26,20 +37,37 @@ export default function GamePage({
   confidence,
   busy,
   canBack = false,
-  viewingPrevious = false,
+  editingPrevious = false,
+  selectedAnswer = null,
+  navDirection = "forward",
   onBack,
-  onReturnCurrent,
   onEndGame,
   onAnswer,
+  mascotState,
+  introPlaying = false,
+  introKey = 0,
+  onIntroComplete,
 }) {
   const { t, tq, lang } = useI18n();
   const [voiceOn, setVoiceOn] = useState(readVoicePref);
   const [listening, setListening] = useState(false);
   const [voiceNote, setVoiceNote] = useState(null);
   const recognitionRef = useRef(null);
+  const reactionTimer = useRef(null);
+  const curiousTimer = useRef(null);
+  const introTimers = useRef([]);
+  const prevQuestionId = useRef(null);
+  const pendingAnswer = useRef(null);
+
+  const [flashMood, setFlashMood] = useState(null);
+  const [flashMessage, setFlashMessage] = useState(null);
+  const [look, setLook] = useState(GAZE.center);
+  const [cardReady, setCardReady] = useState(!introPlaying);
+
   const canListen = speechRecognitionSupported();
   const canSpeak = ttsSupported();
   const voiceAvailable = canListen || canSpeak;
+  const locked = busy || introPlaying;
 
   const answers = [
     { value: "yes", label: t("game.yes") },
@@ -50,10 +78,28 @@ export default function GamePage({
   ];
 
   const spokenQuestion = question ? tq(question.text) : "";
+  const cue = classifyQuestionCue(question?.text || spokenQuestion);
+
+  const baseMood = resolveBaseMood({
+    busy,
+    listening,
+    confidence,
+    override: mascotState || null,
+  });
+  const mood = flashMood || baseMood;
+  const messageKey = flashMessage || undefined;
+
+  const clearIntroTimers = () => {
+    introTimers.current.forEach((id) => clearTimeout(id));
+    introTimers.current = [];
+  };
 
   useEffect(() => {
     return () => {
       stopSpeaking();
+      clearTimeout(reactionTimer.current);
+      clearTimeout(curiousTimer.current);
+      clearIntroTimers();
       try {
         recognitionRef.current?.stop();
       } catch {
@@ -62,7 +108,99 @@ export default function GamePage({
     };
   }, []);
 
+  // Start-game mascot entrance (replays every new game via introKey).
   useEffect(() => {
+    if (!introPlaying) {
+      setCardReady(true);
+      return undefined;
+    }
+
+    clearIntroTimers();
+    prevQuestionId.current = null;
+    setCardReady(false);
+    setLook(GAZE.center);
+
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    setFlashMood(reduced ? "happy" : "excited");
+    setFlashMessage(reduced ? "mascot.letsPlay" : "mascot.hereWeGo");
+
+    const landMsgAt = reduced ? 140 : 700;
+    const revealAt = reduced ? 240 : 980;
+    const doneAt = reduced ? 340 : 1180;
+
+    introTimers.current.push(
+      setTimeout(() => {
+        setFlashMood("happy");
+        setFlashMessage("mascot.letsPlay");
+      }, landMsgAt)
+    );
+    introTimers.current.push(
+      setTimeout(() => {
+        setCardReady(true);
+      }, revealAt)
+    );
+    introTimers.current.push(
+      setTimeout(() => {
+        setFlashMood(null);
+        setFlashMessage(null);
+        onIntroComplete?.();
+      }, doneAt)
+    );
+
+    return () => clearIntroTimers();
+  }, [introPlaying, introKey, onIntroComplete]);
+
+  // New question → curious glance toward the card, then settle.
+  useEffect(() => {
+    if (!question?.id || busy || introPlaying || !cardReady) return;
+    if (prevQuestionId.current === question.id) return;
+    const isFirst = prevQuestionId.current == null;
+    prevQuestionId.current = question.id;
+
+    const answered = pendingAnswer.current;
+    pendingAnswer.current = null;
+
+    clearTimeout(curiousTimer.current);
+    clearTimeout(reactionTimer.current);
+
+    if (answered) {
+      const react = reactionAfterAnswer(answered);
+      setFlashMood(react === "idle" ? null : react);
+      setFlashMessage(reactionMessageKey(answered));
+      setLook(GAZE.question);
+      reactionTimer.current = setTimeout(() => {
+        setFlashMood(null);
+        setFlashMessage(null);
+        setLook(GAZE.center);
+      }, REACTION_MS);
+      return;
+    }
+
+    setLook(GAZE.question);
+    setFlashMood("curious");
+    setFlashMessage(
+      isFirst
+        ? "mascot.idle"
+        : cue === "country"
+          ? "mascot.curiousCountry"
+          : cue === "sports"
+            ? "mascot.curiousSports"
+            : cue === "identity"
+              ? "mascot.curiousIdentity"
+              : "mascot.curious"
+    );
+    curiousTimer.current = setTimeout(() => {
+      setFlashMood(null);
+      setFlashMessage(null);
+      setLook(GAZE.center);
+    }, CURIOUS_MS);
+  }, [question?.id, busy, cue, introPlaying, cardReady]);
+
+  useEffect(() => {
+    if (introPlaying || !cardReady) return;
     if (!voiceOn || !question || busy || !canSpeak) return;
     let cancelled = false;
     (async () => {
@@ -74,9 +212,10 @@ export default function GamePage({
       cancelled = true;
       stopSpeaking();
     };
-  }, [question?.id, spokenQuestion, voiceOn, lang, busy, canSpeak]);
+  }, [question?.id, spokenQuestion, voiceOn, lang, busy, canSpeak, introPlaying, cardReady]);
 
   const toggleVoice = () => {
+    if (introPlaying) return;
     const next = !voiceOn;
     setVoiceOn(next);
     setVoiceNote(null);
@@ -99,13 +238,13 @@ export default function GamePage({
   };
 
   const speakAgain = () => {
-    if (!spokenQuestion || busy) return;
+    if (!spokenQuestion || locked) return;
     setVoiceNote(null);
     speakText(spokenQuestion, { lang });
   };
 
   const startListening = () => {
-    if (!canListen || busy || listening) return;
+    if (!canListen || locked || listening) return;
     stopSpeaking();
     setVoiceNote(null);
 
@@ -119,7 +258,7 @@ export default function GamePage({
         }
         if (matched) {
           setVoiceNote(null);
-          onAnswer(matched);
+          handleAnswer(matched);
         } else {
           setVoiceNote(t("game.voiceUnrecognized"));
         }
@@ -146,105 +285,82 @@ export default function GamePage({
     }
   };
 
+  const handleAnswerHover = (value) => {
+    if (locked || flashMood === "thinking") return;
+    setLook(GAZE[value] || GAZE.center);
+  };
+
+  const handleAnswerLeave = () => {
+    if (locked) return;
+    setLook(GAZE.center);
+  };
+
+  const handleAnswer = (value) => {
+    if (locked) return;
+    pendingAnswer.current = value;
+    clearTimeout(curiousTimer.current);
+    clearTimeout(reactionTimer.current);
+    setFlashMood("thinking");
+    setFlashMessage(value === "dont_know" ? "mascot.thinkingSoft" : "mascot.thinking");
+    setLook(GAZE.center);
+    onAnswer(value);
+  };
+
   if (!question) return null;
-  const pct = formatConfidencePercent(confidence);
 
   return (
-    <section className="page game">
-      <nav className="game-nav" aria-label={t("game.question")}>
-        {canBack ? (
-          <button
-            type="button"
-            className="btn ghost game-nav-btn"
-            disabled={busy}
-            onClick={onBack}
-          >
-            {t("game.back")}
-          </button>
-        ) : (
-          <span className="game-nav-spacer" aria-hidden="true" />
-        )}
-        <button
-          type="button"
-          className="btn ghost game-nav-btn game-nav-end"
-          disabled={busy}
-          onClick={onEndGame}
-        >
-          {t("game.endGame")}
-        </button>
-      </nav>
+    <section className={`page game game-stage${introPlaying ? " is-intro" : ""}`}>
+      <GameHeader
+        t={t}
+        canBack={canBack && !introPlaying}
+        busy={locked}
+        onBack={onBack}
+        onEndGame={onEndGame}
+        voiceOn={voiceOn}
+        onToggleVoice={toggleVoice}
+        voiceAvailable={voiceAvailable && !introPlaying}
+      />
 
-      <header className="game-hud">
-        <div>
-          <span className="hud-label">{t("game.question")}</span>
-          <strong className="hud-value">{questionNumber}</strong>
+      <div className="game-layout">
+        <aside className="game-mascot-col">
+          <Mascot
+            key={`intro-${introKey}`}
+            state={mood}
+            t={t}
+            look={look}
+            cue={cue}
+            messageKey={messageKey}
+            confidence={confidence}
+            entering={introPlaying}
+          />
+        </aside>
+
+        <div className="game-card-col">
+          <QuestionCard
+            t={t}
+            questionNumber={questionNumber}
+            confidence={confidence}
+            questionText={spokenQuestion}
+            questionKey={`${question.id}-${editingPrevious ? "edit" : "live"}-${questionNumber}`}
+            busy={locked}
+            editingPrevious={editingPrevious}
+            navDirection={navDirection}
+            selectedAnswer={selectedAnswer}
+            answers={answers}
+            onAnswer={handleAnswer}
+            onAnswerHover={handleAnswerHover}
+            onAnswerLeave={handleAnswerLeave}
+            voiceOn={voiceOn && !introPlaying}
+            canSpeak={canSpeak}
+            canListen={canListen}
+            listening={listening}
+            voiceNote={voiceNote}
+            onSpeakAgain={speakAgain}
+            onStartListening={startListening}
+            introWaiting={introPlaying && !cardReady}
+            introReady={introPlaying && cardReady}
+          />
         </div>
-        <div className="hud-conf">
-          <span className="hud-label">{t("game.confidence")}</span>
-          <div className="bar" aria-hidden="true">
-            <div className="bar-fill" style={{ width: `${pct}%` }} />
-          </div>
-          <strong className="hud-value">{pct}%</strong>
-        </div>
-      </header>
-
-      <div className="voice-bar">
-        <button
-          type="button"
-          className={`btn ghost voice-toggle ${voiceOn ? "on" : ""}`}
-          onClick={toggleVoice}
-          aria-pressed={voiceOn}
-        >
-          {voiceOn ? t("game.voiceOn") : t("game.voiceOff")}
-        </button>
-        {voiceOn && canSpeak && (
-          <button type="button" className="btn ghost" disabled={busy} onClick={speakAgain}>
-            {t("game.speak")}
-          </button>
-        )}
-        {voiceOn && canListen && (
-          <button
-            type="button"
-            className={`btn primary voice-mic ${listening ? "listening" : ""}`}
-            disabled={busy || listening}
-            onClick={startListening}
-          >
-            {listening ? t("game.listening") : t("game.listen")}
-          </button>
-        )}
-      </div>
-
-      {voiceOn && <p className="voice-hint">{t("game.voiceHint")}</p>}
-      {voiceNote && <p className="voice-note">{voiceNote}</p>}
-
-      <h2 className="question">{spokenQuestion}</h2>
-
-      {viewingPrevious && (
-        <div className="previous-banner">
-          <p className="previous-note">{t("game.viewingPrevious")}</p>
-          <button
-            type="button"
-            className="btn ghost"
-            disabled={busy}
-            onClick={onReturnCurrent}
-          >
-            {t("game.returnCurrent")}
-          </button>
-        </div>
-      )}
-
-      <div className="answers" role="group" aria-label={t("game.answersAria")}>
-        {answers.map((a) => (
-          <button
-            key={a.value}
-            type="button"
-            className="btn answer"
-            disabled={busy || viewingPrevious}
-            onClick={() => onAnswer(a.value)}
-          >
-            {a.label}
-          </button>
-        ))}
       </div>
     </section>
   );

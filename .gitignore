@@ -39,3 +39,5 @@ media/characters/*
 
 # Generated training simulator reports
 reports/*.json
+mindguess_dev.db-shm
+mindguess_dev.db-wal

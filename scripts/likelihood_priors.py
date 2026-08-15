@@ -521,6 +521,12 @@ def refine_prior(
         "athletics",
         "formula",
         "racing",
+        "wicket",
+        "opening batter",
+        "an opener",
+        "a bowler",
+        "mainly a bowler",
+        "volleyball",
     )
     if any(n in text for n in sport_needles) and "sports player" not in text and "athlete" not in text:
         if character_category == "Sports":

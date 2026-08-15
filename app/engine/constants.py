@@ -37,7 +37,14 @@ DEFAULT_CONFIDENCE_SEPARATION = 0.72
 DEFAULT_CONFIDENCE_MARGIN = 0.28
 # Never force a "best available" guess below this unless the question budget is spent.
 DEFAULT_MIN_GUESS_CONFIDENCE = 0.40
-DEFAULT_MAX_QUESTIONS = 25
+# Safety cap. Primary stop is still "dominant candidate or no useful question".
+DEFAULT_MAX_QUESTIONS = 20
+# Focus-pool usefulness: skip questions that do not split CURRENT remaining candidates.
+DEFAULT_MIN_USEFUL_IG = 0.03
+DEFAULT_MIN_USEFUL_SPREAD = 0.18
+DEFAULT_MAX_UNKNOWN_FRACTION = 0.70
+DEFAULT_SPLIT_YES_LIKELIHOOD = 0.70
+DEFAULT_SPLIT_NO_LIKELIHOOD = 0.30
 # After a nationality NO/don't-know, allow additional place questions (Akinator-like tree).
 DEFAULT_MAX_NATIONALITY_QUESTIONS = 3
 DEFAULT_IG_TIE_THRESHOLD = 0.001
@@ -62,10 +69,11 @@ DEFAULT_LOW_PRIORITY_AGE_MIN_IG = 0.12
 DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN = 0.08
 
 # Ordered early priorities (highest first). First matching group wins.
-# Akinator-like opening: alive/dead → India/country → athlete/domain.
+# Akinator-like opening: real/fictional → gender → alive → country → domain.
 EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
-    (("still alive", "alive today", "are they alive", "character still alive"), 0.48),
-    (("real person", "made-up character", "made-up?", "fictional character"), 0.40),
+    (("real person", "made-up character", "made-up?", "fictional character"), 0.52),
+    (("are they male", "girl or woman", "a man", "a woman", "character a man", "character a woman"), 0.46),
+    (("still alive", "alive today", "are they alive", "character still alive"), 0.42),
     (("from india",), 0.38),
     (
         (
@@ -85,7 +93,6 @@ EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
         ),
         0.34,
     ),
-    (("are they male", "girl or woman", "a man", "a woman", "character a man", "character a woman"), 0.28),
     (("are they human", "character human", "an animal"), 0.24),
     (("famous worldwide", "people still talk", "are they famous", "character famous"), 0.20),
     (
@@ -112,7 +119,7 @@ EARLY_PRIORITY_KEYWORD_GROUPS: tuple[tuple[tuple[str, ...], float], ...] = (
     ),
 )
 
-# Alive / dead status — must lead the opening when still unused.
+# Alive / dead status — asked after real vs fictional and gender.
 ALIVE_STATUS_KEYWORDS: frozenset[str] = frozenset(
     {
         "still alive",
@@ -121,6 +128,97 @@ ALIVE_STATUS_KEYWORDS: frozenset[str] = frozenset(
         "character still alive",
         "is your character still alive?",
         "alive?",
+    }
+)
+
+# Real vs made-up — Akinator's first split. Never match "made-up guild".
+REALITY_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "real person",
+        "made-up character",
+        "character made-up",
+        "fictional character",
+        "is your character made-up?",
+        "is this a made-up character?",
+        "real?",
+        "is your character a real person?",
+    }
+)
+
+# Man / woman — classic Akinator identity question.
+GENDER_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "are they male",
+        "girl or woman",
+        "a man",
+        "a woman",
+        "character a man",
+        "character a woman",
+        "male?",
+        "female?",
+        "is your character a man?",
+        "is your character a woman?",
+    }
+)
+
+# Vague / kids-catalog filler that Akinator would never lead with.
+AKINATOR_FILLER_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "alone sports",
+        "team sports",
+        "about sports",
+        "play with a ball",
+        "wear a jersey",
+        "wear a sports jersey",
+        "known by one name",
+        "play on ice",
+        "race or run fast",
+        "swim in contests",
+        "fight in a ring",
+        "about school",
+        "about music",
+        "about science",
+        "about war",
+        "about computers",
+        "about phones",
+        "home run",
+        "long hair",
+        "short hair",
+        "look tall",
+        "are they tall",
+        "green skin",
+        "blue skin",
+        "red skin",
+        "yellow skin",
+        "blue eyes",
+        "green eyes",
+        "wear glasses",
+        "a beard",
+        "are they bald",
+    }
+)
+
+# Indian state / city probes — only after a politician/actor domain is known.
+INDIAN_REGION_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "maharashtra",
+        "uttar pradesh",
+        "west bengal",
+        "tamil nadu",
+        "karnataka",
+        "kerala",
+        "gujarat",
+        "bihar",
+        "andhra",
+        "telangana",
+        "punjab",
+        "delhi",
+        "rajasthan",
+        "madhya pradesh",
+        "odisha",
+        "assam",
+        "haryana",
+        "jharkhand",
     }
 )
 
@@ -260,7 +358,12 @@ SPORT_SPECIFIC_KEYWORDS: frozenset[str] = frozenset(
     {
         "batsman",
         "batting",
+        "batter",
         "bowler",
+        "wicket",
+        "wicketkeeper",
+        "opening batter",
+        "debut",
         "goalkeeper",
         "forward",
         "striker",
@@ -531,7 +634,7 @@ CHARACTER_CATEGORY_QUESTION_PREFERENCES: dict[str, frozenset[str]] = {
     "TV Shows": frozenset({"TV", "Fictional traits", "Personality", "Time period"}),
     "Anime": frozenset({"Anime", "Fictional traits", "Nationality", "Personality"}),
     "Cartoons": frozenset({"Cartoons", "Fictional traits", "Personality", "Age"}),
-    "Sports": frozenset({"Sports", "Physical appearance", "Awards", "Nationality"}),
+    "Sports": frozenset({"Sports", "Awards", "Nationality"}),
     "Scientists": frozenset({"Science", "Profession", "Technology", "Nationality"}),
     "Historical Figures": frozenset({"History", "Time period", "Politics", "Profession"}),
     "Politicians": frozenset({"Politics", "History", "Nationality", "Time period"}),
@@ -544,4 +647,7 @@ CHARACTER_CATEGORY_QUESTION_PREFERENCES: dict[str, frozenset[str]] = {
 
 # Penalty applied when a Stage-4 / niche question is scored (keeps flow natural).
 DEFAULT_SPECIFICITY_PENALTY = 0.18
+# If remaining candidates share nearly the same L(Q), the question is saturated.
+DEFAULT_SATURATED_LIKELIHOOD_SPREAD = 0.20
+DEFAULT_SATURATED_QUESTION_PENALTY = 0.55
 DEFAULT_NEAR_DUPLICATE_PENALTY = 0.25

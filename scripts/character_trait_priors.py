@@ -53,21 +53,49 @@ def _T(
 # Explicit famous / high-traffic characters.
 TRAIT_TABLE: dict[str, CharacterTraits] = {
     # --- Cricket ---
-    "virat kohli": _T(regions={"india"}, sports={"cricket"}),
-    "ms dhoni": _T(regions={"india"}, sports={"cricket"}),
-    "sachin tendulkar": _T(regions={"india"}, sports={"cricket"}),
-    "rohit sharma": _T(regions={"india"}, sports={"cricket"}),
-    "smriti mandhana": _T(female=True, regions={"india"}, sports={"cricket"}),
-    "mithali raj": _T(female=True, regions={"india"}, sports={"cricket"}),
-    "harmanpreet kaur": _T(female=True, regions={"india"}, sports={"cricket"}),
-    "jemimah rodrigues": _T(female=True, regions={"india"}, sports={"cricket"}),
-    "rahul dravid": _T(regions={"india"}, sports={"cricket"}),
-    "sourav ganguly": _T(regions={"india"}, sports={"cricket"}),
-    "kapil dev": _T(regions={"india"}, sports={"cricket"}),
-    "anil kumble": _T(regions={"india"}, sports={"cricket"}),
-    "jasprit bumrah": _T(regions={"india"}, sports={"cricket"}),
+    "virat kohli": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "ms dhoni": _T(regions={"india"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
+    "sachin tendulkar": _T(
+        regions={"india"}, sports={"cricket"}, roles={"batter", "debut_pre_2000"}
+    ),
+    "rohit sharma": _T(regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}),
+    "smriti mandhana": _T(
+        female=True, regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}
+    ),
+    "mithali raj": _T(female=True, regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "harmanpreet kaur": _T(
+        female=True, regions={"india"}, sports={"cricket"}, roles={"batter"}
+    ),
+    "jemimah rodrigues": _T(
+        female=True, regions={"india"}, sports={"cricket"}, roles={"batter"}
+    ),
+    "rahul dravid": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "sourav ganguly": _T(regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}),
+    "kapil dev": _T(regions={"india"}, sports={"cricket"}, roles={"bowler", "batter"}),
+    "anil kumble": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "jasprit bumrah": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
     "hardik pandya": _T(regions={"india"}, sports={"cricket"}),
     "ravindra jadeja": _T(regions={"india"}, sports={"cricket"}),
+    "rishabh pant": _T(regions={"india"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
+    "kl rahul": _T(regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}),
+    "shubman gill": _T(regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}),
+    "yuvaraj singh": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "yuvraj singh": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "gautam gambhir": _T(regions={"india"}, sports={"cricket"}, roles={"batter", "opener"}),
+    "vvs laxman": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "zaheer khan": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "harbhajan singh": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "ravi ashwin": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "ravichandran ashwin": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "mohammed shami": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "mohammed siraj": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "ishant sharma": _T(regions={"india"}, sports={"cricket"}, roles={"bowler"}),
+    "suryakumar yadav": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "shreyas iyer": _T(regions={"india"}, sports={"cricket"}, roles={"batter"}),
+    "dinesh karthik": _T(regions={"india"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
+    "parthiv patel": _T(regions={"india"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
+    "adam gilchrist": _T(regions={"australia"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
+    "kumar sangakkara": _T(regions={"asia"}, sports={"cricket"}, roles={"wicketkeeper", "batter"}),
     "brian lara": _T(regions={"americas"}, sports={"cricket"}),
     "ricky ponting": _T(regions={"australia"}, sports={"cricket"}),
     "steve smith": _T(regions={"australia"}, sports={"cricket"}),
@@ -251,9 +279,9 @@ from knowledge_expansion_v2 import trait_table_from_expansion  # noqa: E402
 from india_cinema_politics import trait_table_from_india  # noqa: E402
 
 TRAIT_TABLE = {
-    **TRAIT_TABLE,
     **trait_table_from_expansion(_T),
     **trait_table_from_india(_T),
+    **TRAIT_TABLE,  # explicit famous traits (cricket roles) win
 }
 
 # Name substrings → sport (applied when not in TRAIT_TABLE).
@@ -535,6 +563,33 @@ def overrides_for_character(
             lik = 0.9 if traits.regions & {"americas", "usa"} else 0.12
         elif "another country" in t:
             lik = None
+        elif "wicket" in t or "keep wicket" in t:
+            if "wicketkeeper" in traits.roles:
+                lik = 0.96
+            elif "cricket" in traits.sports:
+                lik = 0.08
+        elif "opening batter" in t or "an opener" in t:
+            if "opener" in traits.roles:
+                lik = 0.96
+            elif "cricket" in traits.sports:
+                lik = 0.08
+        elif "mainly a bowler" in t or " a bowler" in t or "character a bowler" in t:
+            if "bowler" in traits.roles:
+                lik = 0.96
+            elif "cricket" in traits.sports:
+                lik = 0.08
+        elif "debut" in t and "2000" in t:
+            if "debut_pre_2000" in traits.roles:
+                lik = 0.96
+            elif "cricket" in traits.sports:
+                lik = 0.08
+        elif "alone sports" in t or "individual sport" in t:
+            team = {"cricket", "football", "basketball", "hockey", "volleyball", "baseball"}
+            solo = {"tennis", "golf", "badminton", "boxing", "swimming", "gymnastics", "racing"}
+            if traits.sports & team:
+                lik = 0.08
+            elif traits.sports & solo:
+                lik = 0.92
         elif "cricket" in t:
             lik = 0.96 if "cricket" in traits.sports else (0.08 if traits.sports else None)
         elif "football" in t or "soccer" in t:

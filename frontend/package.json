@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/confidence.test.js src/confirmGuess.test.js src/gameNav.test.js"
+    "test": "node --test src/confidence.test.js src/confirmGuess.test.js src/gameNav.test.js src/mascotMood.test.js src/homeBallInteract.test.js src/guessBeat.test.js"
   },
   "dependencies": {
     "@react-three/drei": "^9.114.0",

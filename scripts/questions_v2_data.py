@@ -256,6 +256,10 @@ _QUESTIONS: list[tuple[str, str, int, float]] = [
     ("Are they linked to Delhi?", "Politics", 4, 0.26),
     # --- Level 4 · Specific (sport subtypes are Level 3) ---
     ("Are they famous for cricket?", "Sports", 3, 0.42),
+    ("Do they keep wickets in cricket?", "Sports", 4, 0.34),
+    ("Are they mainly an opening batter?", "Sports", 4, 0.32),
+    ("Are they mainly a bowler?", "Sports", 4, 0.32),
+    ("Did they debut in cricket before 2000?", "Sports", 4, 0.32),
     ("Are they famous for football?", "Sports", 3, 0.44),
     ("Are they famous for basketball?", "Sports", 3, 0.40),
     ("Are they famous for tennis?", "Sports", 3, 0.36),

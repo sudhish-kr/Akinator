@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useI18n } from "../i18n/index.jsx";
+import Mascot from "../components/Mascot.jsx";
 
 const TYPE_OPTIONS = [
   { id: "real", labelKey: "learn.typeReal", categories: ["Sports", "Scientists", "Politicians", "Musicians", "Business Leaders", "Historical Figures"] },
@@ -78,7 +79,10 @@ export default function LearnPage({
   };
 
   return (
-    <section className="page learn">
+    <section className="page learn learn-stage">
+      <div className="learn-mascot-wrap">
+        <Mascot state="surprised" t={t} compact messageKey="mascot.wrong" />
+      </div>
       <p className="kicker">{t("learn.kicker")}</p>
       <h2 className="title">{t("learn.title")}</h2>
       <p className="lede">

@@ -2137,6 +2137,50 @@
       "legacy_text": "Are they famous for cricket?"
     },
     {
+      "text": "Does your character keep wickets in cricket?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.34,
+      "times_asked": 0,
+      "legacy_text": "Do they keep wickets in cricket?"
+    },
+    {
+      "text": "Is your character mainly an opening batter?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0,
+      "legacy_text": "Are they mainly an opening batter?"
+    },
+    {
+      "text": "Is your character mainly a bowler?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0,
+      "legacy_text": "Are they mainly a bowler?"
+    },
+    {
+      "text": "Did your character debut in cricket before 2000?",
+      "category": "Sports",
+      "hierarchy_level": 4,
+      "hierarchy_name": "Specific",
+      "dataset": "v2",
+      "is_active": true,
+      "avg_information_gain": 0.32,
+      "times_asked": 0,
+      "legacy_text": "Did they debut in cricket before 2000?"
+    },
+    {
       "text": "Does your character play football?",
       "category": "Sports",
       "hierarchy_level": 3,

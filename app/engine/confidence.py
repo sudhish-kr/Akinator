@@ -179,9 +179,8 @@ def resolve_turn(
     Session-manager turn resolution after an answer.
 
     - High confidence / stop rules → guess
-    - Low confidence + a next question → keep asking
-    - No next question + enough confidence (or budget spent) → best available guess
-    - No next question + tiny confidence + budget left → keep asking (do not guess at 1%)
+    - Low confidence + a next *useful* question → keep asking
+    - No next question → best available guess (even if confidence is still low)
     """
     result = evaluate_confidence(
         state,
@@ -194,17 +193,5 @@ def resolve_turn(
         return result
     if next_question_id is not None:
         return result
-
-    budget_spent = state.questions_asked >= max_questions
-    if budget_spent or result.confidence >= min_guess_confidence:
-        return best_available_guess(state)
-
-    # Selector went dry while still very unsure — refuse a random 1% guess.
-    return ConfidenceResult(
-        should_guess=False,
-        confidence=result.confidence,
-        margin=result.margin,
-        top_character_id=result.top_character_id,
-        second_character_id=result.second_character_id,
-        reason="awaiting_questions",
-    )
+    del min_guess_confidence  # Safety: unused Q + remaining pool → guess, never wander.
+    return best_available_guess(state)

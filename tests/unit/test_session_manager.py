@@ -123,3 +123,49 @@ def test_confidence_changes_after_answers_yes_vs_no():
     assert p1_yes > p1_before
     assert p1_no < p1_before
     assert p1_yes != pytest.approx(p1_no, abs=1e-6)
+
+
+def test_two_athletes_do_not_guess_after_generic_yes():
+    """Dhoni vs Kohli must keep asking for cricket/roles, not guess immediately."""
+    dhoni, kohli = uuid4(), uuid4()
+    q_athlete, q_cricket, q_wicket = uuid4(), uuid4(), uuid4()
+    likelihoods = {
+        (dhoni, q_athlete): LikelihoodEntry(0.978, 84),
+        (kohli, q_athlete): LikelihoodEntry(0.970, 80),
+        (dhoni, q_cricket): LikelihoodEntry(0.970, 84),
+        (kohli, q_cricket): LikelihoodEntry(0.960, 80),
+        (dhoni, q_wicket): LikelihoodEntry(0.960, 80),
+        (kohli, q_wicket): LikelihoodEntry(0.080, 80),
+    }
+    refs = {
+        q_athlete: QuestionRef(
+            id=q_athlete, text="Is your character an athlete?", category="Sports"
+        ),
+        q_cricket: QuestionRef(
+            id=q_cricket, text="Does your character play cricket?", category="Sports"
+        ),
+        q_wicket: QuestionRef(
+            id=q_wicket,
+            text="Does your character keep wickets in cricket?",
+            category="Sports",
+        ),
+    }
+    mgr = GameSessionManager(
+        thresholds=ConfidenceThresholds(high=0.5, separation=0.5, margin=0.05, max_questions=25),
+        min_samples=1,
+    )
+    live = mgr.start(
+        session_id=uuid4(),
+        character_ids=[dhoni, kohli],
+        likelihoods=likelihoods,
+        question_ids=[q_athlete, q_cricket, q_wicket],
+        question_refs=refs,
+        character_names={dhoni: "MS Dhoni", kohli: "Virat Kohli"},
+        character_categories={dhoni: "Sports", kohli: "Sports"},
+        character_popularity={dhoni: 98, kohli: 100},
+    )
+    live.pending_question_id = q_athlete
+    turn = mgr.submit_answer(live, q_athlete, "yes")
+    assert turn.status == "asking"
+    assert turn.best_guess_id is None
+    assert live.pending_question_id in {q_cricket, q_wicket}

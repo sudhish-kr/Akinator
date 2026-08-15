@@ -8,8 +8,12 @@ from uuid import UUID, uuid4
 from app.engine.models import LikelihoodEntry, QuestionRef
 from app.engine.selector import (
     create_initial_state,
+    is_akinator_filler_question,
+    is_gender_question,
     is_hard_gated_niche,
     is_question_allowed_for_stage,
+    is_reality_question,
+    is_regional_state_question,
     process_answer,
     question_hierarchy_stage,
     select_next_question,
@@ -49,6 +53,11 @@ Q_AUSTRALIA = UUID("00000000-0000-0000-0000-000000000a17")
 Q_EUROPE = UUID("00000000-0000-0000-0000-000000000a18")
 Q_AMERICAS = UUID("00000000-0000-0000-0000-000000000a19")
 Q_USA = UUID("00000000-0000-0000-0000-000000000a1a")
+Q_ALONE = UUID("00000000-0000-0000-0000-000000000a1b")
+Q_BALL = UUID("00000000-0000-0000-0000-000000000a1c")
+Q_JERSEY = UUID("00000000-0000-0000-0000-000000000a1d")
+Q_LINKED_MH = UUID("00000000-0000-0000-0000-000000000a1e")
+Q_ABOUT_SPORTS = UUID("00000000-0000-0000-0000-000000000a1f")
 
 COUNTRY_QS = frozenset(
     {Q_INDIA, Q_OTHER_COUNTRY, Q_JAPAN, Q_AUSTRALIA, Q_EUROPE, Q_AMERICAS, Q_USA}
@@ -82,6 +91,11 @@ QUESTIONS = [
     Q_NINJA,
     Q_SUPERHERO,
     Q_ICE,
+    Q_ALONE,
+    Q_BALL,
+    Q_JERSEY,
+    Q_LINKED_MH,
+    Q_ABOUT_SPORTS,
 ]
 
 REFS = {
@@ -131,6 +145,21 @@ REFS = {
         id=Q_SUPERHERO, text="Are they a superhero?", category="Movies"
     ),
     Q_ICE: QuestionRef(id=Q_ICE, text="Do they have ice powers?", category="Anime"),
+    Q_ALONE: QuestionRef(
+        id=Q_ALONE, text="Do they play alone sports?", category="Sports"
+    ),
+    Q_BALL: QuestionRef(
+        id=Q_BALL, text="Do they play with a ball?", category="Sports"
+    ),
+    Q_JERSEY: QuestionRef(
+        id=Q_JERSEY, text="Do they wear a sports jersey?", category="Sports"
+    ),
+    Q_LINKED_MH: QuestionRef(
+        id=Q_LINKED_MH, text="Are they linked to Maharashtra?", category="Politics"
+    ),
+    Q_ABOUT_SPORTS: QuestionRef(
+        id=Q_ABOUT_SPORTS, text="Is this about sports games?", category="Sports"
+    ),
 }
 
 CATEGORIES = {
@@ -291,6 +320,11 @@ def _likelihoods():
         Q_EUROPE: 0.1,
         Q_AMERICAS: 0.1,
         Q_USA: 0.1,
+        Q_ALONE: 0.45,
+        Q_BALL: 0.55,
+        Q_JERSEY: 0.5,
+        Q_LINKED_MH: 0.12,
+        Q_ABOUT_SPORTS: 0.4,
     }
     country_overrides = {
         NARUTO: {Q_JAPAN: 0.92, Q_OTHER_COUNTRY: 0.2},
@@ -367,14 +401,38 @@ def test_early_questions_are_broad():
         state, _ = process_answer(state, qid, "dont_know")
 
 
-def test_opening_flow_alive_then_country_then_domain():
-    """Kids path: alive/dead → India/country → athlete (prefer sports)."""
-    asked = _play(KOHLI, max_questions=4, seed=11)
-    assert asked[0] == Q_ALIVE
-    assert asked[1] in COUNTRY_QS
-    assert asked[2] == Q_SPORTS
-    assert Q_CRICKET not in asked[:4]
-    assert Q_CHEF not in asked[:4]
+def test_opening_classifiers_match_akinator_identity():
+    assert is_reality_question(REFS[Q_REAL]) is True
+    assert is_reality_question(REFS[Q_MADE_UP]) is True
+    assert is_reality_question(REFS[Q_GUILD]) is False
+    assert is_gender_question(REFS[Q_MALE]) is True
+    assert is_gender_question(REFS[Q_HUMAN]) is False
+    assert is_akinator_filler_question(REFS[Q_ALONE]) is True
+    assert is_akinator_filler_question(REFS[Q_BALL]) is True
+    assert is_akinator_filler_question(REFS[Q_JERSEY]) is True
+    assert is_akinator_filler_question(REFS[Q_ABOUT_SPORTS]) is True
+    assert is_akinator_filler_question(REFS[Q_SPORTS]) is False
+    assert is_regional_state_question(REFS[Q_LINKED_MH]) is True
+    assert is_regional_state_question(REFS[Q_INDIA]) is False
+    punjabi = QuestionRef(
+        id=uuid4(), text="Is your character from Punjabi movies?", category="Movies"
+    )
+    assert is_regional_state_question(punjabi) is False
+
+
+def test_opening_flow_real_gender_alive_then_country():
+    """Akinator path: real → gender → alive → country (not filler or cricket)."""
+    asked = _play(KOHLI, max_questions=5, seed=11)
+    assert asked[0] == Q_REAL
+    assert asked[1] == Q_MALE
+    assert asked[2] == Q_ALIVE
+    assert asked[3] in COUNTRY_QS
+    assert asked[3] == Q_INDIA
+    assert asked[4] == Q_SPORTS
+    assert Q_CRICKET not in asked[:5]
+    assert Q_CHEF not in asked[:5]
+    assert Q_ALONE not in asked[:5]
+    assert Q_BALL not in asked[:5]
     assert len([q for q in asked if q in COUNTRY_QS]) == 1
 
 
@@ -396,9 +454,7 @@ def test_never_asks_second_country_after_india_yes():
         )
         if qid is None:
             break
-        if qid == Q_ALIVE:
-            answer = "yes"
-        elif qid == Q_INDIA:
+        if qid in {Q_REAL, Q_MALE, Q_ALIVE, Q_INDIA}:
             answer = "yes"
         elif qid in COUNTRY_QS:
             answer = "no"
@@ -419,6 +475,40 @@ def test_never_asks_second_country_after_india_yes():
     assert Q_OTHER_COUNTRY not in asked
     # After India, flow should move to domain — not more geography.
     assert any(q in {Q_SPORTS, Q_MOVIES, Q_ANIME} for q in asked)
+
+
+def test_india_no_allows_followup_country_question():
+    """Akinator-like tree: India=NO should allow another place question."""
+    rng = random.Random(5)
+    likelihoods = _likelihoods()
+    state = create_initial_state(CHARS, likelihoods)
+    asked: list[UUID] = []
+    for _ in range(6):
+        qid = select_next_question(
+            state,
+            QUESTIONS,
+            min_samples=1,
+            question_refs=REFS,
+            character_categories=CATEGORIES,
+            explore=False,
+            rng=rng,
+        )
+        if qid is None:
+            break
+        if qid in {Q_REAL, Q_MALE, Q_ALIVE}:
+            answer = "yes"
+        elif qid == Q_INDIA:
+            answer = "no"
+        elif qid in COUNTRY_QS:
+            answer = "yes"
+        else:
+            answer = "dont_know"
+        state, _ = process_answer(state, qid, answer)
+        asked.append(qid)
+
+    country_asked = [q for q in asked if q in COUNTRY_QS]
+    assert Q_INDIA in country_asked
+    assert len(country_asked) >= 2, [REFS[q].text for q in country_asked]
 
 
 def test_baby_toddler_teen_cannot_appear_early():
@@ -511,12 +601,15 @@ def test_batman_superhero_path_after_fictional_detection():
     assert Q_MOVIES in asked or Q_SUPERHERO in asked
     assert Q_GUILD not in asked
     assert Q_NINJA not in asked
-    if Q_SUPERHERO in asked and Q_MOVIES in asked:
-        # Either order is ok once fictional is established; both after identity.
-        first_identity = min(
-            i for i, q in enumerate(asked) if q in {Q_REAL, Q_MADE_UP, Q_MALE, Q_FAMOUS}
-        )
-        assert asked.index(Q_SUPERHERO) > first_identity
+    # Superhero is domain-specific — not an opening identity question.
+    if Q_SUPERHERO in asked:
+        assert asked.index(Q_SUPERHERO) >= 2
+
+
+def test_filler_questions_stay_out_of_opening():
+    asked = _play(KOHLI, max_questions=8, seed=11)
+    filler = {Q_ALONE, Q_BALL, Q_JERSEY, Q_LINKED_MH, Q_ABOUT_SPORTS}
+    assert not filler.intersection(asked)
 
 
 def test_hard_gate_helpers_cover_forbidden_topics():

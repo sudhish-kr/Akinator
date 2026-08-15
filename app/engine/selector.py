@@ -7,6 +7,7 @@ Bayesian update itself is unchanged.
 
 from __future__ import annotations
 
+import logging
 import math
 import random
 from uuid import UUID
@@ -32,8 +33,13 @@ from app.engine.constants import (
     DEFAULT_LOW_PRIORITY_AGE_IG_MARGIN,
     DEFAULT_LOW_PRIORITY_AGE_MIN_IG,
     DEFAULT_MAX_NATIONALITY_QUESTIONS,
+    DEFAULT_MAX_UNKNOWN_FRACTION,
+    DEFAULT_MIN_USEFUL_IG,
+    DEFAULT_MIN_USEFUL_SPREAD,
     DEFAULT_NEAR_DUPLICATE_PENALTY,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    DEFAULT_SATURATED_LIKELIHOOD_SPREAD,
+    DEFAULT_SATURATED_QUESTION_PENALTY,
     DEFAULT_SPECIFICITY_PENALTY,
     DEFAULT_STAGE_A_EXIT_MARGIN,
     DEFAULT_STAGE_A_EXIT_THRESHOLD,
@@ -41,8 +47,12 @@ from app.engine.constants import (
     DEFAULT_STAGE_ORIGIN_EXIT_MARGIN,
     DEFAULT_STAGE_ORIGIN_EXIT_THRESHOLD,
     DOMAIN_QUESTION_CATEGORY_REQUIREMENTS,
+    AKINATOR_FILLER_KEYWORDS,
     ALIVE_STATUS_KEYWORDS,
     EARLY_PRIORITY_KEYWORD_GROUPS,
+    GENDER_KEYWORDS,
+    INDIAN_REGION_KEYWORDS,
+    REALITY_KEYWORDS,
     FICTIONAL_CHARACTER_CATEGORIES,
     FORBIDDEN_EARLY_KEYWORDS,
     LOW_PRIORITY_AGE_KEYWORDS,
@@ -50,6 +60,8 @@ from app.engine.constants import (
     NATIONALITY_PLACE_KEYWORDS,
     NICHE_TOPIC_REQUIRED_CATEGORIES,
     PROFESSION_SPECIFIC_KEYWORDS,
+    DEFAULT_SPLIT_NO_LIKELIHOOD,
+    DEFAULT_SPLIT_YES_LIKELIHOOD,
     SPORT_SPECIFIC_KEYWORDS,
     SPORT_SUBTYPE_KEYWORDS,
     STAGE_1_IDENTITY_KEYWORDS,
@@ -63,12 +75,19 @@ from app.engine.constants import (
 )
 from app.engine.elimination import eliminate_candidates, entropy
 from app.engine.models import ConfidenceResult, GameEngineState, LikelihoodEntry, QuestionRef
+from app.engine.question_consistency import (
+    infer_established_facts,
+    india_relevant_score_bonus,
+    is_logically_valid_question,
+)
 
 # Outcomes used when estimating E[H | Q]. Includes yes / no / unknown (dont_know).
 _IG_ANSWERS: tuple[Answer, ...] = ALL_ANSWERS
 # Natural gameplay stages: 1 Identity → 2 Origin → 3 Category → 4 Subcategory
 # Legacy aliases A/B/C still accepted by allow-list helpers.
 SelectionStage = str  # "1" | "2" | "3" | "4" | "A" | "B" | "C"
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_stage(stage: SelectionStage) -> SelectionStage:
@@ -108,6 +127,8 @@ def is_hard_gated_niche(question_ref: QuestionRef | None) -> bool:
         return True
     if is_low_priority_age_question(question_ref):
         return True
+    if is_akinator_filler_question(question_ref) or is_regional_state_question(question_ref):
+        return True
     return bool(niche_topic_keys(question_ref))
 
 
@@ -134,6 +155,10 @@ def is_major_category_question(question_ref: QuestionRef | None) -> bool:
 def is_sport_subtype_question(question_ref: QuestionRef | None) -> bool:
     """Level-3 sport questions (cricket / boxing / skating / …)."""
     if question_ref is None:
+        return False
+    # Role questions often mention the sport ("wickets in cricket") — those are
+    # specifics, not a second sport-subtype to chain after cricket/football.
+    if is_sport_specific_question(question_ref):
         return False
     text = (question_ref.text or "").casefold()
     if "famous for" in text and (question_ref.category or "") == "Sports":
@@ -166,6 +191,47 @@ def has_asked_major_sports_category(
             return True
         if ref.category == "Sports" and is_major_category_question(ref):
             return True
+    return False
+
+
+def should_delay_guess_for_sport_split(
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+    character_categories: dict[UUID, str] | None,
+) -> bool:
+    """Keep asking when several athletes remain indistinguishable.
+
+    Generic athlete/India/man answers must not guess Dhoni (or Kohli)
+    until a sport subtype — and for cricket, a role — has been asked.
+    """
+    if not question_refs or not character_categories:
+        return False
+    sports = [
+        cid
+        for cid, p in state.probabilities.items()
+        if p > 0 and character_categories.get(cid) == "Sports"
+    ]
+    if len(sports) < 2:
+        return False
+    used = state.used_question_ids
+    subtype_asked = any(
+        is_sport_subtype_question(question_refs.get(qid)) for qid in used
+    )
+    if not subtype_asked:
+        return True
+    cricket_yes = False
+    for qid, ans in state.answer_log.items():
+        ref = question_refs.get(qid)
+        if ref is None:
+            continue
+        text = (ref.text or "").casefold()
+        if "cricket" in text and ans in {"yes", "probably_yes"}:
+            cricket_yes = True
+            break
+    if cricket_yes and not any(
+        is_sport_specific_question(question_refs.get(qid)) for qid in used
+    ):
+        return True
     return False
 
 
@@ -303,6 +369,42 @@ def is_alive_status_question(question_ref: QuestionRef | None) -> bool:
     return _text_matches_any(text, ALIVE_STATUS_KEYWORDS)
 
 
+def is_reality_question(question_ref: QuestionRef | None) -> bool:
+    """True for real-person vs made-up (not 'made-up guild')."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    if "guild" in text:
+        return False
+    return _text_matches_any(text, REALITY_KEYWORDS)
+
+
+def is_gender_question(question_ref: QuestionRef | None) -> bool:
+    """True for man / woman identity questions."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, GENDER_KEYWORDS)
+
+
+def is_akinator_filler_question(question_ref: QuestionRef | None) -> bool:
+    """Vague catalog questions Akinator would skip (ball/jersey/'about sports')."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    return _text_matches_any(text, AKINATOR_FILLER_KEYWORDS)
+
+
+def is_regional_state_question(question_ref: QuestionRef | None) -> bool:
+    """Indian state/city probes — too specific for the opening/country tree."""
+    if question_ref is None:
+        return False
+    text = (question_ref.text or "").casefold()
+    if "movie" in text or "cinema" in text or "film" in text:
+        return False
+    return _text_matches_any(text, INDIAN_REGION_KEYWORDS)
+
+
 def is_origin_question(question_ref: QuestionRef | None) -> bool:
     """True for nationality / era origin questions (Stage 2)."""
     return question_hierarchy_stage(question_ref) == "2"
@@ -311,6 +413,8 @@ def is_origin_question(question_ref: QuestionRef | None) -> bool:
 def is_nationality_place_question(question_ref: QuestionRef | None) -> bool:
     """True for country / region place questions (India, Japan, Europe, …)."""
     if question_ref is None:
+        return False
+    if is_regional_state_question(question_ref):
         return False
     category = (question_ref.category or "").strip()
     if category == "Nationality":
@@ -572,6 +676,120 @@ def information_gain(
         active = state.active_character_ids()
         current_entropy = entropy({cid: state.probabilities[cid] for cid in active})
     return current_entropy - expected_entropy_after_question(state, question_id)
+
+
+def remaining_likelihood_spread(state: GameEngineState, question_id: UUID) -> float:
+    """max L − min L among remaining (active) candidates. Unknown defaults to 0.5."""
+    likes = [
+        get_likelihood(state.likelihoods, cid, question_id)
+        for cid in state.active_character_ids()
+    ]
+    if not likes:
+        return 0.0
+    return max(likes) - min(likes)
+
+
+def candidate_split_counts(
+    state: GameEngineState,
+    question_id: UUID,
+    *,
+    yes_cutoff: float = DEFAULT_SPLIT_YES_LIKELIHOOD,
+    no_cutoff: float = DEFAULT_SPLIT_NO_LIKELIHOOD,
+    min_samples: int = 5,
+) -> tuple[int, int, int]:
+    """Known YES / known NO / UNKNOWN mapping counts on the CURRENT candidate pool.
+
+    Missing rows and near-neutral L are UNKNOWN — never treated as YES or NO.
+    """
+    yes_n = no_n = unk_n = 0
+    for cid in state.active_character_ids():
+        entry = state.likelihoods.get((cid, question_id))
+        if entry is None or int(entry.sample_size) < min_samples:
+            unk_n += 1
+            continue
+        lik = float(entry.likelihood)
+        if lik >= yes_cutoff:
+            yes_n += 1
+        elif lik <= no_cutoff:
+            no_n += 1
+        else:
+            unk_n += 1
+    return yes_n, no_n, unk_n
+
+
+def is_useful_split_on_pool(
+    state: GameEngineState,
+    question_id: UUID,
+    *,
+    ig: float,
+    min_ig: float = DEFAULT_MIN_USEFUL_IG,
+    min_spread: float = DEFAULT_MIN_USEFUL_SPREAD,
+    max_unknown: float = DEFAULT_MAX_UNKNOWN_FRACTION,
+    min_samples: int = 5,
+) -> bool:
+    """True when Q actually divides CURRENT remaining candidates."""
+    yes_n, no_n, unk_n = candidate_split_counts(
+        state, question_id, min_samples=min_samples
+    )
+    total = yes_n + no_n + unk_n
+    if total <= 0:
+        return False
+    if min(yes_n, no_n) == 0:
+        return False
+    mapped = yes_n + no_n
+    spread = remaining_likelihood_spread(state, question_id)
+    if spread < min_spread:
+        return False
+    # A mapped YES/NO split is useful even when most rows are UNKNOWN.
+    # Unknown stays unknown in Bayes; it must not hide wicketkeeper/opener/etc.
+    if mapped >= 3:
+        return True
+    if (unk_n / total) > max_unknown:
+        return False
+    if ig < min_ig:
+        return False
+    return True
+
+
+def is_askable_on_pool(
+    state: GameEngineState,
+    question_id: UUID,
+    *,
+    ig: float,
+    question_ref: QuestionRef | None,
+    subtype_already_asked: bool,
+    min_ig: float = DEFAULT_MIN_USEFUL_IG,
+    min_samples: int = 5,
+) -> bool:
+    """Keep only questions that split the pool or complete the category tree.
+
+    Filler / appearance / high-unknown trivia is never kept without a real split.
+    A sport subtype that some remaining candidates match may still be asked once
+    so cricket/football can unlock role questions.
+    """
+    if is_useful_split_on_pool(
+        state, question_id, ig=ig, min_ig=min_ig, min_samples=min_samples
+    ):
+        return True
+    if is_akinator_filler_question(question_ref):
+        return False
+    category = (question_ref.category or "") if question_ref else ""
+    if category == "Physical appearance":
+        return False
+    yes_n, no_n, unk_n = candidate_split_counts(
+        state, question_id, min_samples=min_samples
+    )
+    total = yes_n + no_n + unk_n
+    if total <= 0 or (unk_n / total) > DEFAULT_MAX_UNKNOWN_FRACTION:
+        return False
+    if (
+        is_sport_subtype_question(question_ref)
+        and not subtype_already_asked
+        and yes_n > 0
+    ):
+        return True
+    del no_n
+    return False
 
 
 def total_sample_size_for_question(
@@ -1053,6 +1271,7 @@ def select_next_question(
     diversity_margin: float = DEFAULT_DIVERSITY_MARGIN,
     rng: random.Random | None = None,
     explore: bool = False,
+    character_names: dict[UUID, str] | None = None,
 ) -> UUID | None:
     """
     Select the next question using natural Stage 1 → 2 → 3 → 4 gating.
@@ -1117,10 +1336,22 @@ def select_next_question(
         )
 
     remaining_cats = remaining_character_categories(
-        focus if character_categories else state,
+        state,
         character_categories,
         min_mass=category_remain_mass,
     )
+    facts = infer_established_facts(
+        state,
+        question_refs,
+        remaining_categories=remaining_cats,
+    )
+
+    def _logically_ok(qid: UUID) -> bool:
+        return is_logically_valid_question(
+            question_refs.get(qid),
+            facts,
+            remaining_cats,
+        )
 
     # Hierarchy engaged but category map missing → Stage 1 identity-only (fail safe).
     if not character_categories:
@@ -1130,6 +1361,7 @@ def select_next_question(
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
             and not is_hard_gated_niche(question_refs.get(qid))
             and not is_low_priority_age_question(question_refs.get(qid))
+            and _logically_ok(qid)
         ]
         if not broad_only:
             broad_only = [
@@ -1137,6 +1369,7 @@ def select_next_question(
                 for qid in unused
                 if question_hierarchy_stage(question_refs.get(qid)) == "1"
                 and not is_hard_gated_niche(question_refs.get(qid))
+                and _logically_ok(qid)
             ]
         if not broad_only:
             return None
@@ -1176,18 +1409,25 @@ def select_next_question(
 
     # First turns stay on identity when broad questions remain — even if the
     # cast is sports-heavy and category mass would otherwise unlock Stage 3.
-    if state.questions_asked < 2:
+    if state.questions_asked < 3:
         identity_available = any(
             question_hierarchy_stage(question_refs.get(qid)) == "1"
             and not is_hard_gated_niche(question_refs.get(qid))
+            and _logically_ok(qid)
             for qid in unused
         )
         if identity_available:
             stage = "1"
 
-    # Akinator-like opening: alive/dead → country tree → athlete/domain.
+    # Akinator-like opening: real → gender → alive → country tree → domain.
     # Affirmed place locks geography; NO/don't-know may ask another country (≤3).
     opening_pool: list[UUID] | None = None
+    asked_reality = _has_asked_matching(
+        state.used_question_ids, question_refs, is_reality_question
+    )
+    asked_gender = _has_asked_matching(
+        state.used_question_ids, question_refs, is_gender_question
+    )
     asked_alive = _has_asked_matching(
         state.used_question_ids, question_refs, is_alive_status_question
     )
@@ -1199,36 +1439,54 @@ def select_next_question(
     asked_major = _has_asked_matching(
         state.used_question_ids, question_refs, is_major_category_question
     )
-    unused_alive = [
-        qid
-        for qid in unused
-        if is_alive_status_question(question_refs.get(qid))
-        and not is_hard_gated_niche(question_refs.get(qid))
-    ]
-    unused_nationality = [
-        qid
-        for qid in unused
-        if is_nationality_place_question(question_refs.get(qid))
-        and not is_hard_gated_niche(question_refs.get(qid))
-    ]
-    unused_major = [
-        qid
-        for qid in unused
-        if is_major_category_question(question_refs.get(qid))
-        and not is_hard_gated_niche(question_refs.get(qid))
-    ]
-    if unused_alive and not asked_alive:
+
+    def _unused_if(pred) -> list[UUID]:
+        return [
+            qid
+            for qid in unused
+            if pred(question_refs.get(qid))
+            and not is_hard_gated_niche(question_refs.get(qid))
+            and _logically_ok(qid)
+        ]
+
+    def _prefer_needles(pool: list[UUID], needles: tuple[str, ...]) -> list[UUID]:
+        hits: list[UUID] = []
+        for qid in pool:
+            ref = question_refs.get(qid)
+            text = (ref.text or "").casefold() if ref else ""
+            if any(needle in text for needle in needles):
+                hits.append(qid)
+        return hits or pool
+
+    unused_reality = _unused_if(is_reality_question)
+    unused_gender = _unused_if(is_gender_question)
+    unused_alive = _unused_if(is_alive_status_question)
+    unused_nationality = _unused_if(is_nationality_place_question)
+    unused_major = _unused_if(is_major_category_question)
+    # Do not stall the game expecting another country question that does not exist.
+    wants_nationality = wants_nationality and bool(unused_nationality)
+    # Catch up identity only while still in the opening. Once a domain question
+    # has been asked, do not jump back to "real person?" / leftover gender.
+    if unused_reality and not asked_reality and not asked_major:
+        stage = "1"
+        opening_pool = _prefer_needles(unused_reality, ("real person",))
+    elif unused_gender and not asked_gender and not asked_major:
+        stage = "1"
+        opening_pool = _prefer_needles(
+            unused_gender, ("a man", "are they male", "male?")
+        )
+    elif unused_alive and not asked_alive and not asked_major:
         stage = "1"
         opening_pool = unused_alive
     elif unused_nationality and wants_nationality:
         stage = "2"
         opening_pool = unused_nationality
-    elif unused_major and asked_nationality and not wants_nationality and not asked_major:
+    elif unused_major and not wants_nationality and not asked_major:
         # After geography resolves (affirmed or exhausted), jump to domain.
         # India=yes → prefer athlete/sports (Kohli path); else any major.
         stage = "3"
         opening_pool = unused_major
-        if _india_affirmed(state, question_refs):
+        if facts.values.get("origin") == "india" or _india_affirmed(state, question_refs):
             sports_majors = []
             for qid in unused_major:
                 ref = question_refs.get(qid)
@@ -1262,6 +1520,19 @@ def select_next_question(
             ref = question_refs.get(qid)
             if ref is None:
                 continue
+            if not _logically_ok(qid):
+                continue
+            if is_akinator_filler_question(ref):
+                if state.questions_asked < 12:
+                    continue
+                if remaining_likelihood_spread(state, qid) < 0.28:
+                    continue
+            if is_regional_state_question(ref) and dominant not in {
+                "Politicians",
+                "Movies",
+                "Historical Figures",
+            }:
+                continue
             if not is_question_relevant_to_candidates(qid, question_refs, remaining_cats):
                 if question_hierarchy_stage(ref) not in {"1", "2"}:
                     continue
@@ -1285,14 +1556,20 @@ def select_next_question(
                     unlock_threshold=category_unlock_threshold,
                 ):
                     continue
-            # Hard niche / rare roles (knight, wizard, …) only late in the game.
+            # Hard niche / rare roles wait until Stage 4. Sport subtypes must
+            # NOT wait for a question-count delay once the sports domain is known:
+            # remaining peers (e.g. Indian cricketers) need cricket/roles next.
             if is_hard_gated_niche(ref):
                 if _normalize_stage(active_stage) != "4":
                     continue
-                if state.questions_asked < 8:
-                    continue
-                if dominant is None:
-                    continue
+                sport_family = is_sport_subtype_question(ref) or is_sport_specific_question(
+                    ref
+                )
+                if not sport_family:
+                    if state.questions_asked < 8:
+                        continue
+                    if dominant is None:
+                        continue
             if is_sport_subtype_question(ref):
                 if _normalize_stage(active_stage) != "4":
                     continue
@@ -1308,12 +1585,31 @@ def select_next_question(
                     continue
                 if dominant != "Sports":
                     continue
-                # Specific only after at least one subtype was asked.
-                if not any(
+                # Prefer subtype first, but do not deadlock when remaining
+                # subtypes no longer split the pool (all remaining are cricket).
+                subtype_asked = any(
                     is_sport_subtype_question(question_refs.get(u))
                     for u in state.used_question_ids
-                ):
-                    continue
+                )
+                if not subtype_asked:
+                    pending_subtypes = [
+                        sid
+                        for sid in unused
+                        if is_sport_subtype_question(question_refs.get(sid))
+                    ]
+                    if any(
+                        is_askable_on_pool(
+                            state,
+                            sid,
+                            ig=0.0,
+                            question_ref=question_refs.get(sid),
+                            subtype_already_asked=False,
+                            min_ig=0.0,
+                            min_samples=min_samples,
+                        )
+                        for sid in pending_subtypes
+                    ):
+                        continue
             if not respects_one_level_step(
                 ref,
                 previous_ref=previous_ref,
@@ -1333,17 +1629,22 @@ def select_next_question(
         for promo in ("2", "3", "4"):
             if _normalize_stage(stage) == promo:
                 continue
-            # Do not skip past alive / country milestones via promo.
-            if unused_alive and not asked_alive:
+            # Do not skip past real / gender / alive / country milestones.
+            if unused_reality and not asked_reality and not asked_major:
+                break
+            if unused_gender and not asked_gender and not asked_major:
+                break
+            if unused_alive and not asked_alive and not asked_major:
                 break
             if unused_nationality and wants_nationality and promo in {"3", "4"}:
                 continue
             if promo == "2" and state.questions_asked < 2:
                 continue
-            if promo == "3" and state.questions_asked < 3:
+            if promo == "3" and state.questions_asked < 3 and wants_nationality:
                 continue
-            if promo == "4" and state.questions_asked < 10:
-                continue
+            if promo == "4" and state.questions_asked < 6:
+                if wants_nationality or (unused_major and not asked_major):
+                    continue
             relevant = _collect_relevant(promo)
             if relevant:
                 stage = promo
@@ -1354,12 +1655,12 @@ def select_next_question(
             for qid in unused
             if question_hierarchy_stage(question_refs.get(qid)) == "1"
             and not is_hard_gated_niche(question_refs.get(qid))
+            and _logically_ok(qid)
             and not (
                 is_nationality_place_question(question_refs.get(qid)) and not wants_nationality
             )
         ]
-    if not relevant:
-        return None
+    # Empty `relevant` means no gated candidate left — do not scrape trivia.
 
     preferred_cats = frozenset()
     if dominant is not None:
@@ -1394,7 +1695,21 @@ def select_next_question(
             continue
         if is_hard_gated_niche(ref) and _normalize_stage(stage) != "4":
             continue
+        if opening_pool is None and remaining_likelihood_spread(state, qid) < DEFAULT_SATURATED_LIKELIHOOD_SPREAD:
+            if not (
+                is_sport_subtype_question(ref)
+                and sports_major_asked
+                and _normalize_stage(stage) == "4"
+            ):
+                continue
         score = ig
+        yes_n, no_n, unk_n = candidate_split_counts(
+            state, qid, min_samples=min_samples
+        )
+        split_total = yes_n + no_n + unk_n
+        if split_total:
+            # Prefer better-mapped splits; UNKNOWN coverage lowers rank, not legality.
+            score -= (unk_n / split_total) * 0.12
         q_stage = question_hierarchy_stage(ref)
         if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):
             score += category_ig_bonus
@@ -1413,6 +1728,14 @@ def select_next_question(
             ):
                 # Once athlete is known, prefer cricket/football over more identity.
                 score += category_ig_bonus * 0.45
+                active = focus.active_character_ids()
+                if active:
+                    mean_l = sum(
+                        get_likelihood(focus.likelihoods, cid, qid) for cid in active
+                    ) / len(active)
+                    # Prefer the subtype remaining candidates actually match,
+                    # so role questions can unlock (wicketkeeper requires cricket).
+                    score += (mean_l - 0.5) * 0.4
             else:
                 score -= DEFAULT_SPECIFICITY_PENALTY * 0.5
         if is_sport_specific_question(ref):
@@ -1421,6 +1744,7 @@ def select_next_question(
             if "superhero" in (ref.text or "").casefold():
                 score += category_ig_bonus * 0.25
         score += early_question_priority_bonus(ref)
+        score += india_relevant_score_bonus(ref, facts)
         score -= specificity_penalty(ref, stage)
         score -= near_duplicate_penalty(ref, previous_ref)
         samples = total_sample_size_for_question(state, qid)
@@ -1438,33 +1762,50 @@ def select_next_question(
                     qid,
                 )
             )
+    if opening_pool is None and scored:
+        useful: list[tuple[float, int, UUID]] = []
+        min_ig = DEFAULT_MIN_USEFUL_IG
+        if state.questions_asked < 4:
+            min_ig = 0.008
+        elif state.questions_asked < 10:
+            min_ig = 0.02
+        subtype_already_asked = any(
+            is_sport_subtype_question(question_refs.get(qid))
+            for qid in state.used_question_ids
+        )
+        for score, samples, qid in scored:
+            if is_askable_on_pool(
+                state,
+                qid,
+                ig=ig_by_qid.get(qid, 0.0),
+                question_ref=question_refs.get(qid),
+                subtype_already_asked=subtype_already_asked,
+                min_ig=min_ig,
+                min_samples=min_samples,
+            ):
+                useful.append((score, samples, qid))
+        scored = useful
     if not scored:
-        # Emergency fallback: never return None while useful broad questions remain.
-        # Empty strict pools were causing 1%-confidence forced guesses.
-        emergency: list[tuple[float, int, UUID]] = []
-        for qid in unused:
-            ref = question_refs.get(qid)
-            if ref is None:
-                continue
-            if is_nationality_place_question(ref) and not wants_nationality:
-                continue
-            if is_hard_gated_niche(ref) and state.questions_asked < 8:
-                continue
-            if is_low_priority_age_question(ref) and state.questions_asked < 8:
-                continue
-            emergency.append(
+        if logger.isEnabledFor(logging.DEBUG):
+            pool = sorted(
                 (
-                    information_gain(focus, qid, current_entropy=focus_entropy)
-                    + early_question_priority_bonus(ref),
-                    total_sample_size_for_question(state, qid),
-                    qid,
-                )
+                    (
+                        (character_names or {}).get(cid, str(cid)[:8]),
+                        state.probabilities[cid],
+                    )
+                    for cid in state.active_character_ids()
+                ),
+                key=lambda row: -row[1],
+            )[:8]
+            logger.debug(
+                "selection_exhausted asked=%s remaining=%s n=%s",
+                state.questions_asked,
+                pool,
+                len(state.active_character_ids()),
             )
-        if not emergency:
-            return None
-        scored = emergency
+        return None
 
-    return _pick_from_near_best(
+    chosen = _pick_from_near_best(
         scored,
         tie_threshold=tie_threshold,
         diversity_margin=diversity_margin,
@@ -1472,6 +1813,36 @@ def select_next_question(
         rng=rng,
         explore=explore if _normalize_stage(stage) == "4" else False,
     )
+    if logger.isEnabledFor(logging.DEBUG):
+        pool = sorted(
+            (
+                (
+                    (character_names or {}).get(cid, str(cid)[:8]),
+                    round(state.probabilities[cid], 4),
+                )
+                for cid in state.active_character_ids()
+            ),
+            key=lambda row: -row[1],
+        )[:5]
+        ref = question_refs.get(chosen) if question_refs else None
+        yes_n, no_n, unk_n = candidate_split_counts(focus, chosen)
+        logger.debug(
+            "selection_debug q=%s n=%s top5=%s next=%r cat=%s score=%.4f ig=%.4f "
+            "spread=%.4f yes=%s no=%s unk=%s reason=%s",
+            state.questions_asked + 1,
+            len(state.active_character_ids()),
+            pool,
+            (ref.text if ref else str(chosen)),
+            (ref.category if ref else None),
+            scored[0][0] if scored else 0.0,
+            ig_by_qid.get(chosen, 0.0),
+            remaining_likelihood_spread(focus, chosen),
+            yes_n,
+            no_n,
+            unk_n,
+            "best_split" if opening_pool is None else "opening",
+        )
+    return chosen
 
 
 def process_answer(

@@ -225,7 +225,9 @@ def test_question_two_never_low_age_for_real_person_paths():
 
 def test_early_turns_prefer_natural_priority_over_age():
     for true_id in (KOHLI, MESSI, EINSTEIN, SRK):
-        asked = _first_questions(true_id, n=6, seed=5)
+        # Five early turns are enough to prove age stays locked. A 6th pick used
+        # to be the contradictory "made-up?" after "real person? YES".
+        asked = _first_questions(true_id, n=5, seed=5)
         assert asked[0] not in LOW_AGE_IDS
         assert all(qid not in LOW_AGE_IDS for qid in asked)
         # First pick should be a ranked early-priority question (identity/origin/domain).

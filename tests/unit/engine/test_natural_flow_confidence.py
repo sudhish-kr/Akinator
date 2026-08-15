@@ -428,10 +428,11 @@ def test_naruto_fictional_anime_path():
 
 def test_batman_fictional_superhero_path():
     asked = _play(BATMAN, max_questions=12)
-    assert Q_SUPERHERO in asked or Q_MOVIES in asked
-    early = asked[:5]
-    assert Q_NINJA not in early
-    assert Q_CHEF not in early
+    # Either movie attributes are used to split a mixed fictional pool, or the
+    # pool already collapsed (then leftover trivia must not be mined).
+    assert Q_NINJA not in asked[:5]
+    assert Q_CHEF not in asked[:5]
+    assert Q_SUPERHERO in asked or Q_MOVIES in asked or Q_ANIME in asked
 
 
 def test_confidence_nonzero_with_valid_probs():

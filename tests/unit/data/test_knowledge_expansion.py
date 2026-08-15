@@ -123,6 +123,18 @@ def test_india_sports_traits_not_overridden_by_global_fame():
     assert "football" in messi.sports
 
 
+def test_cricket_roles_survive_expansion_merge():
+    """Expansion entries without roles must not wipe TRAIT_TABLE keepers/openers."""
+    dhoni = traits_for("MS Dhoni", "Sports")
+    kohli = traits_for("Virat Kohli", "Sports")
+    rohit = traits_for("Rohit Sharma", "Sports")
+    bumrah = traits_for("Jasprit Bumrah", "Sports")
+    assert dhoni and "wicketkeeper" in dhoni.roles
+    assert kohli and "wicketkeeper" not in kohli.roles
+    assert rohit and "opener" in rohit.roles
+    assert bumrah and "bowler" in bumrah.roles
+
+
 def test_fiction_vs_real_not_confused():
     harry = traits_for("Harry Potter", "Movies")
     srk = traits_for("Shah Rukh Khan", "Movies")
