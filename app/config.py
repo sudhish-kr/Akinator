@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Explicit CORS origins (comma-separated). Production uses this list only.
     # Development also allows localhost Vite ports 5173–5199 via regex
     # (see cors_allow_origin_regex) so Vite can bump ports without a code change.
-    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173"
+    cors_origins: str = "http://127.0.0.1:5173,http://localhost:5173,https://mindguess.netlify.app"
 
     # Engine thresholds (TDD v1.1)
     elimination_floor: float = 0.0005
