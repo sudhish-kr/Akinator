@@ -11,7 +11,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.game import router as game_router
 from app.config import settings
 from app.core.logging import request_logging_middleware, setup_logging
-from app.db.session import async_session_factory, engine
+from app.db.session import engine
 from app.monitoring.db import instrument_engine
 from app.monitoring.health import build_health_report, check_database
 from app.monitoring.metrics import APP_INFO, render_prometheus_metrics
@@ -33,7 +33,10 @@ APP_INFO.labels(
 async def lifespan(app: FastAPI):
     # Never block "Application startup complete" on SQLite locks / large DDL.
     migrate_task = asyncio.create_task(asyncio.to_thread(_run_migrations_safe))
-    warm_task = asyncio.create_task(_warm_playable_catalog())
+    # Do NOT warm the playable catalog here. Loading every CharacterAnswer row
+    # at boot (in parallel with Alembic) peaked RSS on Render free/starter
+    # instances and produced exit status 137. GameService loads it lazily
+    # on the first /game/start via a streaming query.
 
     # Session cleanup runs on Celery beat (abandon_stale_sessions).
     # Keep a lightweight in-process fallback only when workers run eager/local.
@@ -43,7 +46,7 @@ async def lifespan(app: FastAPI):
 
         cleanup_task = asyncio.create_task(run_session_cleanup_loop())
     yield
-    for task in (migrate_task, warm_task, cleanup_task):
+    for task in (migrate_task, cleanup_task):
         if task is None:
             continue
         task.cancel()
@@ -60,18 +63,6 @@ def _run_migrations_safe() -> None:
         run_pending_migrations()
     except Exception:
         # Local SQLite lock / already-migrated races — app can still serve.
-        pass
-
-
-async def _warm_playable_catalog() -> None:
-    try:
-        from app.db.repositories.game_repository import GameRepository
-        from app.services.playable_catalog import get_playable_catalog
-
-        async with async_session_factory() as db:
-            await get_playable_catalog(GameRepository(db))
-    except Exception:
-        # Empty DB / first boot — catalog loads lazily on first game start.
         pass
 
 

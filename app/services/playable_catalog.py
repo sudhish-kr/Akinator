@@ -1,8 +1,13 @@
 """Process-level cache of active characters, questions, and likelihoods.
 
-Gameplay must NOT reload ~1M likelihood rows from SQLite/Postgres or Redis on
-every /game/start or /game/answer. The catalog is read-mostly; learning updates
-the DB asynchronously and callers can invalidate() when mappings change.
+Gameplay must NOT reload hundreds of thousands of likelihood rows from
+Postgres/SQLite or Redis on every /game/start or /game/answer. The catalog is
+read-mostly; learning updates the DB asynchronously and callers can
+invalidate() when mappings change.
+
+Production note: the full CharacterAnswer table (~characters × questions for
+each category rule) is too large to materialize twice in RAM on a small Render
+instance. Load is deferred until first gameplay request and streamed in batches.
 """
 
 from __future__ import annotations
@@ -17,8 +22,9 @@ from app.engine.models import LikelihoodEntry, QuestionRef
 
 logger = logging.getLogger(__name__)
 
-# Refresh automatically after this many seconds (learning may have landed).
-DEFAULT_TTL_SECONDS = 300.0
+# Fallback when Settings is unavailable. Learning invalidates explicitly;
+# a 5-minute TTL caused periodic full-table reloads (Render exit 137).
+DEFAULT_TTL_SECONDS = 3600.0
 
 
 @dataclass
@@ -54,6 +60,17 @@ def _db_identity(repo) -> int:
         return 0
 
 
+def _catalog_ttl_seconds(override: float | None) -> float:
+    if override is not None:
+        return override
+    try:
+        from app.config import settings
+
+        return float(settings.playable_catalog_ttl_seconds)
+    except Exception:
+        return DEFAULT_TTL_SECONDS
+
+
 def peek_catalog() -> PlayableCatalog | None:
     """Non-blocking access to the warm catalog (may be None / stale)."""
     return _catalog
@@ -73,14 +90,31 @@ def invalidate_playable_catalog() -> None:
     logger.info("playable_catalog_invalidated")
 
 
-async def get_playable_catalog(repo, *, ttl_seconds: float = DEFAULT_TTL_SECONDS) -> PlayableCatalog:
+def _as_uuid(value) -> UUID:
+    return value if isinstance(value, UUID) else UUID(str(value))
+
+
+def _intern_uuid(cache: dict[UUID, UUID], value) -> UUID:
+    """Reuse one UUID object per id so the likelihood dict does not clone millions."""
+    key = value if isinstance(value, UUID) else UUID(str(value))
+    existing = cache.get(key)
+    if existing is not None:
+        return existing
+    cache[key] = key
+    return key
+
+
+async def get_playable_catalog(
+    repo, *, ttl_seconds: float | None = None
+) -> PlayableCatalog:
     """Return a warm catalog, loading from DB at most once per TTL window."""
     global _catalog
+    ttl = _catalog_ttl_seconds(ttl_seconds)
     identity = _db_identity(repo)
     current = _catalog
     if (
         current is not None
-        and current.is_fresh(ttl_seconds)
+        and current.is_fresh(ttl)
         and current.db_identity == identity
     ):
         return current
@@ -89,26 +123,36 @@ async def get_playable_catalog(repo, *, ttl_seconds: float = DEFAULT_TTL_SECONDS
         current = _catalog
         if (
             current is not None
-            and current.is_fresh(ttl_seconds)
+            and current.is_fresh(ttl)
             and current.db_identity == identity
         ):
             return current
         started = time.perf_counter()
+        logger.info("playable_catalog_loading")
         loaded = await _load_catalog(repo, identity=identity)
         _catalog = loaded
         elapsed_ms = (time.perf_counter() - started) * 1000
         logger.info(
-            "playable_catalog_loaded characters=%s questions=%s likelihoods=%s elapsed_ms=%.1f",
+            "playable_catalog_loaded characters=%s questions=%s likelihoods=%s "
+            "elapsed_ms=%.1f ttl_seconds=%.0f",
             loaded.character_count,
             loaded.question_count,
             loaded.likelihood_count,
             elapsed_ms,
+            ttl,
         )
         return loaded
 
 
-def _as_uuid(value) -> UUID:
-    return value if isinstance(value, UUID) else UUID(str(value))
+async def _iter_likelihood_rows(repo):
+    iterator = getattr(repo, "iter_active_likelihood_rows", None)
+    if iterator is not None:
+        async for row in iterator():
+            yield row
+        return
+    rows = await repo.get_active_likelihood_rows()
+    for row in rows:
+        yield row
 
 
 async def _load_catalog(repo, *, identity: int) -> PlayableCatalog:
@@ -119,34 +163,39 @@ async def _load_catalog(repo, *, identity: int) -> PlayableCatalog:
     if not questions:
         raise ValueError("No active questions available")
 
-    character_ids = [_as_uuid(c.id) for c in characters]
-    question_ids = [_as_uuid(q.id) for q in questions]
-    rows = await repo.get_active_likelihood_rows()
+    intern: dict[UUID, UUID] = {}
+    character_ids = [_intern_uuid(intern, c.id) for c in characters]
+    question_ids = [_intern_uuid(intern, q.id) for q in questions]
+
     likelihoods: dict[tuple[UUID, UUID], LikelihoodEntry] = {}
     sample_totals: dict[UUID, int] = {}
-    for character_id, question_id, likelihood, sample_size in rows:
-        cid = _as_uuid(character_id)
-        qid = _as_uuid(question_id)
+    async for character_id, question_id, likelihood, sample_size in _iter_likelihood_rows(
+        repo
+    ):
+        cid = _intern_uuid(intern, character_id)
+        qid = _intern_uuid(intern, question_id)
         n = int(sample_size)
         likelihoods[(cid, qid)] = LikelihoodEntry(
             likelihood=float(likelihood),
             sample_size=n,
         )
         sample_totals[qid] = sample_totals.get(qid, 0) + n
+
     return PlayableCatalog(
         character_ids=character_ids,
         question_ids=question_ids,
         likelihoods=likelihoods,
         question_refs={
-            _as_uuid(q.id): QuestionRef(
-                id=_as_uuid(q.id), text=q.text, category=q.category
+            _intern_uuid(intern, q.id): QuestionRef(
+                id=_intern_uuid(intern, q.id), text=q.text, category=q.category
             )
             for q in questions
         },
-        character_names={_as_uuid(c.id): c.name for c in characters},
-        character_categories={_as_uuid(c.id): c.category for c in characters},
+        character_names={_intern_uuid(intern, c.id): c.name for c in characters},
+        character_categories={_intern_uuid(intern, c.id): c.category for c in characters},
         character_popularity={
-            _as_uuid(c.id): int(getattr(c, "popularity_score", 0) or 0) for c in characters
+            _intern_uuid(intern, c.id): int(getattr(c, "popularity_score", 0) or 0)
+            for c in characters
         },
         question_sample_totals=sample_totals,
         character_count=len(character_ids),

@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     ig_tie_threshold: float = 0.001
     session_abandon_minutes: int = 30
     new_question_min_samples: int = 5
+    # How long the in-process likelihood catalog stays warm. Learning already
+    # calls invalidate_playable_catalog(); a short TTL would reload ~10^5–10^6
+    # rows and spike RSS on a small Render instance.
+    playable_catalog_ttl_seconds: float = 3600.0
 
     # Live session cache — Redis shared across workers; "memory" for local-only
     session_cache_backend: str = "redis"

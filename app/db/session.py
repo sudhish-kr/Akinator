@@ -6,11 +6,21 @@ from app.db.url import normalize_asyncpg_url
 
 _engine_url, _connect_args = normalize_asyncpg_url(settings.database_url)
 
-engine = create_async_engine(
-    _engine_url,
-    echo=settings.debug,
-    connect_args=_connect_args,
-)
+_engine_kwargs: dict = {
+    "echo": settings.debug,
+    "connect_args": _connect_args,
+}
+if not _engine_url.startswith("sqlite"):
+    # Render/Neon: keep the pool tiny so catalog load + requests don't
+    # multiply connection RSS / Neon connection-slot use.
+    _engine_kwargs.update(
+        pool_size=2,
+        max_overflow=1,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
+
+engine = create_async_engine(_engine_url, **_engine_kwargs)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 if _engine_url.startswith("sqlite"):

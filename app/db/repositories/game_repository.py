@@ -143,11 +143,8 @@ class GameRepository:
         )
         return list(result.scalars().all())
 
-    async def get_active_likelihood_rows(
-        self,
-    ) -> list[tuple[UUID, UUID, float, int]]:
-        """All L(C,Q) for active characters × active questions (no huge IN lists)."""
-        result = await self.db.execute(
+    def _active_likelihood_stmt(self):
+        return (
             select(
                 CharacterAnswer.character_id,
                 CharacterAnswer.question_id,
@@ -158,7 +155,23 @@ class GameRepository:
             .join(Question, Question.id == CharacterAnswer.question_id)
             .where(Character.is_active.is_(True), Question.is_active.is_(True))
         )
-        return list(result.all())
+
+    async def iter_active_likelihood_rows(self, *, batch_size: int = 5000):
+        """Stream active L(C, Q) rows in batches — never realize the full table."""
+        stmt = self._active_likelihood_stmt().execution_options(
+            yield_per=batch_size,
+            stream_results=True,
+        )
+        result = await self.db.stream(stmt)
+        async for partition in result.partitions(batch_size):
+            for character_id, question_id, likelihood, sample_size in partition:
+                yield character_id, question_id, float(likelihood), int(sample_size)
+
+    async def get_active_likelihood_rows(
+        self,
+    ) -> list[tuple[UUID, UUID, float, int]]:
+        """All L(C,Q) for active characters × active questions (no huge IN lists)."""
+        return [row async for row in self.iter_active_likelihood_rows()]
 
     async def get_character_answer(
         self,
