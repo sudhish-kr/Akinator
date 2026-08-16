@@ -97,6 +97,13 @@ class LearningService:
             question_ids.append(distinguishing_question_id)
 
         knowledge = await self._load_knowledge(correct_character_id, question_ids)
+        guessed_id = None
+        db_session = await self.repo.get_session_row(session_id)
+        if db_session is not None:
+            guessed_id = db_session.guessed_character_id
+        if guessed_id and guessed_id != correct_character_id:
+            guessed_knowledge = await self._load_knowledge(guessed_id, question_ids)
+            knowledge.update(guessed_knowledge)
         updates = learn_from_wrong_guess(
             correct_character_id,
             observations,
@@ -104,5 +111,7 @@ class LearningService:
             distinguishing_question_id=distinguishing_question_id,
             distinguishing_answer=distinguishing_answer,
             learning_rate=settings.learning_rate,
+            guessed_character_id=guessed_id,
+            min_samples=settings.new_question_min_samples,
         )
         return await self._apply_updates(updates)

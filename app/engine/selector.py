@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import math
 import random
+from dataclasses import dataclass
 from uuid import UUID
 
 from app.engine.bayesian import bayesian_update, initialize_priors, initialize_uniform_priors
@@ -1204,6 +1205,139 @@ def _category_aligned(
     return ref.category in preferred_cats
 
 
+@dataclass(frozen=True)
+class QuestionScore:
+    """Rank used by select_next_question.
+
+    QuestionScore =
+        InformationGain
+        + separation_bonus
+        + confidence_utility
+        + useful_candidate_weight
+        + quality_bonus
+        - repetition_penalty
+        - useless_question_penalty
+        - specificity_penalty
+
+    Weights reuse engine constants; they must stay small so IG remains
+    the primary ranking signal.
+    """
+
+    information_gain: float
+    separation_bonus: float = 0.0
+    confidence_utility: float = 0.0
+    useful_candidate_weight: float = 0.0
+    quality_bonus: float = 0.0
+    repetition_penalty: float = 0.0
+    useless_question_penalty: float = 0.0
+    specificity_penalty: float = 0.0
+
+    @property
+    def total(self) -> float:
+        return (
+            self.information_gain
+            + self.separation_bonus
+            + self.confidence_utility
+            + self.useful_candidate_weight
+            + self.quality_bonus
+            - self.repetition_penalty
+            - self.useless_question_penalty
+            - self.specificity_penalty
+        )
+
+
+def score_question(
+    *,
+    question_id: UUID,
+    information_gain_value: float,
+    state: GameEngineState,
+    focus: GameEngineState,
+    ref: QuestionRef | None,
+    previous_ref: QuestionRef | None,
+    stage: SelectionStage,
+    preferred_cats: frozenset[str],
+    facts,
+    sports_major_asked: bool,
+    dominant: str | None,
+    min_samples: int,
+    category_ig_bonus: float,
+    broad_question_bonus: float,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> QuestionScore:
+    """Composite score from in-memory likelihoods (no database access)."""
+    useless = 0.0
+    yes_n, no_n, unk_n = candidate_split_counts(
+        state, question_id, min_samples=min_samples
+    )
+    split_total = yes_n + no_n + unk_n
+    if split_total:
+        # Prefer better-mapped splits; UNKNOWN coverage lowers rank, not legality.
+        useless = (unk_n / split_total) * 0.12
+
+    q_stage = question_hierarchy_stage(ref)
+    quality = 0.0
+    if preferred_cats and _category_aligned(question_id, question_refs, preferred_cats):
+        quality += category_ig_bonus
+    if stage in {"1", "2"} and q_stage in {"1", "2"}:
+        quality += broad_question_bonus
+    if stage in {"3", "4"} and q_stage == "3":
+        quality += category_ig_bonus * 0.5
+    if is_major_category_question(ref):
+        quality += category_ig_bonus * 0.35
+
+    separation = 0.0
+    specificity_cost = 0.0
+    if is_sport_subtype_question(ref):
+        if (
+            _normalize_stage(stage) == "4"
+            and dominant == "Sports"
+            and sports_major_asked
+        ):
+            quality += category_ig_bonus * 0.45
+            active = focus.active_character_ids()
+            if active:
+                mean_l = sum(
+                    get_likelihood(focus.likelihoods, cid, question_id) for cid in active
+                ) / len(active)
+                # Prefer the subtype remaining candidates actually match.
+                separation += (mean_l - 0.5) * 0.4
+        else:
+            specificity_cost += DEFAULT_SPECIFICITY_PENALTY * 0.5
+    if is_sport_specific_question(ref):
+        specificity_cost += DEFAULT_SPECIFICITY_PENALTY
+    if is_major_category_question(ref) and ref is not None and ref.category == "Movies":
+        if "superhero" in (ref.text or "").casefold():
+            quality += category_ig_bonus * 0.25
+    quality += early_question_priority_bonus(ref)
+    quality += india_relevant_score_bonus(ref, facts)
+    specificity_cost += specificity_penalty(ref, stage)
+
+    # IG already encodes remaining-candidate uncertainty; extra utility
+    # weights stay at 0 so ranking matches the existing engine.
+    return QuestionScore(
+        information_gain=information_gain_value,
+        separation_bonus=separation,
+        confidence_utility=0.0,
+        useful_candidate_weight=0.0,
+        quality_bonus=quality,
+        repetition_penalty=near_duplicate_penalty(ref, previous_ref),
+        useless_question_penalty=useless,
+        specificity_penalty=specificity_cost,
+    )
+
+
+def _is_category_diverse(
+    question_id: UUID,
+    previous_category: str | None,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> bool:
+    if not previous_category or not question_refs:
+        return False
+    ref = question_refs.get(question_id)
+    category = (ref.category or "") if ref else ""
+    return bool(category) and category != previous_category
+
+
 def _pick_from_near_best(
     scored: list[tuple[float, int, UUID]],
     *,
@@ -1212,20 +1346,33 @@ def _pick_from_near_best(
     diversity_top_k: int,
     rng: random.Random | None,
     explore: bool,
+    previous_category: str | None = None,
+    question_refs: dict[UUID, QuestionRef] | None = None,
 ) -> UUID:
-    """Pick among near-best scores; explore when several questions are close."""
+    """Pick among near-best scores; explore when several questions are close.
+
+    Category diversity is only a tie-breaker inside `tie_threshold`
+    (typically ig_tie_threshold). Higher information-gain always wins.
+    """
     scored = sorted(scored, key=lambda row: (row[0], row[1]), reverse=True)
     best_score, best_samples, best_qid = scored[0]
 
     if not explore or len(scored) == 1:
         chosen = best_qid
         chosen_samples = best_samples
+        chosen_diverse = _is_category_diverse(
+            best_qid, previous_category, question_refs
+        )
         for score, samples, qid in scored[1:]:
-            if abs(score - best_score) <= tie_threshold and samples > chosen_samples:
+            if abs(score - best_score) > tie_threshold:
+                break
+            diverse = _is_category_diverse(qid, previous_category, question_refs)
+            if samples > chosen_samples or (
+                samples == chosen_samples and diverse and not chosen_diverse
+            ):
                 chosen = qid
                 chosen_samples = samples
-            elif score < best_score - tie_threshold:
-                break
+                chosen_diverse = diverse
         return chosen
 
     pool = [
@@ -1702,53 +1849,25 @@ def select_next_question(
                 and _normalize_stage(stage) == "4"
             ):
                 continue
-        score = ig
-        yes_n, no_n, unk_n = candidate_split_counts(
-            state, qid, min_samples=min_samples
+        qs = score_question(
+            question_id=qid,
+            information_gain_value=ig,
+            state=state,
+            focus=focus,
+            ref=ref,
+            previous_ref=previous_ref,
+            stage=stage,
+            preferred_cats=preferred_cats,
+            facts=facts,
+            sports_major_asked=sports_major_asked,
+            dominant=dominant,
+            min_samples=min_samples,
+            category_ig_bonus=category_ig_bonus,
+            broad_question_bonus=broad_question_bonus,
+            question_refs=question_refs,
         )
-        split_total = yes_n + no_n + unk_n
-        if split_total:
-            # Prefer better-mapped splits; UNKNOWN coverage lowers rank, not legality.
-            score -= (unk_n / split_total) * 0.12
-        q_stage = question_hierarchy_stage(ref)
-        if preferred_cats and _category_aligned(qid, question_refs, preferred_cats):
-            score += category_ig_bonus
-        if stage in {"1", "2"} and q_stage in {"1", "2"}:
-            score += broad_question_bonus
-        if stage in {"3", "4"} and q_stage == "3":
-            score += category_ig_bonus * 0.5
-        # Prefer major category over sport subtypes when both are eligible.
-        if is_major_category_question(ref):
-            score += category_ig_bonus * 0.35
-        if is_sport_subtype_question(ref):
-            if (
-                _normalize_stage(stage) == "4"
-                and dominant == "Sports"
-                and sports_major_asked
-            ):
-                # Once athlete is known, prefer cricket/football over more identity.
-                score += category_ig_bonus * 0.45
-                active = focus.active_character_ids()
-                if active:
-                    mean_l = sum(
-                        get_likelihood(focus.likelihoods, cid, qid) for cid in active
-                    ) / len(active)
-                    # Prefer the subtype remaining candidates actually match,
-                    # so role questions can unlock (wicketkeeper requires cricket).
-                    score += (mean_l - 0.5) * 0.4
-            else:
-                score -= DEFAULT_SPECIFICITY_PENALTY * 0.5
-        if is_sport_specific_question(ref):
-            score -= DEFAULT_SPECIFICITY_PENALTY
-        if is_major_category_question(ref) and ref.category == "Movies":
-            if "superhero" in (ref.text or "").casefold():
-                score += category_ig_bonus * 0.25
-        score += early_question_priority_bonus(ref)
-        score += india_relevant_score_bonus(ref, facts)
-        score -= specificity_penalty(ref, stage)
-        score -= near_duplicate_penalty(ref, previous_ref)
         samples = total_sample_size_for_question(state, qid)
-        scored.append((score, samples, qid))
+        scored.append((qs.total, samples, qid))
 
     if not scored:
         for qid in relevant:
@@ -1812,6 +1931,8 @@ def select_next_question(
         diversity_top_k=diversity_top_k,
         rng=rng,
         explore=explore if _normalize_stage(stage) == "4" else False,
+        previous_category=(previous_ref.category if previous_ref else None),
+        question_refs=question_refs,
     )
     if logger.isEnabledFor(logging.DEBUG):
         pool = sorted(

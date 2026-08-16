@@ -47,12 +47,18 @@ class TestEvaluateConfidence:
         assert result.reason == "high_confidence"
         assert result.top_character_id == C1
 
-    def test_low_confidence_continues_asking(self):
-        state = _state({C1: 0.4, C2: 0.35, C3: 0.25})
-        result = evaluate_confidence(state, confidence_high=0.85)
+    def test_low_confidence_close_seconds_continue_asking(self):
+        state = _state({C1: 0.42, C2: 0.39, C3: 0.19})
+        result = evaluate_confidence(state)
         assert result.should_guess is False
-        assert result.confidence == pytest.approx(0.4)
-        assert result.reason is None
+        assert result.confidence == pytest.approx(0.42)
+
+    def test_high_confidence_and_separation_guesses_early(self):
+        state = _state({C1: 0.93, C2: 0.03, C3: 0.04}, questions_asked=7)
+        result = evaluate_confidence(state)
+        assert result.should_guess is True
+        assert result.reason in {"high_confidence", "clear_separation"}
+        assert result.top_character_id == C1
 
     def test_clear_separation_triggers_guess(self):
         state = _state({C1: 0.7, C2: 0.2, C3: 0.1})

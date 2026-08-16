@@ -230,7 +230,11 @@ class TrainingSimulator:
             )
         else:
             updates = learn_from_wrong_guess(
-                outcome.true_character_id, obs, knowledge, learning_rate=self.learning_rate
+                outcome.true_character_id,
+                obs,
+                knowledge,
+                learning_rate=self.learning_rate,
+                guessed_character_id=outcome.guessed_character_id,
             )
 
         for upd in updates:
