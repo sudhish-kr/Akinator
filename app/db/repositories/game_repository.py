@@ -157,15 +157,18 @@ class GameRepository:
         )
 
     async def iter_active_likelihood_rows(self, *, batch_size: int = 5000):
-        """Stream active L(C, Q) rows in batches — never realize the full table."""
-        stmt = self._active_likelihood_stmt().execution_options(
-            yield_per=batch_size,
-            stream_results=True,
-        )
-        result = await self.db.stream(stmt)
-        async for partition in result.partitions(batch_size):
-            for character_id, question_id, likelihood, sample_size in partition:
-                yield character_id, question_id, float(likelihood), int(sample_size)
+        """Yield active L(C, Q) rows without a second full-table Python list.
+
+        Uses ``execute()`` (client-side fetch), not ``stream()``. SQLAlchemy
+        ``AsyncSession.stream()`` opens an asyncpg **server-side cursor**
+        (``prepared_stmt.cursor()``), which Neon/PgBouncer pooled connections
+        reject. Regular SELECT via execute already works for /health and the
+        character/question catalog queries on the same request.
+        """
+        del batch_size  # fetch is client-side; callers may still pass a size
+        result = await self.db.execute(self._active_likelihood_stmt())
+        for character_id, question_id, likelihood, sample_size in result:
+            yield character_id, question_id, float(likelihood), int(sample_size)
 
     async def get_active_likelihood_rows(
         self,

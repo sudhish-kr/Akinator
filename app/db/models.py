@@ -37,6 +37,11 @@ class GameAnswerValue(str, enum.Enum):
     NO = "no"
 
 
+def _str_enum_values(enum_cls: type[enum.Enum]) -> list[str]:
+    """Persist Enum *values* (Alembic created lowercase labels, not member names)."""
+    return [member.value for member in enum_cls]
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -150,7 +155,11 @@ class GameSession(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     status: Mapped[GameSessionStatus] = mapped_column(
-        Enum(GameSessionStatus, name="game_session_status"),
+        Enum(
+            GameSessionStatus,
+            name="game_session_status",
+            values_callable=_str_enum_values,
+        ),
         default=GameSessionStatus.IN_PROGRESS,
         nullable=False,
     )
@@ -196,7 +205,12 @@ class GameAnswer(Base):
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("game_sessions.id"), nullable=False)
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("questions.id"), nullable=False)
     answer: Mapped[GameAnswerValue] = mapped_column(
-        Enum(GameAnswerValue, name="game_answer_value"), nullable=False
+        Enum(
+            GameAnswerValue,
+            name="game_answer_value",
+            values_callable=_str_enum_values,
+        ),
+        nullable=False,
     )
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
     entropy_before: Mapped[float | None] = mapped_column(Float, nullable=True)

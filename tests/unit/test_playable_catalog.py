@@ -218,3 +218,39 @@ async def test_repository_streams_likelihood_rows_in_batches():
     assert len(streamed) == 2
     assert (cid_a, 0.8, 9) in pairs
     assert (cid_b, 0.2, 11) in pairs
+
+
+@pytest.mark.asyncio
+async def test_likelihood_iter_does_not_open_sqlalchemy_stream():
+    from unittest.mock import AsyncMock
+
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+    from app.db.models import Base, Character, CharacterAnswer, Question
+    from app.db.repositories.game_repository import GameRepository
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    cid, qid = uuid4(), uuid4()
+    async with factory() as db:
+        db.add(Character(id=cid, name="A", category="Sports", is_active=True))
+        db.add(Question(id=qid, text="Q?", category="Bio", is_active=True))
+        db.add(
+            CharacterAnswer(
+                character_id=cid, question_id=qid, likelihood=0.5, sample_size=3
+            )
+        )
+        await db.commit()
+
+    async with factory() as db:
+        db.stream = AsyncMock(side_effect=AssertionError("must not use stream()"))
+        repo = GameRepository(db)
+        rows = [row async for row in repo.iter_active_likelihood_rows(batch_size=1)]
+
+    await engine.dispose()
+    assert len(rows) == 1
+    assert rows[0][0] == cid
+    db.stream.assert_not_called()
