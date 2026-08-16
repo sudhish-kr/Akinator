@@ -100,3 +100,24 @@ def test_remaining_candidates_use_current_pool_not_generic_popularity():
     empty_cat = remaining_candidates(probs, names, cats, category="Movies")
     assert empty_cat == []
 
+
+def test_remaining_candidates_expand_learn_world_aliases():
+    sports, movie, anime = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    probs = {sports: 0.5, movie: 0.3, anime: 0.2}
+    names = {sports: "Virat Kohli", movie: "Iron Man", anime: "Naruto"}
+    cats = {sports: "Sports", movie: "Movies", anime: "Anime"}
+
+    famous = remaining_candidates(probs, names, cats, category="Famous People")
+    assert [r["name"] for r in famous] == ["Virat Kohli"]
+
+    fictional = remaining_candidates(probs, names, cats, category="Fictional Characters")
+    assert [r["name"] for r in fictional] == ["Iron Man", "Naruto"]
+
+    science_alias = remaining_candidates(
+        {sports: 0.1, movie: 0.2},
+        {sports: "Ada", movie: "Film"},
+        {sports: "Scientists", movie: "Movies"},
+        category="Science",
+    )
+    assert [r["name"] for r in science_alias] == ["Ada"]
+

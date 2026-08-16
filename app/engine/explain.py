@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.engine.learn_categories import matching_character_categories
 from app.engine.models import GameEngineState, LikelihoodEntry, QuestionRef
 from app.engine.selector import create_initial_state, process_answer
 
@@ -72,14 +73,14 @@ def remaining_candidates(
 
     excluded = exclude_ids or set()
     needle = (q or "").strip().casefold()
-    wanted_cat = (category or "").strip()
+    allowed_cats = matching_character_categories(category)
     cats = character_categories or {}
     ranked = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)
     out: list[dict] = []
     for cid, prob in ranked:
         if cid in excluded:
             continue
-        if wanted_cat and cats.get(cid) != wanted_cat:
+        if allowed_cats and cats.get(cid) not in allowed_cats:
             continue
         name = character_names.get(cid, str(cid))
         if needle and needle not in name.casefold():

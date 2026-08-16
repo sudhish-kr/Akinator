@@ -1,63 +1,39 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useI18n } from "../i18n/index.jsx";
 import Mascot from "../components/Mascot.jsx";
 
 const TYPE_OPTIONS = [
-  {
-    id: "real",
-    labelKey: "learn.typeReal",
-    categories: [
-      "Sports",
-      "Scientists",
-      "Politicians",
-      "Musicians",
-      "Business Leaders",
-      "Historical Figures",
-    ],
-  },
-  {
-    id: "fictional",
-    labelKey: "learn.typeFictional",
-    categories: ["Movies", "TV Shows", "Anime", "Cartoons", "Gaming", "Literature", "Mythology"],
-  },
-  { id: "animal", labelKey: "learn.typeAnimal", categories: ["Cartoons", "Movies", "Mythology"] },
-  {
-    id: "other",
-    labelKey: "learn.typeOther",
-    categories: [
-      "Sports",
-      "Movies",
-      "TV Shows",
-      "Anime",
-      "Cartoons",
-      "Gaming",
-      "Politics",
-      "Science",
-      "Music",
-      "Literature",
-      "Business Leaders",
-    ],
-  },
+  { id: "real", labelKey: "learn.typeReal" },
+  { id: "fictional", labelKey: "learn.typeFictional" },
+  { id: "animal", labelKey: "learn.typeAnimal" },
+  { id: "other", labelKey: "learn.typeOther" },
 ];
 
-const CATEGORY_LABELS = {
-  Sports: "learn.catSports",
-  Movies: "learn.catMovies",
-  "TV Shows": "learn.catTv",
-  Anime: "learn.catAnime",
-  Cartoons: "learn.catCartoons",
-  Gaming: "learn.catGaming",
-  Politicians: "learn.catPolitics",
-  Politics: "learn.catPolitics",
-  Scientists: "learn.catScience",
-  Science: "learn.catScience",
-  Musicians: "learn.catMusic",
-  Music: "learn.catMusic",
-  Literature: "learn.catLiterature",
-  "Business Leaders": "learn.catBusiness",
-  "Historical Figures": "learn.catHistory",
-  Mythology: "learn.catMythology",
-};
+/** Stored Character.category (or learn-group alias) sent to the existing filter. */
+const LEARN_CATEGORIES = [
+  { value: "Sports", labelKey: "learn.catSports" },
+  { value: "Scientists", labelKey: "learn.catScience" },
+  { value: "Politicians", labelKey: "learn.catPolitics" },
+  { value: "Musicians", labelKey: "learn.catMusic" },
+  { value: "Business Leaders", labelKey: "learn.catBusiness" },
+  { value: "Historical Figures", labelKey: "learn.catHistory" },
+  { value: "Movies", labelKey: "learn.catMovies" },
+  { value: "TV Shows", labelKey: "learn.catTv" },
+  { value: "Gaming", labelKey: "learn.catGaming" },
+  { value: "Internet & Social Media", labelKey: "learn.catInternet" },
+  { value: "World / Geography", labelKey: "learn.catWorld" },
+  { value: "Literature", labelKey: "learn.catLiterature" },
+  { value: "Art & Entertainment", labelKey: "learn.catArt" },
+  { value: "Fictional Characters", labelKey: "learn.catFictionalChars" },
+  { value: "Famous People", labelKey: "learn.catFamousPeople" },
+  { value: "Anime", labelKey: "learn.catAnime" },
+  { value: "Cartoons", labelKey: "learn.catCartoons" },
+  { value: "Mythology", labelKey: "learn.catMythology" },
+];
+
+const CATEGORY_LABELS = Object.fromEntries(
+  LEARN_CATEGORIES.map((cat) => [cat.value, cat.labelKey])
+);
 
 /**
  * Wrong-guess wizard:
@@ -78,11 +54,6 @@ export default function LearnPage({
   const [category, setCategory] = useState(null);
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
-
-  const typeMeta = useMemo(
-    () => TYPE_OPTIONS.find((opt) => opt.id === kind) || null,
-    [kind]
-  );
 
   const pickType = async (opt) => {
     setKind(opt.id);
@@ -139,19 +110,19 @@ export default function LearnPage({
         </>
       )}
 
-      {step === "category" && typeMeta && (
+      {step === "category" && (
         <>
           <p className="muted">{t("learn.askCategory")}</p>
-          <div className="char-grid">
-            {typeMeta.categories.map((cat) => (
+          <div className="char-grid learn-category-grid">
+            {LEARN_CATEGORIES.map((cat) => (
               <button
-                key={cat}
+                key={cat.value}
                 type="button"
                 className="btn chip"
                 disabled={busy}
-                onClick={() => pickCategory(cat)}
+                onClick={() => pickCategory(cat.value)}
               >
-                {t(CATEGORY_LABELS[cat] || "learn.catOther")}
+                {t(cat.labelKey)}
               </button>
             ))}
           </div>

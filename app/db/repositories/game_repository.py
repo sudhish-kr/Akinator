@@ -17,6 +17,7 @@ from app.db.models import (
     Question,
     RejectedGuess,
 )
+from app.engine.learn_categories import matching_character_categories
 
 
 class GameRepository:
@@ -51,8 +52,14 @@ class GameRepository:
         count_query = select(func.count()).select_from(Character)
 
         if category is not None:
-            query = query.where(Character.category == category)
-            count_query = count_query.where(Character.category == category)
+            allowed = matching_character_categories(category)
+            if allowed and len(allowed) == 1:
+                stored = next(iter(allowed))
+                query = query.where(Character.category == stored)
+                count_query = count_query.where(Character.category == stored)
+            elif allowed:
+                query = query.where(Character.category.in_(allowed))
+                count_query = count_query.where(Character.category.in_(allowed))
         if is_active is not None:
             query = query.where(Character.is_active.is_(is_active))
             count_query = count_query.where(Character.is_active.is_(is_active))

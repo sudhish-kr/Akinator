@@ -50,5 +50,24 @@ describe("wrong-guess selectable flow labels", () => {
     assert.match(src, /step === "category"/);
     assert.match(src, /step === "suggestions"/);
     assert.match(src, /step === "manual"/);
+    for (const value of [
+      "Sports",
+      "Scientists",
+      "Politicians",
+      "Musicians",
+      "Business Leaders",
+      "Historical Figures",
+      "Movies",
+      "TV Shows",
+      "Gaming",
+      "Internet & Social Media",
+      "World / Geography",
+      "Literature",
+      "Art & Entertainment",
+      "Fictional Characters",
+      "Famous People",
+    ]) {
+      assert.match(src, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
   });
 });
