@@ -53,10 +53,10 @@ class SessionStore:
 
     def save(self, session: LiveSession) -> None:
         session.last_activity_at = datetime.now(timezone.utc)
-        # Compact payload only — no likelihood blob.
+        # Compact payload — no likelihood blob, no catalog copies (reattached on get).
         self._cache.set(
             self._key(session.session_id),
-            encode_live_session(session, include_likelihoods=False),
+            encode_live_session(session, include_likelihoods=False, include_catalog=False),
             self._ttl_seconds,
         )
 
@@ -67,19 +67,24 @@ class SessionStore:
         if isinstance(payload, LiveSession):
             return payload
         live = decode_live_session(payload)
-        if not live.engine.likelihoods:
-            from app.services.playable_catalog import peek_catalog
+        from app.services.playable_catalog import peek_catalog
 
-            catalog = peek_catalog()
-            if catalog:
+        catalog = peek_catalog()
+        if catalog:
+            if not live.engine.likelihoods:
                 live.engine.likelihoods = catalog.likelihoods
+            if live.engine.question_sample_totals is None:
                 live.engine.question_sample_totals = catalog.question_sample_totals
-        elif live.engine.question_sample_totals is None:
-            from app.services.playable_catalog import peek_catalog
-
-            catalog = peek_catalog()
-            if catalog:
-                live.engine.question_sample_totals = catalog.question_sample_totals
+            if not live.question_refs:
+                live.question_refs = catalog.question_refs
+            if not live.character_names:
+                live.character_names = catalog.character_names
+            if not live.character_categories:
+                live.character_categories = catalog.character_categories
+            if not live.character_popularity:
+                live.character_popularity = catalog.character_popularity
+            if not live.all_question_ids:
+                live.all_question_ids = catalog.question_ids
         return live
 
     def delete(self, session_id: UUID) -> None:

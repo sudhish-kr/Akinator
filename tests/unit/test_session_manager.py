@@ -50,6 +50,29 @@ def test_start_selects_first_question():
     assert live.answers == []
 
 
+def test_start_reuses_cached_first_question_id():
+    mgr = _manager()
+    live = _start(mgr)
+    reused = mgr.start(
+        session_id=uuid4(),
+        character_ids=[C1, C2],
+        likelihoods={
+            (C1, Q1): LikelihoodEntry(0.95, 50),
+            (C2, Q1): LikelihoodEntry(0.05, 50),
+            (C1, Q2): LikelihoodEntry(0.9, 50),
+            (C2, Q2): LikelihoodEntry(0.1, 50),
+        },
+        question_ids=[Q1, Q2],
+        question_refs={
+            Q1: QuestionRef(id=Q1, text="Is this a real person?", category="Personality"),
+            Q2: QuestionRef(id=Q2, text="Is this a made-up character?", category="Fictional traits"),
+        },
+        character_names={C1: "Einstein", C2: "Messi"},
+        first_question_id=live.pending_question_id,
+    )
+    assert reused.pending_question_id == live.pending_question_id
+
+
 def test_submit_answer_tracks_and_updates_bayesian_state():
     mgr = _manager()
     live = _start(mgr)

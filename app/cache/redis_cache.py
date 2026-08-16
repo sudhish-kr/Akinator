@@ -29,7 +29,7 @@ class RedisCache:
         self._client = client or redis.Redis.from_url(
             url,
             decode_responses=True,
-            socket_connect_timeout=2.0,
+            socket_connect_timeout=0.3,
             socket_timeout=2.0,
         )
 

@@ -64,6 +64,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return self._limiter_override or rate_limiter
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # CORS preflight is not gameplay. Counting OPTIONS against /game limits
+        # added a Redis/memory hop and could 429 the preflight on a cold start.
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         scope = resolve_scope(request.url.path)
         if scope is None:
             return await call_next(request)

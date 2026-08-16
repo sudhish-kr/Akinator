@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -196,10 +196,24 @@ class GameRepository:
         return await self.db.get(Question, question_id)
 
     async def create_session(self, user_id: UUID | None = None) -> GameSession:
-        session = GameSession(user_id=user_id)
+        # Assign id in Python so start_game can use it without a Neon flush RTT.
+        session = GameSession(id=uuid4(), user_id=user_id)
         self.db.add(session)
-        await self.db.flush()
         return session
+
+    async def get_session_row(self, session_id: UUID) -> GameSession | None:
+        """Session row only — skip selectinload(answers) for progress updates."""
+        return await self.db.get(GameSession, session_id)
+
+    async def update_session_progress(self, session_id: UUID, *, questions_asked: int) -> None:
+        await self.db.execute(
+            update(GameSession)
+            .where(GameSession.id == session_id)
+            .values(
+                questions_asked_count=questions_asked,
+                last_activity_at=datetime.now(timezone.utc),
+            )
+        )
 
     async def get_session(self, session_id: UUID) -> GameSession | None:
         result = await self.db.execute(
@@ -255,9 +269,11 @@ class GameRepository:
         return set(result.scalars().all())
 
     async def increment_question_times_asked(self, question_id: UUID) -> None:
-        question = await self.db.get(Question, question_id)
-        if question:
-            question.times_asked += 1
+        await self.db.execute(
+            update(Question)
+            .where(Question.id == question_id)
+            .values(times_asked=Question.times_asked + 1)
+        )
 
     async def create_character(
         self,

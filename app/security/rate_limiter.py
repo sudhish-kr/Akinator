@@ -74,7 +74,7 @@ class RateLimiter:
             client = redis.Redis.from_url(
                 settings.redis_url,
                 decode_responses=True,
-                socket_connect_timeout=1.0,
+                socket_connect_timeout=0.3,
                 socket_timeout=1.0,
             )
             client.ping()

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminAuth, adminApi } from "./api.js";
+import "./admin.css";
 import { LanguageSwitch, useI18n } from "../i18n/index.jsx";
 import AdminLogin from "./pages/Login.jsx";
 import CharactersPage from "./pages/Characters.jsx";

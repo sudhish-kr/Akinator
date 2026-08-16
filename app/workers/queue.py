@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from typing import Any
 from uuid import UUID
 
 from celery.result import AsyncResult
@@ -11,6 +13,20 @@ from app.config import settings
 from app.workers.tasks import process_analytics, process_learning
 
 logger = logging.getLogger("mindguess.workers.queue")
+
+
+class _SkippedJob:
+    """Returned when background jobs cannot run inside a live FastAPI request."""
+
+    id = None
+
+
+def _in_running_event_loop() -> bool:
+    try:
+        asyncio.get_running_loop()
+        return True
+    except RuntimeError:
+        return False
 
 
 def _broker_reachable(timeout: float = 0.4) -> bool:
@@ -27,21 +43,31 @@ def _broker_reachable(timeout: float = 0.4) -> bool:
         )
         return bool(client.ping())
     except Exception as exc:
-        logger.warning("Celery broker unreachable (%s); using in-process fallback", exc)
+        logger.warning("Celery broker unreachable (%s); skipping inline fallback on HTTP", exc)
         return False
 
 
-def _dispatch(task, *args, **kwargs) -> AsyncResult:
-    """Queue via Celery when broker is up; otherwise run the task inline."""
+def _dispatch(task, *args, **kwargs) -> Any:
+    """Queue via Celery when broker is up.
+
+    Never call task.apply() on FastAPI's running event loop. Learning/analytics
+    open a new asyncio loop (run_async) and reuse the process AsyncEngine;
+    asyncpg then raises and the HTTP handler becomes an unhandled 500.
+    """
     if settings.celery_task_always_eager:
         return task.delay(*args, **kwargs)
-    if not _broker_reachable():
-        return task.apply(args=args, kwargs=kwargs)
-    try:
-        return task.delay(*args, **kwargs)
-    except Exception as exc:
-        logger.warning("Celery delay failed (%s); running task inline", exc)
-        return task.apply(args=args, kwargs=kwargs)
+    if _broker_reachable():
+        try:
+            return task.delay(*args, **kwargs)
+        except Exception as exc:
+            logger.warning("Celery delay failed (%s)", exc)
+    if _in_running_event_loop():
+        logger.warning(
+            "Skipping inline Celery task %s; broker is down and this is an HTTP request",
+            getattr(task, "name", task),
+        )
+        return _SkippedJob()
+    return task.apply(args=args, kwargs=kwargs)
 
 
 def enqueue_learning(
@@ -90,7 +116,7 @@ def enqueue_post_game(
     guessed_character_id: UUID | None = None,
     distinguishing_question_id: UUID | None = None,
     distinguishing_answer: str | None = None,
-) -> dict[str, str]:
+) -> dict[str, str | None]:
     """Queue learning + analytics; returns Celery task ids."""
     learning = enqueue_learning(
         session_id,

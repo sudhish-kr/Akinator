@@ -1,8 +1,14 @@
 import { apiUrl } from "./config.js";
 
 async function request(method, path, body) {
-  const options = { method, headers: { "Content-Type": "application/json" } };
-  if (body !== undefined) options.body = JSON.stringify(body);
+  const options = { method };
+  // Only send JSON Content-Type when there is a body. An empty POST /game/start
+  // with that header is a non-simple CORS request (OPTIONS + POST). GETs and
+  // body-less POSTs stay simple requests and skip the extra Render RTT.
+  if (body !== undefined) {
+    options.headers = { "Content-Type": "application/json" };
+    options.body = JSON.stringify(body);
+  }
   const res = await fetch(apiUrl(path), options);
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
@@ -34,12 +40,11 @@ export const api = {
   getGuess: (sessionId) => request("GET", `/game/guess/${sessionId}`),
 
   /** Confirm a correct guess ("Yes — you got it"). */
-  confirmGuess: (sessionId, { correct = true, actualCharacterId = null } = {}) =>
-    request("POST", "/game/guess/confirm", {
-      session_id: sessionId,
-      correct,
-      actual_character_id: actualCharacterId,
-    }),
+  confirmGuess: (sessionId, { correct = true, actualCharacterId = null } = {}) => {
+    const body = { session_id: sessionId, correct };
+    if (actualCharacterId) body.actual_character_id = actualCharacterId;
+    return request("POST", "/game/guess/confirm", body);
+  },
 
   learn: (sessionId, characterId, { wrongGuess = false } = {}) =>
     request("POST", "/game/learn", {

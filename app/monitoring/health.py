@@ -10,7 +10,6 @@ from sqlalchemy import text
 from app.config import settings
 from app.db.session import async_session_factory
 from app.monitoring.metrics import DB_HEALTH_LATENCY, DB_QUERY_LATENCY
-from app.workers.monitoring import get_worker_status
 
 
 async def check_database() -> dict[str, Any]:
@@ -34,10 +33,14 @@ async def check_database() -> dict[str, Any]:
         }
 
 
-async def build_health_report(*, include_workers: bool = True) -> dict[str, Any]:
+async def build_health_report(*, include_workers: bool = False) -> dict[str, Any]:
     """Aggregate liveness-style health for GET /health."""
     db = await check_database()
-    workers = get_worker_status() if include_workers else None
+    workers = None
+    if include_workers:
+        from app.workers.monitoring import get_worker_status
+
+        workers = get_worker_status()
     overall = "ok"
     if db["status"] != "ok":
         overall = "degraded"

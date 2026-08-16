@@ -1,6 +1,7 @@
 """Minimal API tests for the Game REST endpoints."""
 
 import uuid
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -143,3 +144,72 @@ async def test_get_guess_and_post_learn(client: AsyncClient):
     assert learn.status_code == 200
     assert learn.json()["status"] == "learned"
     assert learn.json()["updates"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_yes_you_got_it_confirm_accepts_null_actual_character_id(client: AsyncClient):
+    """Frontend Yes button historically sent actual_character_id: null."""
+    start = (await client.post("/game/start")).json()
+    session_id = start["session_id"]
+    question = start["question"]
+    for _ in range(12):
+        resp = await client.post(
+            "/game/answer",
+            json={"session_id": session_id, "question_id": question["id"], "answer": "dont_know"},
+        )
+        data = resp.json()
+        if data["status"] == "ready_to_guess":
+            break
+        question = data["next_question"]
+
+    guess = await client.get(f"/game/guess/{session_id}")
+    assert guess.status_code == 200
+    character_id = guess.json()["character"]["id"]
+
+    confirm = await client.post(
+        "/game/guess/confirm",
+        json={"session_id": session_id, "correct": True, "actual_character_id": None},
+    )
+    assert confirm.status_code == 200, confirm.text
+    assert confirm.json()["status"] == "guessed_correct"
+
+    again = await client.post(
+        "/game/guess/confirm",
+        json={
+            "session_id": session_id,
+            "correct": True,
+            "actual_character_id": character_id,
+        },
+    )
+    assert again.status_code in {200, 409}
+
+
+@pytest.mark.asyncio
+async def test_yes_you_got_it_survives_post_game_job_failure(client: AsyncClient):
+    """Confirm must return 200 even if Celery/asyncpg post-game jobs explode."""
+    start = (await client.post("/game/start")).json()
+    session_id = start["session_id"]
+    question = start["question"]
+    for _ in range(12):
+        resp = await client.post(
+            "/game/answer",
+            json={"session_id": session_id, "question_id": question["id"], "answer": "dont_know"},
+        )
+        data = resp.json()
+        if data["status"] == "ready_to_guess":
+            break
+        question = data["next_question"]
+
+    guess = await client.get(f"/game/guess/{session_id}")
+    assert guess.status_code == 200
+
+    with patch(
+        "app.workers.queue.enqueue_post_game",
+        side_effect=RuntimeError("Task got Future attached to a different loop"),
+    ):
+        confirm = await client.post(
+            "/game/guess/confirm",
+            json={"session_id": session_id, "correct": True, "actual_character_id": None},
+        )
+    assert confirm.status_code == 200, confirm.text
+    assert confirm.json()["status"] == "guessed_correct"

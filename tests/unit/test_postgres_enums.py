@@ -21,6 +21,9 @@ def test_game_session_status_binds_alembic_lowercase_values():
     bound = _bind(GameSession.__table__.c.status, GameSessionStatus.IN_PROGRESS)
     assert bound == "in_progress"
     assert bound != "IN_PROGRESS"
+    correct = _bind(GameSession.__table__.c.status, GameSessionStatus.GUESSED_CORRECT)
+    assert correct == "guessed_correct"
+    assert correct != "GUESSED_CORRECT"
     col = GameSession.__table__.c.status
     assert col.type.enums == [
         "in_progress",

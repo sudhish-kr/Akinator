@@ -129,6 +129,8 @@ def test_compact_save_reattaches_likelihoods_from_catalog(redis_cache):
     assert again is not None
     assert len(again.engine.likelihoods) == 4
     assert again.engine.questions_asked == 2
+    assert again.question_refs == live.question_refs
+    assert again.character_names == live.character_names
 
 
 def test_multiple_backend_instances_share_sessions(redis_client):
@@ -139,6 +141,7 @@ def test_multiple_backend_instances_share_sessions(redis_client):
     store_b = SessionStore(cache=cache_b, ttl_seconds=120)
 
     live = _live_session()
+    _warm_catalog(live)
     store_a.save(live)
 
     from_b = store_b.get(live.session_id)

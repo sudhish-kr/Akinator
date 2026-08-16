@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import GameApp from "./App.jsx";
-import AdminApp from "./admin/AdminApp.jsx";
 import { I18nProvider } from "./i18n/index.jsx";
 import "./styles.css";
-import "./admin/admin.css";
+
+const AdminApp = lazy(() => import("./admin/AdminApp.jsx"));
 
 function getRoute() {
   const hash = window.location.hash.replace(/^#/, "") || "/";
@@ -21,7 +21,13 @@ export default function Root() {
 
   return (
     <I18nProvider>
-      {route === "admin" ? <AdminApp /> : <GameApp />}
+      {route === "admin" ? (
+        <Suspense fallback={null}>
+          <AdminApp />
+        </Suspense>
+      ) : (
+        <GameApp />
+      )}
     </I18nProvider>
   );
 }

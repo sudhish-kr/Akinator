@@ -324,7 +324,10 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      await api.confirmGuess(sessionId, { correct: true });
+      await api.confirmGuess(sessionId, {
+        correct: true,
+        actualCharacterId: guess.character.id,
+      });
       recordScore("correct");
       setDoneMessage(t("done.nailed", { name: guess.character.name }));
       setScreen("done");

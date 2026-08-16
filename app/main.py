@@ -10,7 +10,7 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.game import router as game_router
 from app.config import settings
-from app.core.logging import request_logging_middleware, setup_logging
+from app.core.logging import setup_logging
 from app.db.session import engine
 from app.monitoring.db import instrument_engine
 from app.monitoring.health import build_health_report, check_database
@@ -72,9 +72,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Register logging first, then CORS last so CORS is outermost and still
-# attaches headers when routes return error Responses (e.g. DB failures).
-app.middleware("http")(request_logging_middleware)
+# CORS last among add_middleware so it stays outermost for error Responses.
+# Monitoring already records access logs + X-Request-ID; do not double-wrap
+# with request_logging_middleware (extra task hop and duplicate JSON logs).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -115,8 +115,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health", tags=["health"])
 async def health():
-    """Liveness / aggregated health (database latency included)."""
-    return await build_health_report(include_workers=True)
+    """Liveness + database ping. Worker inspect lives on GET /health/workers.
+
+    Never call Celery inspect here: on Render without a broker that blocks the
+    event loop for several seconds and stalls concurrent /game/start.
+    """
+    return await build_health_report(include_workers=False)
 
 
 @app.get("/health/ready", tags=["health"])
@@ -138,8 +142,8 @@ async def readiness():
 
 @app.get("/health/workers", tags=["health"])
 async def workers_health():
-    """Celery worker / queue monitoring endpoint."""
-    return get_worker_status()
+    """Celery worker / queue monitoring endpoint (off the request event loop)."""
+    return await asyncio.to_thread(get_worker_status)
 
 
 @app.get("/metrics", tags=["monitoring"])

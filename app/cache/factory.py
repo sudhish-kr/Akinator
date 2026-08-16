@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import logging
+
 from app.cache.backend import CacheBackend
 from app.cache.memory import MemoryCache
 from app.cache.redis_cache import RedisCache
+
+logger = logging.getLogger(__name__)
 
 
 def build_cache_backend(
@@ -37,8 +41,9 @@ def build_cache_backend(
             try:
                 cache.ping()
             except Exception:
-                if settings.debug or settings.environment in {"development", "test"}:
-                    return MemoryCache()
-                raise
+                logger.warning(
+                    "Redis session cache unavailable; using in-memory store"
+                )
+                return MemoryCache()
         return cache
     raise ValueError(f"Unknown session cache backend: {name!r}")

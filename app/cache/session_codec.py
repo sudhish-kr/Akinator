@@ -48,10 +48,11 @@ def encode_live_session(
     session: LiveSession,
     *,
     include_likelihoods: bool = True,
+    include_catalog: bool = True,
 ) -> dict[str, Any]:
     """Serialize a live session to a JSON-friendly dict."""
     engine = session.engine
-    return {
+    payload: dict[str, Any] = {
         "session_id": str(session.session_id),
         "engine": {
             "character_ids": [str(cid) for cid in engine.character_ids],
@@ -68,22 +69,6 @@ def encode_live_session(
                 str(engine.pre_elimination_top) if engine.pre_elimination_top else None
             ),
         },
-        "question_refs": {
-            str(qid): {
-                "id": str(ref.id),
-                "text": ref.text,
-                "category": ref.category,
-            }
-            for qid, ref in session.question_refs.items()
-        },
-        "character_names": {str(cid): name for cid, name in session.character_names.items()},
-        "character_categories": {
-            str(cid): cat for cid, cat in session.character_categories.items()
-        },
-        "character_popularity": {
-            str(cid): int(score) for cid, score in session.character_popularity.items()
-        },
-        "all_question_ids": [str(qid) for qid in session.all_question_ids],
         "pending_question_id": (
             str(session.pending_question_id) if session.pending_question_id else None
         ),
@@ -98,6 +83,32 @@ def encode_live_session(
         ],
         "last_activity_at": session.last_activity_at.astimezone(timezone.utc).isoformat(),
     }
+    if include_catalog:
+        payload["question_refs"] = {
+            str(qid): {
+                "id": str(ref.id),
+                "text": ref.text,
+                "category": ref.category,
+            }
+            for qid, ref in session.question_refs.items()
+        }
+        payload["character_names"] = {
+            str(cid): name for cid, name in session.character_names.items()
+        }
+        payload["character_categories"] = {
+            str(cid): cat for cid, cat in session.character_categories.items()
+        }
+        payload["character_popularity"] = {
+            str(cid): int(score) for cid, score in session.character_popularity.items()
+        }
+        payload["all_question_ids"] = [str(qid) for qid in session.all_question_ids]
+    else:
+        payload["question_refs"] = {}
+        payload["character_names"] = {}
+        payload["character_categories"] = {}
+        payload["character_popularity"] = {}
+        payload["all_question_ids"] = []
+    return payload
 
 
 def decode_live_session(payload: dict[str, Any]) -> LiveSession:

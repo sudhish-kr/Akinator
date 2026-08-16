@@ -71,6 +71,7 @@ class GameSessionManager:
         character_categories: dict[UUID, str] | None = None,
         character_popularity: dict[UUID, int] | None = None,
         question_sample_totals: dict[UUID, int] | None = None,
+        first_question_id: UUID | None = None,
     ) -> LiveSession:
         """Start a new session and select the first question."""
         categories = dict(character_categories or {})
@@ -81,13 +82,20 @@ class GameSessionManager:
             popularity=popularity,
             question_sample_totals=question_sample_totals,
         )
-        first_q = select_next_question(
-            engine,
-            question_ids,
-            min_samples=self.min_samples,
-            question_refs=question_refs,
-            character_categories=categories,
-        )
+        if (
+            first_question_id is not None
+            and first_question_id in question_refs
+            and first_question_id in question_ids
+        ):
+            first_q = first_question_id
+        else:
+            first_q = select_next_question(
+                engine,
+                question_ids,
+                min_samples=self.min_samples,
+                question_refs=question_refs,
+                character_categories=categories,
+            )
         if first_q is None:
             raise ValueError("No eligible questions to start game")
 

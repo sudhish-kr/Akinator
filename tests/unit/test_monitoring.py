@@ -53,16 +53,26 @@ async def test_health_endpoint_includes_database_latency(client: AsyncClient):
             return_value={"status": "ok", "latency_seconds": 0.00123}
         ),
     ):
-        with patch(
-            "app.monitoring.health.get_worker_status",
-            return_value={"status": "ok", "workers": ["eager"], "active_tasks": 0, "error": None},
-        ):
-            resp = await client.get("/health")
+        resp = await client.get("/health")
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] in {"ok", "degraded"}
     assert "database" in data["checks"]
+    assert "workers" not in data["checks"]
     assert data["checks"]["database"]["latency_seconds"] == 0.00123
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_does_not_inspect_celery_workers(client: AsyncClient):
+    with patch(
+        "app.monitoring.health.check_database",
+        new=AsyncMock(return_value={"status": "ok", "latency_seconds": 0.001}),
+    ):
+        with patch("app.workers.monitoring.get_worker_status") as inspect:
+            resp = await client.get("/health")
+    assert resp.status_code == 200
+    inspect.assert_not_called()
+    assert "workers" not in resp.json()["checks"]
 
 
 @pytest.mark.asyncio
@@ -108,11 +118,7 @@ async def test_request_timing_headers_and_metrics(client: AsyncClient):
         "app.monitoring.health.check_database",
         new=AsyncMock(return_value={"status": "ok", "latency_seconds": 0.001}),
     ):
-        with patch(
-            "app.monitoring.health.get_worker_status",
-            return_value={"status": "ok", "workers": [], "active_tasks": 0, "error": None},
-        ):
-            resp = await client.get("/health")
+        resp = await client.get("/health")
     assert resp.status_code == 200
     assert "X-Request-ID" in resp.headers
     assert "X-Response-Time-Ms" in resp.headers

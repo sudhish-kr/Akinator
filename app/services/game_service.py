@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from uuid import UUID
+import logging
 
 from app.config import settings
 from app.db.models import GameSessionStatus
@@ -15,6 +16,8 @@ from app.services.session_manager import ConfidenceThresholds, GameSessionManage
 from app.services.session_store import LiveSession, SessionStore, StoredAnswer, session_store
 from app.services.playable_catalog import get_playable_catalog
 from app.monitoring.instrumentation import track_ai_inference
+
+logger = logging.getLogger("mindguess.game")
 
 
 class GameServiceError(Exception):
@@ -59,9 +62,12 @@ class GameService:
                     character_categories=catalog.character_categories,
                     character_popularity=catalog.character_popularity,
                     question_sample_totals=catalog.question_sample_totals,
+                    first_question_id=catalog.first_question_id,
                 )
         except ValueError as exc:
             raise GameServiceError(str(exc), 503) from exc
+        if catalog.first_question_id is None:
+            catalog.first_question_id = live.pending_question_id
 
         self.store.save(live)
         await self.repo.commit()
@@ -122,11 +128,9 @@ class GameService:
             entropy_before=turn.entropy_before,
         )
         await self.repo.increment_question_times_asked(question_id)
-
-        db_session = await self.repo.get_session(session_id)
-        if db_session:
-            db_session.questions_asked_count = turn.questions_asked
-            db_session.last_activity_at = datetime.now(timezone.utc)
+        await self.repo.update_session_progress(
+            session_id, questions_asked=turn.questions_asked
+        )
 
         self.store.save(live)
         await self.repo.commit()
@@ -157,7 +161,7 @@ class GameService:
             if not character:
                 raise GameServiceError("Top candidate character not found", 500)
 
-            db_session = await self.repo.get_session(session_id)
+            db_session = await self.repo.get_session_row(session_id)
             if db_session:
                 db_session.guessed_character_id = top_id
                 db_session.last_activity_at = datetime.now(timezone.utc)
@@ -243,31 +247,62 @@ class GameService:
     ) -> dict:
         from app.workers.queue import enqueue_post_game
 
-        db_session = await self.repo.get_session(session_id)
+        try:
+            return await self._confirm_guess(
+                session_id, correct, actual_character_id, enqueue_post_game
+            )
+        except GameServiceError:
+            raise
+        except Exception:
+            logger.exception("confirm_guess failed session=%s correct=%s", session_id, correct)
+            raise GameServiceError(
+                "Could not confirm this guess. The session may already be closed.",
+                500,
+            ) from None
+
+    async def _confirm_guess(
+        self,
+        session_id: UUID,
+        correct: bool,
+        actual_character_id: UUID | None,
+        enqueue_post_game,
+    ) -> dict:
+        # Row only — loading answers is unnecessary here and can 500 on Neon
+        # if PostgreSQL enum labels fail to map on selectinload.
+        db_session = await self.repo.get_session_row(session_id)
         if not db_session:
             raise GameServiceError("Session not found", 404)
 
         if correct:
-            # Correct confirmation only needs the DB row — do not depend on live
-            # cache / rehydrate (and never hang on a missing Celery broker).
             if db_session.status not in {
                 GameSessionStatus.IN_PROGRESS,
                 GameSessionStatus.GUESSED_CORRECT,
             }:
                 raise GameServiceError("Session is already closed", 409)
-            guessed_id = db_session.guessed_character_id
+            guessed_id = db_session.guessed_character_id or actual_character_id
+            if guessed_id is None:
+                raise GameServiceError(
+                    "No guessed character recorded for this session",
+                    409,
+                )
             db_session.status = GameSessionStatus.GUESSED_CORRECT
-            db_session.actual_character_id = guessed_id or actual_character_id
+            db_session.guessed_character_id = db_session.guessed_character_id or guessed_id
+            db_session.actual_character_id = guessed_id
             db_session.ended_at = datetime.now(timezone.utc)
             db_session.last_activity_at = db_session.ended_at
             await self.repo.commit()
             self.store.delete(session_id)
-            if guessed_id or actual_character_id:
+            try:
                 enqueue_post_game(
                     session_id,
-                    guessed_id or actual_character_id,
+                    guessed_id,
                     wrong_guess=False,
                     guessed_character_id=guessed_id,
+                )
+            except Exception:
+                logger.exception(
+                    "Post-game jobs failed after correct confirm session=%s",
+                    session_id,
                 )
             return {"status": "guessed_correct"}
 
@@ -316,12 +351,18 @@ class GameService:
         self.store.save(live)
         await self.repo.commit()
 
-        enqueue_post_game(
-            session_id,
-            actual_character_id,
-            wrong_guess=True,
-            guessed_character_id=guessed_id,
-        )
+        try:
+            enqueue_post_game(
+                session_id,
+                actual_character_id,
+                wrong_guess=True,
+                guessed_character_id=guessed_id,
+            )
+        except Exception:
+            logger.exception(
+                "Post-game jobs failed after wrong confirm session=%s",
+                session_id,
+            )
 
         if next_q_id is None:
             live.awaiting_guess = True
@@ -365,7 +406,7 @@ class GameService:
         """Wrong-guess recovery: rank the live posterior pool (no catalog scan)."""
         live = await self._get_live_session(session_id)
         exclude: set[UUID] = set()
-        db_session = await self.repo.get_session(session_id)
+        db_session = await self.repo.get_session_row(session_id)
         if db_session and db_session.guessed_character_id:
             exclude.add(db_session.guessed_character_id)
         items = remaining_candidates(

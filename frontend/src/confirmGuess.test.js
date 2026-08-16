@@ -29,6 +29,27 @@ test("confirmGuess posts to /game/guess/confirm with correct=true", async () => 
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.correct, true);
   assert.equal(body.session_id, "11111111-1111-1111-1111-111111111111");
+  assert.equal(body.actual_character_id, undefined);
+});
+
+test("confirmGuess includes actual_character_id only when provided", async () => {
+  const calls = [];
+  globalThis.fetch = mock.fn(async (url, options) => {
+    calls.push({ url: String(url), options });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "guessed_correct", next_question: null }),
+    };
+  });
+
+  const { api } = await import(`./api.js?t=${Date.now()}-confirm-id`);
+  await api.confirmGuess("11111111-1111-1111-1111-111111111111", {
+    correct: true,
+    actualCharacterId: "22222222-2222-2222-2222-222222222222",
+  });
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.actual_character_id, "22222222-2222-2222-2222-222222222222");
 });
 
 test("learn wrong-guess still posts to /game/learn", async () => {
@@ -51,6 +72,31 @@ test("learn wrong-guess still posts to /game/learn", async () => {
   assert.match(calls[0].url, /\/game\/learn$/);
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.wrong_guess, true);
+});
+
+test("startGame POST has no JSON Content-Type so browsers skip CORS preflight", async () => {
+  const calls = [];
+  globalThis.fetch = mock.fn(async (url, options) => {
+    calls.push({ url: String(url), options });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        session_id: "11111111-1111-1111-1111-111111111111",
+        question: { id: "q1", text: "Q?" },
+        questions_asked: 0,
+        top_confidence: 0.1,
+      }),
+    };
+  });
+
+  const { api } = await import(`./api.js?t=${Date.now()}-start`);
+  await api.startGame();
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.method, "POST");
+  assert.equal(calls[0].options.body, undefined);
+  assert.equal(calls[0].options.headers?.["Content-Type"], undefined);
 });
 
 test("listRemainingCandidates queries the session candidate pool", async () => {

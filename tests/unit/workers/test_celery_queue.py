@@ -67,6 +67,19 @@ def test_enqueue_uses_inline_apply_when_broker_unreachable(monkeypatch):
         assert result.id == "inline-learn"
 
 
+@pytest.mark.asyncio
+async def test_enqueue_skips_inline_apply_inside_running_event_loop(monkeypatch):
+    """HTTP handlers must not task.apply() — asyncpg cannot share the FastAPI loop."""
+    monkeypatch.setattr("app.config.settings.celery_task_always_eager", False)
+    monkeypatch.setattr("app.workers.queue._broker_reachable", lambda timeout=0.4: False)
+
+    with patch("app.workers.queue.process_learning") as task:
+        result = enqueue_learning(uuid4(), uuid4(), wrong_guess=False)
+        task.apply.assert_not_called()
+        task.delay.assert_not_called()
+        assert result.id is None
+
+
 def test_enqueue_post_game_correct_path_survives_broker_outage(monkeypatch):
     monkeypatch.setattr("app.config.settings.celery_task_always_eager", False)
     monkeypatch.setattr("app.workers.queue._broker_reachable", lambda timeout=0.4: False)

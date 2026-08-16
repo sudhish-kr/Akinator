@@ -35,13 +35,18 @@ def get_worker_status(*, ping_timeout: float = 1.0) -> dict[str, Any]:
     try:
         inspector = celery_app.control.inspect(timeout=ping_timeout)
         ping = inspector.ping() or {}
+        workers = sorted(ping.keys())
+        payload["workers"] = workers
+        if not workers:
+            payload["status"] = "degraded"
+            payload["error"] = "No Celery workers responded to ping"
+            return payload
+
         active = inspector.active() or {}
         reserved = inspector.reserved() or {}
         scheduled = inspector.scheduled() or {}
         stats = inspector.stats() or {}
 
-        workers = sorted(ping.keys())
-        payload["workers"] = workers
         payload["active_tasks"] = sum(len(v or []) for v in active.values())
         payload["reserved_tasks"] = sum(len(v or []) for v in reserved.values())
         payload["scheduled_tasks"] = sum(len(v or []) for v in scheduled.values())
@@ -52,9 +57,7 @@ def get_worker_status(*, ping_timeout: float = 1.0) -> dict[str, Any]:
             }
             for name, info in stats.items()
         }
-        payload["status"] = "ok" if workers else "degraded"
-        if not workers:
-            payload["error"] = "No Celery workers responded to ping"
+        payload["status"] = "ok"
     except Exception as exc:  # noqa: BLE001 — monitoring must not crash the API
         payload["status"] = "unavailable"
         payload["error"] = str(exc)

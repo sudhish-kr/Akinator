@@ -42,6 +42,7 @@ class PlayableCatalog:
     question_count: int = 0
     likelihood_count: int = 0
     db_identity: int = 0
+    first_question_id: UUID | None = None
 
     def is_fresh(self, ttl_seconds: float = DEFAULT_TTL_SECONDS) -> bool:
         return (time.monotonic() - self.loaded_at) < ttl_seconds

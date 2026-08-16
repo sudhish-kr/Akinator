@@ -163,6 +163,22 @@ async def test_game_endpoint_rate_limited(client):
 
 
 @pytest.mark.asyncio
+async def test_options_preflight_does_not_consume_game_limit(client):
+    ac, limiter = client
+    limiter._backend.clear()
+    for _ in range(5):
+        await ac.options(
+            "/game/start",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+    resp = await ac.post("/game/start")
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_admin_can_configure_rate_limits(client):
     ac, limiter = client
     limiter._backend.clear()
