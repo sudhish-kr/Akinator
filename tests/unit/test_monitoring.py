@@ -46,6 +46,19 @@ async def client():
 
 
 @pytest.mark.asyncio
+async def test_health_live_returns_ok_without_db_redis_or_celery(client: AsyncClient):
+    with patch("app.monitoring.health.check_database", new=AsyncMock()) as db:
+        with patch("app.workers.monitoring.get_worker_status") as workers:
+            with patch("app.services.playable_catalog.get_playable_catalog", new=AsyncMock()) as catalog:
+                resp = await client.get("/health/live")
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+    db.assert_not_called()
+    workers.assert_not_called()
+    catalog.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_health_endpoint_includes_database_latency(client: AsyncClient):
     with patch(
         "app.monitoring.health.check_database",

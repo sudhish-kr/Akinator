@@ -12,6 +12,11 @@ from app.db.session import async_session_factory
 from app.monitoring.metrics import DB_HEALTH_LATENCY, DB_QUERY_LATENCY
 
 
+def live_status() -> dict[str, str]:
+    """Process liveness for Render. No I/O of any kind."""
+    return {"status": "ok"}
+
+
 async def check_database() -> dict[str, Any]:
     """Ping the database and record latency gauges/histograms."""
     start = time.perf_counter()

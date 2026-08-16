@@ -208,6 +208,14 @@ async def test_repository_streams_likelihood_rows_in_batches():
         await db.commit()
 
     async with factory() as db:
+        execute_calls = {"n": 0}
+        original_execute = db.execute
+
+        async def counted_execute(*args, **kwargs):
+            execute_calls["n"] += 1
+            return await original_execute(*args, **kwargs)
+
+        db.execute = counted_execute
         repo = GameRepository(db)
         streamed = [
             row async for row in repo.iter_active_likelihood_rows(batch_size=1)
@@ -216,6 +224,7 @@ async def test_repository_streams_likelihood_rows_in_batches():
     await engine.dispose()
     pairs = {(row[0], round(row[2], 2), row[3]) for row in streamed}
     assert len(streamed) == 2
+    assert execute_calls["n"] >= 2
     assert (cid_a, 0.8, 9) in pairs
     assert (cid_b, 0.2, 11) in pairs
 

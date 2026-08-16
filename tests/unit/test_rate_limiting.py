@@ -41,6 +41,8 @@ def test_resolve_scope():
     assert resolve_scope("/auth/login") == "auth"
     assert resolve_scope("/game/start") == "game"
     assert resolve_scope("/health") is None
+    assert resolve_scope("/health/live") is None
+    assert resolve_scope("/health/ready") is None
     assert resolve_scope("/admin/rate-limits") is None
 
 

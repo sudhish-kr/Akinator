@@ -1,7 +1,8 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -159,16 +160,44 @@ class GameRepository:
     async def iter_active_likelihood_rows(self, *, batch_size: int = 5000):
         """Yield active L(C, Q) rows without a second full-table Python list.
 
-        Uses ``execute()`` (client-side fetch), not ``stream()``. SQLAlchemy
-        ``AsyncSession.stream()`` opens an asyncpg **server-side cursor**
-        (``prepared_stmt.cursor()``), which Neon/PgBouncer pooled connections
-        reject. Regular SELECT via execute already works for /health and the
-        character/question catalog queries on the same request.
+        Uses batched ``execute()`` (client-side fetch), not ``stream()``.
+        SQLAlchemy ``AsyncSession.stream()`` opens an asyncpg **server-side
+        cursor**, which Neon/PgBouncer pooled connections reject.
+
+        One giant SELECT also blocked the uvicorn event loop while Neon
+        returned the full mapping, so Render's 5s health check timed out
+        and recycled the instance during POST /game/start. Keyset pages
+        plus ``asyncio.sleep(0)`` let GET /health/live run between batches.
         """
-        del batch_size  # fetch is client-side; callers may still pass a size
-        result = await self.db.execute(self._active_likelihood_stmt())
-        for character_id, question_id, likelihood, sample_size in result:
-            yield character_id, question_id, float(likelihood), int(sample_size)
+        size = max(1, int(batch_size))
+        last_cid = None
+        last_qid = None
+        while True:
+            stmt = (
+                self._active_likelihood_stmt()
+                .order_by(CharacterAnswer.character_id, CharacterAnswer.question_id)
+                .limit(size)
+            )
+            if last_cid is not None:
+                stmt = stmt.where(
+                    or_(
+                        CharacterAnswer.character_id > last_cid,
+                        and_(
+                            CharacterAnswer.character_id == last_cid,
+                            CharacterAnswer.question_id > last_qid,
+                        ),
+                    )
+                )
+            result = await self.db.execute(stmt)
+            rows = result.all()
+            if not rows:
+                return
+            for character_id, question_id, likelihood, sample_size in rows:
+                yield character_id, question_id, float(likelihood), int(sample_size)
+            if len(rows) < size:
+                return
+            last_cid, last_qid = rows[-1][0], rows[-1][1]
+            await asyncio.sleep(0)
 
     async def get_active_likelihood_rows(
         self,

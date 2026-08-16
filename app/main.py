@@ -13,7 +13,7 @@ from app.config import settings
 from app.core.logging import setup_logging
 from app.db.session import engine
 from app.monitoring.db import instrument_engine
-from app.monitoring.health import build_health_report, check_database
+from app.monitoring.health import build_health_report, check_database, live_status
 from app.monitoring.metrics import APP_INFO, render_prometheus_metrics
 from app.monitoring.middleware import monitoring_middleware
 from app.security.middleware import RateLimitMiddleware
@@ -113,12 +113,19 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.get("/health/live", tags=["health"])
+async def liveness():
+    """Render health-check target. No DB, Redis, Celery, or catalog I/O."""
+    return live_status()
+
+
 @app.get("/health", tags=["health"])
 async def health():
-    """Liveness + database ping. Worker inspect lives on GET /health/workers.
+    """Diagnostic health: process + database ping.
 
-    Never call Celery inspect here: on Render without a broker that blocks the
-    event loop for several seconds and stalls concurrent /game/start.
+    Do not point Render's Health Check Path here — Neon round-trips can exceed
+    the 5s probe budget and recycle the instance during POST /game/start.
+    Use GET /health/live for liveness. Worker inspect: GET /health/workers.
     """
     return await build_health_report(include_workers=False)
 
