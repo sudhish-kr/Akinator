@@ -651,3 +651,24 @@ DEFAULT_SPECIFICITY_PENALTY = 0.18
 DEFAULT_SATURATED_LIKELIHOOD_SPREAD = 0.20
 DEFAULT_SATURATED_QUESTION_PENALTY = 0.55
 DEFAULT_NEAR_DUPLICATE_PENALTY = 0.25
+
+# Composite ranking extras. IG stays primary: these must stay smaller than a
+# typical high-information split (~0.4–1.0 bits).
+DEFAULT_SEPARATION_WEIGHT = 0.32
+# |P(top) − P(runner)| at or above this is not a close race.
+DEFAULT_SEPARATION_CLOSE_MARGIN = 0.22
+# Do not hunt a discriminator when the leader is already dominant.
+DEFAULT_SEPARATION_DOMINANT_TOP = 0.82
+# Minimum |L(top) − L(runner)| to count as an A/B discriminator.
+DEFAULT_SEPARATION_MIN_LIKELIHOOD_GAP = 0.25
+# Skip head-to-head bonus while the posterior is still a broad field.
+DEFAULT_SEPARATION_MAX_EFFECTIVE_N = 8.0
+# Top and runner must jointly own this mass before A/B hunting.
+DEFAULT_SEPARATION_MIN_DUEL_MASS = 0.72
+# Runner must be a real competitor, not a leftover tail.
+DEFAULT_SEPARATION_MIN_RUNNER_P = 0.12
+DEFAULT_CONTEXT_WEIGHT = 0.10
+DEFAULT_SPECIFICITY_ALIGN_WEIGHT = 0.10
+DEFAULT_USELESS_IG_PENALTY = 0.40
+# Remaining-candidate concentration below which specific discriminators help.
+DEFAULT_SPECIFICITY_NARROW_EFFECTIVE_N = 6.0

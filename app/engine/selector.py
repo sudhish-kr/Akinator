@@ -39,6 +39,17 @@ from app.engine.constants import (
     DEFAULT_MIN_USEFUL_SPREAD,
     DEFAULT_NEAR_DUPLICATE_PENALTY,
     DEFAULT_NEW_QUESTION_MIN_SAMPLES,
+    DEFAULT_SEPARATION_CLOSE_MARGIN,
+    DEFAULT_SEPARATION_DOMINANT_TOP,
+    DEFAULT_SEPARATION_MAX_EFFECTIVE_N,
+    DEFAULT_SEPARATION_MIN_DUEL_MASS,
+    DEFAULT_SEPARATION_MIN_LIKELIHOOD_GAP,
+    DEFAULT_SEPARATION_MIN_RUNNER_P,
+    DEFAULT_SEPARATION_WEIGHT,
+    DEFAULT_SPECIFICITY_ALIGN_WEIGHT,
+    DEFAULT_SPECIFICITY_NARROW_EFFECTIVE_N,
+    DEFAULT_CONTEXT_WEIGHT,
+    DEFAULT_USELESS_IG_PENALTY,
     DEFAULT_SATURATED_LIKELIHOOD_SPREAD,
     DEFAULT_SATURATED_QUESTION_PENALTY,
     DEFAULT_SPECIFICITY_PENALTY,
@@ -74,7 +85,7 @@ from app.engine.constants import (
     STAGE_C_QUESTION_CATEGORIES,
     Answer,
 )
-from app.engine.elimination import eliminate_candidates, entropy
+from app.engine.elimination import eliminate_candidates, entropy, top_two
 from app.engine.models import ConfidenceResult, GameEngineState, LikelihoodEntry, QuestionRef
 from app.engine.question_consistency import (
     infer_established_facts,
@@ -1206,44 +1217,202 @@ def _category_aligned(
 
 
 @dataclass(frozen=True)
+class PosteriorView:
+    """Current Bayesian frontier used by ranking (not a second candidate list)."""
+
+    top_id: UUID | None
+    top_p: float
+    runner_id: UUID | None
+    runner_p: float
+    margin: float
+    entropy: float
+    effective_n: float
+    candidate_count: int
+
+
+def posterior_view(
+    state: GameEngineState,
+    current_entropy: float | None = None,
+) -> PosteriorView:
+    """Summarize the active posterior for scoring. Does not query a database."""
+    active = {cid: state.probabilities[cid] for cid in state.active_character_ids()}
+    h = current_entropy if current_entropy is not None else entropy(active)
+    top, second = top_two(active)
+    top_id = top[0] if top else None
+    top_p = float(top[1]) if top else 0.0
+    runner_id = second[0] if second else None
+    runner_p = float(second[1]) if second else 0.0
+    n = len(active)
+    return PosteriorView(
+        top_id=top_id,
+        top_p=top_p,
+        runner_id=runner_id,
+        runner_p=runner_p,
+        margin=max(0.0, top_p - runner_p),
+        entropy=h,
+        effective_n=float(2**h) if h > 0 else float(max(n, 1)),
+        candidate_count=n,
+    )
+
+
+def candidate_separation_score(
+    state: GameEngineState,
+    question_id: UUID,
+    view: PosteriorView | None = None,
+    *,
+    weight: float = DEFAULT_SEPARATION_WEIGHT,
+    close_margin: float = DEFAULT_SEPARATION_CLOSE_MARGIN,
+    dominant_top: float = DEFAULT_SEPARATION_DOMINANT_TOP,
+    min_gap: float = DEFAULT_SEPARATION_MIN_LIKELIHOOD_GAP,
+    max_effective_n: float = DEFAULT_SEPARATION_MAX_EFFECTIVE_N,
+    min_duel_mass: float = DEFAULT_SEPARATION_MIN_DUEL_MASS,
+    min_runner_p: float = DEFAULT_SEPARATION_MIN_RUNNER_P,
+) -> float:
+    """Bonus for questions that split the current top candidate vs runner-up.
+
+    Zero when the leader is already dominant or the field is still broad, so
+    ranking does not hunt extra questions that the confidence layer should
+    turn into a guess.
+    """
+    snap = view or posterior_view(state)
+    if snap.top_id is None or snap.runner_id is None:
+        return 0.0
+    if snap.top_p >= dominant_top:
+        return 0.0
+    if snap.runner_p < min_runner_p:
+        return 0.0
+    if (snap.top_p + snap.runner_p) < min_duel_mass:
+        return 0.0
+    if snap.effective_n > max_effective_n:
+        return 0.0
+    closeness = max(0.0, 1.0 - (snap.margin / max(close_margin, 1e-9)))
+    if closeness <= 0.0:
+        return 0.0
+    gap = abs(
+        get_likelihood(state.likelihoods, snap.top_id, question_id)
+        - get_likelihood(state.likelihoods, snap.runner_id, question_id)
+    )
+    if gap < min_gap:
+        return 0.0
+    scaled = (gap - min_gap) / max(1.0 - min_gap, 1e-9)
+    return weight * closeness * scaled
+
+
+def context_relevance_score(
+    *,
+    question_id: UUID,
+    ref: QuestionRef | None,
+    view: PosteriorView,
+    stage: SelectionStage,
+    preferred_cats: frozenset[str],
+    question_refs: dict[UUID, QuestionRef] | None,
+    category_ig_bonus: float,
+    broad_question_bonus: float,
+) -> float:
+    """Mild bonus when Q matches the current posterior domain / phase."""
+    score = 0.0
+    q_stage = question_hierarchy_stage(ref)
+    if preferred_cats and _category_aligned(question_id, question_refs, preferred_cats):
+        score += min(category_ig_bonus, DEFAULT_CONTEXT_WEIGHT)
+    if stage in {"1", "2"} and q_stage in {"1", "2"} and view.effective_n >= 4:
+        score += min(broad_question_bonus, DEFAULT_CONTEXT_WEIGHT)
+    elif stage in {"3", "4"} and q_stage == "3":
+        score += min(category_ig_bonus, DEFAULT_CONTEXT_WEIGHT) * 0.5
+    if is_major_category_question(ref) and view.effective_n >= 3:
+        score += min(category_ig_bonus, DEFAULT_CONTEXT_WEIGHT) * 0.35
+    return score
+
+
+def specificity_alignment_score(
+    state: GameEngineState,
+    question_id: UUID,
+    view: PosteriorView,
+    ref: QuestionRef | None,
+    stage: SelectionStage,
+) -> float:
+    """Net specificity: boost tight discriminators when few remain; penalize early niches."""
+    align = 0.0
+    if view.effective_n <= DEFAULT_SPECIFICITY_NARROW_EFFECTIVE_N:
+        spread = remaining_likelihood_spread(state, question_id)
+        align = DEFAULT_SPECIFICITY_ALIGN_WEIGHT * min(1.0, spread)
+    return align - specificity_penalty(ref, stage)
+
+
+def useless_question_penalty_score(
+    *,
+    information_gain_value: float,
+    unknown_fraction: float,
+    likelihood_spread: float,
+) -> float:
+    """Penalize questions that cannot move the current posterior."""
+    del likelihood_spread  # skip-filter handles saturated spread; keep IG primary
+    penalty = unknown_fraction * 0.12
+    if information_gain_value <= 1e-9:
+        penalty += DEFAULT_USELESS_IG_PENALTY
+    return penalty
+
+
+@dataclass(frozen=True)
 class QuestionScore:
     """Rank used by select_next_question.
 
     QuestionScore =
         InformationGain
-        + separation_bonus
-        + confidence_utility
-        + useful_candidate_weight
-        + quality_bonus
-        - repetition_penalty
-        - useless_question_penalty
-        - specificity_penalty
+        + CandidateSeparation
+        + ContextRelevance
+        + Specificity
+        + QuestionQuality
+        - RedundancyPenalty
+        - UselessQuestionPenalty
 
-    Weights reuse engine constants; they must stay small so IG remains
-    the primary ranking signal.
+    Information gain is the primary signal. Named constants keep the extras
+    smaller than a typical useful split.
     """
 
     information_gain: float
-    separation_bonus: float = 0.0
-    confidence_utility: float = 0.0
-    useful_candidate_weight: float = 0.0
-    quality_bonus: float = 0.0
-    repetition_penalty: float = 0.0
+    candidate_separation: float = 0.0
+    context_relevance: float = 0.0
+    specificity: float = 0.0
+    question_quality: float = 0.0
+    redundancy_penalty: float = 0.0
     useless_question_penalty: float = 0.0
-    specificity_penalty: float = 0.0
 
     @property
     def total(self) -> float:
         return (
             self.information_gain
-            + self.separation_bonus
-            + self.confidence_utility
-            + self.useful_candidate_weight
-            + self.quality_bonus
-            - self.repetition_penalty
+            + self.candidate_separation
+            + self.context_relevance
+            + self.specificity
+            + self.question_quality
+            - self.redundancy_penalty
             - self.useless_question_penalty
-            - self.specificity_penalty
         )
+
+    @property
+    def separation_bonus(self) -> float:
+        return self.candidate_separation
+
+    @property
+    def quality_bonus(self) -> float:
+        return self.question_quality
+
+    @property
+    def repetition_penalty(self) -> float:
+        return self.redundancy_penalty
+
+    @property
+    def specificity_penalty(self) -> float:
+        return max(0.0, -self.specificity) if self.specificity < 0 else 0.0
+
+    @property
+    def confidence_utility(self) -> float:
+        return 0.0
+
+    @property
+    def useful_candidate_weight(self) -> float:
+        return 0.0
+
 
 
 def score_question(
@@ -1263,30 +1432,33 @@ def score_question(
     category_ig_bonus: float,
     broad_question_bonus: float,
     question_refs: dict[UUID, QuestionRef] | None,
+    posterior: PosteriorView | None = None,
 ) -> QuestionScore:
     """Composite score from in-memory likelihoods (no database access)."""
-    useless = 0.0
+    view = posterior or posterior_view(focus)
+    rank_state = focus if focus.active_character_ids() else state
     yes_n, no_n, unk_n = candidate_split_counts(
-        state, question_id, min_samples=min_samples
+        rank_state, question_id, min_samples=min_samples
     )
     split_total = yes_n + no_n + unk_n
-    if split_total:
-        # Prefer better-mapped splits; UNKNOWN coverage lowers rank, not legality.
-        useless = (unk_n / split_total) * 0.12
+    unknown_fraction = (unk_n / split_total) if split_total else 0.0
+    spread = remaining_likelihood_spread(rank_state, question_id)
 
-    q_stage = question_hierarchy_stage(ref)
-    quality = 0.0
-    if preferred_cats and _category_aligned(question_id, question_refs, preferred_cats):
-        quality += category_ig_bonus
-    if stage in {"1", "2"} and q_stage in {"1", "2"}:
-        quality += broad_question_bonus
-    if stage in {"3", "4"} and q_stage == "3":
-        quality += category_ig_bonus * 0.5
-    if is_major_category_question(ref):
-        quality += category_ig_bonus * 0.35
-
-    separation = 0.0
-    specificity_cost = 0.0
+    context = context_relevance_score(
+        question_id=question_id,
+        ref=ref,
+        view=view,
+        stage=stage,
+        preferred_cats=preferred_cats,
+        question_refs=question_refs,
+        category_ig_bonus=category_ig_bonus,
+        broad_question_bonus=broad_question_bonus,
+    )
+    quality = early_question_priority_bonus(ref)
+    if facts is not None:
+        quality += india_relevant_score_bonus(ref, facts)
+    separation = candidate_separation_score(rank_state, question_id, view)
+    extra_specificity = 0.0
     if is_sport_subtype_question(ref):
         if (
             _normalize_stage(stage) == "4"
@@ -1299,30 +1471,31 @@ def score_question(
                 mean_l = sum(
                     get_likelihood(focus.likelihoods, cid, question_id) for cid in active
                 ) / len(active)
-                # Prefer the subtype remaining candidates actually match.
                 separation += (mean_l - 0.5) * 0.4
         else:
-            specificity_cost += DEFAULT_SPECIFICITY_PENALTY * 0.5
+            extra_specificity -= DEFAULT_SPECIFICITY_PENALTY * 0.5
     if is_sport_specific_question(ref):
-        specificity_cost += DEFAULT_SPECIFICITY_PENALTY
+        extra_specificity -= DEFAULT_SPECIFICITY_PENALTY
     if is_major_category_question(ref) and ref is not None and ref.category == "Movies":
         if "superhero" in (ref.text or "").casefold():
             quality += category_ig_bonus * 0.25
-    quality += early_question_priority_bonus(ref)
-    quality += india_relevant_score_bonus(ref, facts)
-    specificity_cost += specificity_penalty(ref, stage)
 
-    # IG already encodes remaining-candidate uncertainty; extra utility
-    # weights stay at 0 so ranking matches the existing engine.
+    specificity = (
+        specificity_alignment_score(rank_state, question_id, view, ref, stage)
+        + extra_specificity
+    )
     return QuestionScore(
         information_gain=information_gain_value,
-        separation_bonus=separation,
-        confidence_utility=0.0,
-        useful_candidate_weight=0.0,
-        quality_bonus=quality,
-        repetition_penalty=near_duplicate_penalty(ref, previous_ref),
-        useless_question_penalty=useless,
-        specificity_penalty=specificity_cost,
+        candidate_separation=separation,
+        context_relevance=context,
+        specificity=specificity,
+        question_quality=quality,
+        redundancy_penalty=near_duplicate_penalty(ref, previous_ref),
+        useless_question_penalty=useless_question_penalty_score(
+            information_gain_value=information_gain_value,
+            unknown_fraction=unknown_fraction,
+            likelihood_spread=spread,
+        ),
     )
 
 
@@ -1390,6 +1563,35 @@ def _pick_from_near_best(
     return picker.choices([qid for _, _, qid in pool], weights=weights, k=1)[0]
 
 
+def _log_question_selected(
+    *,
+    chosen: UUID | None,
+    scores_by_qid: dict[UUID, QuestionScore],
+    view: PosteriorView,
+    state: GameEngineState,
+    question_refs: dict[UUID, QuestionRef] | None,
+) -> None:
+    if chosen is None or not logger.isEnabledFor(logging.DEBUG):
+        return
+    qs = scores_by_qid.get(chosen)
+    ref = question_refs.get(chosen) if question_refs else None
+    logger.debug(
+        "question_selected question_id=%s ig=%.4f separation=%.4f specificity=%.4f "
+        "quality=%.4f context=%.4f candidate_count=%s top_probability=%.4f "
+        "runner_up_probability=%.4f text=%r",
+        chosen,
+        qs.information_gain if qs else 0.0,
+        qs.candidate_separation if qs else 0.0,
+        qs.specificity if qs else 0.0,
+        qs.question_quality if qs else 0.0,
+        qs.context_relevance if qs else 0.0,
+        view.candidate_count,
+        view.top_p,
+        view.runner_p,
+        (ref.text if ref else None),
+    )
+
+
 def select_next_question(
     state: GameEngineState,
     all_question_ids: list[UUID],
@@ -1428,6 +1630,7 @@ def select_next_question(
     Niche questions stay hard-gated until Stage 4 and category relevance.
     """
     del consecutive_dont_know_cap  # reserved for future dont_know streak policy
+    del character_names
     preference_threshold = (
         category_confidence_gate
         if category_preference_threshold is None
@@ -1462,18 +1665,60 @@ def select_next_question(
     focus_entropy = entropy(
         {cid: focus.probabilities[cid] for cid in focus.active_character_ids()}
     )
+    view = posterior_view(focus, focus_entropy)
 
-    # Legacy callers (no hierarchy metadata) → pure information-gain selection.
+    def _score_one(
+        qid: UUID,
+        *,
+        ref: QuestionRef | None,
+        previous_ref: QuestionRef | None,
+        stage: SelectionStage,
+        preferred_cats: frozenset[str],
+        facts,
+        sports_major_asked: bool,
+        dominant: str | None,
+    ) -> QuestionScore:
+        return score_question(
+            question_id=qid,
+            information_gain_value=information_gain(
+                focus, qid, current_entropy=focus_entropy
+            ),
+            state=state,
+            focus=focus,
+            ref=ref,
+            previous_ref=previous_ref,
+            stage=stage,
+            preferred_cats=preferred_cats,
+            facts=facts,
+            sports_major_asked=sports_major_asked,
+            dominant=dominant,
+            min_samples=min_samples,
+            category_ig_bonus=category_ig_bonus,
+            broad_question_bonus=broad_question_bonus,
+            question_refs=question_refs,
+            posterior=view,
+        )
+
+    # Legacy callers (no hierarchy metadata) → IG + current-posterior ranking.
     if question_refs is None:
-        scored_legacy: list[tuple[float, int, UUID]] = [
-            (
-                information_gain(focus, qid, current_entropy=focus_entropy),
-                total_sample_size_for_question(state, qid),
+        scored_legacy: list[tuple[float, int, UUID]] = []
+        scores_by_qid: dict[UUID, QuestionScore] = {}
+        for qid in unused:
+            qs = _score_one(
                 qid,
+                ref=None,
+                previous_ref=None,
+                stage="1",
+                preferred_cats=frozenset(),
+                facts=None,
+                sports_major_asked=False,
+                dominant=None,
             )
-            for qid in unused
-        ]
-        return _pick_from_near_best(
+            scores_by_qid[qid] = qs
+            scored_legacy.append(
+                (qs.total, total_sample_size_for_question(state, qid), qid)
+            )
+        chosen_legacy = _pick_from_near_best(
             scored_legacy,
             tie_threshold=tie_threshold,
             diversity_margin=diversity_margin,
@@ -1481,6 +1726,14 @@ def select_next_question(
             rng=rng,
             explore=explore,
         )
+        _log_question_selected(
+            chosen=chosen_legacy,
+            scores_by_qid=scores_by_qid,
+            view=view,
+            state=state,
+            question_refs=None,
+        )
+        return chosen_legacy
 
     remaining_cats = remaining_character_categories(
         state,
@@ -1827,6 +2080,7 @@ def select_next_question(
     best_non_low_ig = max(non_low_igs) if non_low_igs else None
 
     scored: list[tuple[float, int, UUID]] = []
+    scores_by_qid: dict[UUID, QuestionScore] = {}
     for qid in relevant:
         ref = question_refs.get(qid)
         ig = ig_by_qid[qid]
@@ -1865,7 +2119,9 @@ def select_next_question(
             category_ig_bonus=category_ig_bonus,
             broad_question_bonus=broad_question_bonus,
             question_refs=question_refs,
+            posterior=view,
         )
+        scores_by_qid[qid] = qs
         samples = total_sample_size_for_question(state, qid)
         scored.append((qs.total, samples, qid))
 
@@ -1934,35 +2190,13 @@ def select_next_question(
         previous_category=(previous_ref.category if previous_ref else None),
         question_refs=question_refs,
     )
-    if logger.isEnabledFor(logging.DEBUG):
-        pool = sorted(
-            (
-                (
-                    (character_names or {}).get(cid, str(cid)[:8]),
-                    round(state.probabilities[cid], 4),
-                )
-                for cid in state.active_character_ids()
-            ),
-            key=lambda row: -row[1],
-        )[:5]
-        ref = question_refs.get(chosen) if question_refs else None
-        yes_n, no_n, unk_n = candidate_split_counts(focus, chosen)
-        logger.debug(
-            "selection_debug q=%s n=%s top5=%s next=%r cat=%s score=%.4f ig=%.4f "
-            "spread=%.4f yes=%s no=%s unk=%s reason=%s",
-            state.questions_asked + 1,
-            len(state.active_character_ids()),
-            pool,
-            (ref.text if ref else str(chosen)),
-            (ref.category if ref else None),
-            scored[0][0] if scored else 0.0,
-            ig_by_qid.get(chosen, 0.0),
-            remaining_likelihood_spread(focus, chosen),
-            yes_n,
-            no_n,
-            unk_n,
-            "best_split" if opening_pool is None else "opening",
-        )
+    _log_question_selected(
+        chosen=chosen,
+        scores_by_qid=scores_by_qid,
+        view=view,
+        state=state,
+        question_refs=question_refs,
+    )
     return chosen
 
 
