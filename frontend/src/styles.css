@@ -217,7 +217,7 @@ body {
   height: var(--ball-size);
   margin-left: calc(var(--ball-size) / -2);
   margin-top: calc(var(--ball-size) / -2);
-  opacity: calc(0.42 + (var(--ball-depth) * 0.22));
+  opacity: var(--ball-opacity, calc(0.42 + (var(--ball-depth) * 0.22)));
   filter: blur(calc((1.8 - var(--ball-depth)) * 0.7px));
   transform: translate3d(
     calc(var(--px) * var(--ball-parallax) * 1px),
@@ -377,6 +377,77 @@ body {
   70% { transform: translateY(calc(var(--ball-amp) * 0.35)) translateX(-3px) scale(0.99); }
 }
 
+/* Proximity pop: one ball bursts, then a new one arrives elsewhere */
+.home-ball.is-popping {
+  z-index: 3;
+  transition: none;
+}
+
+.home-ball.is-popping .home-ball-core {
+  animation: none;
+}
+
+.home-ball.is-popping .home-ball-bounce {
+  animation: homeBallPop 0.36s ease-in forwards;
+}
+
+@keyframes homeBallPop {
+  0% { transform: scale(1); opacity: 1; }
+  42% { transform: scale(0.78); opacity: 0.8; }
+  100% { transform: scale(0.12); opacity: 0; }
+}
+
+.home-ball.is-arriving {
+  transition: none;
+}
+
+.home-ball.is-arriving .home-ball-bounce {
+  animation: homeBallArrive 0.28s ease-out both;
+}
+
+@keyframes homeBallArrive {
+  0% { transform: scale(0.62); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.home-ball-pop {
+  position: absolute;
+  inset: -28%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.home-ball-ring {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(61, 154, 122, 0.38);
+  animation: homeBallRing 0.36s ease-out forwards;
+}
+
+@keyframes homeBallRing {
+  0% { transform: scale(0.55); opacity: 0.45; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.home-ball-speck {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: rgba(94, 184, 148, 0.52);
+  --ang: calc(var(--speck-i) * 72deg);
+  animation: homeBallSpeck 0.36s ease-out forwards;
+}
+
+@keyframes homeBallSpeck {
+  0% { transform: rotate(var(--ang)) translateY(0) scale(1); opacity: 0.65; }
+  100% { transform: rotate(var(--ang)) translateY(-20px) scale(0.2); opacity: 0; }
+}
+
 /* Hide some balls on smaller screens */
 .home-ball--b6,
 .home-ball--b8,
@@ -410,7 +481,7 @@ body {
 
   .home-ball {
     filter: blur(0.4px);
-    opacity: calc(0.35 + (var(--ball-depth) * 0.18));
+    opacity: var(--ball-opacity, calc(0.35 + (var(--ball-depth) * 0.18)));
   }
 }
 
@@ -1976,6 +2047,10 @@ body {
   .home-balls.is-start-hover .home-ball-core,
   .home-balls.is-burst .home-ball-core {
     filter: none;
+  }
+
+  .home-ball-pop {
+    display: none;
   }
 
   .mascot--entering .mascot-svg {

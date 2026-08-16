@@ -1,16 +1,18 @@
 /**
  * Decorative MindGuess orbs for the home world.
  * Lightweight CSS float + subtle pointer parallax (no canvas/libs).
- * Desktop: proximity reactions via rAF + refs (no per-move React state).
+ * Desktop: proximity burst + respawn via rAF + refs (no per-move React state).
  */
 import { useEffect, useRef } from "react";
 import {
-  lookOffset,
-  pickBallColor,
-  pickBallMood,
+  ARRIVE_MS,
+  BURST_MS,
+  collectKeepOutRects,
+  jitterSize,
+  nextBallSpec,
+  pickSpawnPercent,
   proximityRadius,
   shouldActivate,
-  staggerDelay,
 } from "./homeBallInteract.js";
 
 const BALLS = [
@@ -26,9 +28,6 @@ const BALLS = [
   { id: "b10", size: 50, x: 28, y: 82, depth: 0.85, delay: -1.1, duration: 7.7, amp: 12, parallax: 20 },
 ];
 
-const COOLDOWN_MS = 850;
-const REACT_MS = 560;
-const TINT_HOLD_MS = 920;
 const LEAVE_HYSTERESIS = 1.12;
 
 function finePointer() {
@@ -47,6 +46,44 @@ function reducedMotion() {
   }
 }
 
+function applySpec(el, spec) {
+  if (!el) return;
+  el.style.setProperty("--ball-x", `${spec.x}%`);
+  el.style.setProperty("--ball-y", `${spec.y}%`);
+  el.style.setProperty("--ball-nx", String(spec.x));
+  el.style.setProperty("--ball-ny", String(spec.y));
+  el.style.setProperty("--ball-size", `${spec.size}px`);
+  el.style.setProperty("--ball-duration", `${spec.duration}s`);
+  el.style.setProperty("--ball-amp", `${spec.amp}px`);
+  el.style.setProperty("--ball-delay", `${spec.delay}s`);
+  el.style.setProperty("--ball-opacity", String(spec.opacity));
+}
+
+function addRipple(el) {
+  el.querySelectorAll(".home-ball-pop").forEach((node) => node.remove());
+  const wrap = document.createElement("span");
+  wrap.className = "home-ball-pop";
+  const ring = document.createElement("span");
+  ring.className = "home-ball-ring";
+  wrap.appendChild(ring);
+  for (let i = 0; i < 5; i += 1) {
+    const speck = document.createElement("span");
+    speck.className = "home-ball-speck";
+    speck.style.setProperty("--speck-i", String(i));
+    wrap.appendChild(speck);
+  }
+  el.appendChild(wrap);
+  return wrap;
+}
+
+function restartFloat(el) {
+  const core = el?.querySelector(".home-ball-core");
+  if (!core) return;
+  core.style.animation = "none";
+  void core.offsetWidth;
+  core.style.animation = "";
+}
+
 export default function HomeBackgroundBalls({ burst = false, startHover = false }) {
   const rootRef = useRef(null);
   const burstRef = useRef(burst);
@@ -63,16 +100,25 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
       el: nodes[i],
       x: ball.x,
       y: ball.y,
+      size: ball.size,
+      depth: ball.depth,
+      duration: ball.duration,
+      amp: ball.amp,
+      delay: ball.delay,
+      baseSize: ball.size,
+      baseDuration: ball.duration,
+      baseAmp: ball.amp,
       radius: proximityRadius(ball.size),
       inside: false,
+      popping: false,
+      gen: 0,
       cooldownUntil: 0,
-      lastColor: null,
-      lastMood: null,
       timers: [],
     }));
 
     let raf = 0;
     let pending = null;
+    let lastMouse = null;
     const pendingTimers = [];
 
     const clearTimers = (item) => {
@@ -80,46 +126,55 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
       item.timers = [];
     };
 
-    const restoreTint = (item) => {
-      if (!item.el) return;
-      item.el.classList.remove("is-tinted", "is-mood-happy", "is-mood-excited", "is-mood-curious");
-      item.el.style.removeProperty("--ball-tint");
+    const respawn = (item) => {
+      const rect = root.getBoundingClientRect();
+      const size = jitterSize(item.baseSize);
+      const spec = nextBallSpec(item, {
+        ...pickSpawnPercent({
+          rootRect: rect,
+          mouse: lastMouse,
+          avoidRects: collectKeepOutRects(root),
+          size,
+        }),
+        size,
+      });
+      applySpec(item.el, spec);
+      item.x = spec.x;
+      item.y = spec.y;
+      item.size = spec.size;
+      item.duration = spec.duration;
+      item.amp = spec.amp;
+      item.delay = spec.delay;
+      item.radius = spec.radius;
+      item.inside = false;
+      item.popping = false;
+      item.cooldownUntil = performance.now() + ARRIVE_MS + 80;
+      item.el.classList.remove("is-popping");
+      item.el.querySelectorAll(".home-ball-pop").forEach((node) => node.remove());
+      restartFloat(item.el);
+      item.el.classList.add("is-arriving");
+      const arriveId = setTimeout(() => item.el?.classList.remove("is-arriving"), ARRIVE_MS);
+      pendingTimers.push(arriveId);
+      item.timers.push(arriveId);
     };
 
-    const activate = (item, look, delay) => {
-      const run = () => {
-        if (!item.el || burstRef.current || !item.inside) return;
-        const color = pickBallColor(item.lastColor);
-        const mood = pickBallMood(item.lastMood);
-        item.lastColor = color.id;
-        item.lastMood = mood;
-        item.cooldownUntil = performance.now() + COOLDOWN_MS;
-        const reduced = reducedMotion();
-        const lookX = reduced ? 0 : look.x;
-        const lookY = reduced ? 0 : look.y;
+    const popBall = (item) => {
+      if (!item.el || item.popping || burstRef.current || reducedMotion()) return;
+      item.popping = true;
+      item.inside = true;
+      item.gen += 1;
+      const gen = item.gen;
+      clearTimers(item);
+      addRipple(item.el);
+      item.el.classList.add("is-popping");
+      item.el.classList.remove("is-arriving", "is-reacting", "is-tinted", "is-watching");
 
-        item.el.style.setProperty("--ball-tint", color.tint);
-        item.el.style.setProperty("--look-x", `${lookX}px`);
-        item.el.style.setProperty("--look-y", `${lookY}px`);
-        item.el.classList.add("is-tinted", `is-mood-${mood}`);
-        if (!reduced) item.el.classList.add("is-reacting");
-
-        clearTimers(item);
-        if (!reduced) {
-          item.timers.push(
-            setTimeout(() => item.el?.classList.remove("is-reacting"), REACT_MS)
-          );
-        }
-        item.timers.push(setTimeout(() => restoreTint(item), reduced ? 520 : TINT_HOLD_MS));
-      };
-
-      if (delay) {
-        const id = setTimeout(run, delay);
-        pendingTimers.push(id);
-        item.timers.push(id);
-      } else {
-        run();
-      }
+      const id = setTimeout(() => {
+        if (item.gen !== gen || !item.el) return;
+        respawn(item);
+      }, BURST_MS);
+      pendingTimers.push(id);
+      item.timers.push(id);
     };
 
     const tick = () => {
@@ -131,12 +186,11 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
       const rect = root.getBoundingClientRect();
       if (rect.width < 8 || rect.height < 8) return;
 
-      let frameIndex = 0;
       const now = performance.now();
 
       for (const item of runtime) {
-        if (!item.el) continue;
-        if (item.el.offsetWidth === 0) {
+        if (!item.el || item.popping) continue;
+        if (item.el.offsetWidth === 0 || now < item.cooldownUntil) {
           item.inside = false;
           continue;
         }
@@ -145,18 +199,10 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
         const cy = rect.top + (item.y / 100) * rect.height;
         const dx = ev.clientX - cx;
         const dy = ev.clientY - cy;
+        const dist = Math.hypot(dx, dy);
         const inside = item.inside
-          ? Math.hypot(dx, dy) <= item.radius * LEAVE_HYSTERESIS
-          : Math.hypot(dx, dy) <= item.radius;
-
-        const look = lookOffset(dx, dy, item.radius);
-        if (inside && !reducedMotion()) {
-          item.el.style.setProperty("--look-x", `${look.x}px`);
-          item.el.style.setProperty("--look-y", `${look.y}px`);
-          item.el.classList.add("is-watching");
-        } else if (!inside) {
-          item.el.classList.remove("is-watching");
-        }
+          ? dist <= item.radius * LEAVE_HYSTERESIS
+          : dist <= item.radius;
 
         if (
           shouldActivate({
@@ -167,8 +213,8 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
           })
         ) {
           item.inside = true;
-          activate(item, look, staggerDelay(frameIndex));
-          frameIndex += 1;
+          popBall(item);
+          continue;
         }
         item.inside = inside;
       }
@@ -176,14 +222,15 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
 
     const onMove = (event) => {
       if (event.pointerType && event.pointerType !== "mouse") return;
-      pending = { clientX: event.clientX, clientY: event.clientY };
+      lastMouse = { clientX: event.clientX, clientY: event.clientY };
+      pending = lastMouse;
       if (!raf) raf = requestAnimationFrame(tick);
     };
 
     const onLeave = () => {
       pending = null;
       runtime.forEach((item) => {
-        item.inside = false;
+        if (!item.popping) item.inside = false;
       });
     };
 
@@ -201,8 +248,8 @@ export default function HomeBackgroundBalls({ burst = false, startHover = false 
       runtime.forEach((item) => {
         clearTimers(item);
         if (item.el) {
-          item.el.classList.remove("is-reacting", "is-tinted", "is-watching", "is-mood-happy", "is-mood-excited", "is-mood-curious");
-          item.el.style.removeProperty("--ball-tint");
+          item.el.classList.remove("is-popping", "is-arriving");
+          item.el.querySelectorAll(".home-ball-pop").forEach((node) => node.remove());
         }
       });
     };
