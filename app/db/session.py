@@ -2,19 +2,18 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
+from app.db.url import normalize_asyncpg_url
 
-_connect_args: dict = {}
-if settings.database_url.startswith("sqlite"):
-    _connect_args = {"timeout": 30}
+_engine_url, _connect_args = normalize_asyncpg_url(settings.database_url)
 
 engine = create_async_engine(
-    settings.database_url,
+    _engine_url,
     echo=settings.debug,
     connect_args=_connect_args,
 )
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-if settings.database_url.startswith("sqlite"):
+if _engine_url.startswith("sqlite"):
 
     @event.listens_for(engine.sync_engine, "connect")
     def _sqlite_on_connect(dbapi_connection, _connection_record) -> None:

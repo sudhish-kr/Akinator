@@ -20,7 +20,7 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from urllib.parse import urlparse
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.config import settings
 from app.db.models import Character, CharacterAlias, CharacterAnswer, Question
+from app.db.url import normalize_asyncpg_url
 from app.services.knowledge_seed import KnowledgeSeedError, load_seed_file, validate_seed_payload
 
 DEFAULT_SEED = ROOT / "data" / "knowledge" / "seed_v1.json"
@@ -76,28 +77,7 @@ def describe_database(url: str) -> str:
 
 def async_engine_url(url: str) -> tuple[str, dict[str, Any]]:
     """Convert a Postgres URL for asyncpg. Drops libpq-only query params."""
-    connect_args: dict[str, Any] = {}
-    if url.startswith("sqlite"):
-        return url, connect_args
-    if url.startswith("postgresql://"):
-        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
-    parsed = urlparse(url)
-    query: list[tuple[str, str]] = []
-    ssl_needed = False
-    for key, value in parse_qsl(parsed.query, keep_blank_values=True):
-        lowered = key.casefold()
-        if lowered in {"sslmode", "ssl"}:
-            ssl_needed = value.casefold() not in {"disable", "false", "0"}
-            continue
-        if lowered in {"channel_binding", "channelbinding"}:
-            continue
-        query.append((key, value))
-    if ssl_needed or "neon.tech" in (parsed.hostname or ""):
-        connect_args["ssl"] = True
-    if parsed.hostname and "pooler" in parsed.hostname:
-        connect_args["statement_cache_size"] = 0
-    rebuilt = parsed._replace(query=urlencode(query))
-    return urlunparse(rebuilt), connect_args
+    return normalize_asyncpg_url(url)
 
 
 def estimate_mapping_count(data: dict[str, Any]) -> int:
